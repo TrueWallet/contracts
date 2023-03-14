@@ -5,7 +5,7 @@
 
 ![Github Actions](https://github.com/devanonon/hardhat-foundry-template/workflows/test/badge.svg)
 
-### This repository is a hybrid [hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#quick-start) and [foundry](https://book.getfoundry.sh/getting-started/installation) environment. For installation follow the instruction on this links.
+This repository is a hybrid [hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#quick-start) and [foundry](https://book.getfoundry.sh/getting-started/installation) environment. For the Foundry installation follow the instructions through the [link](https://github.com/foundry-rs/foundry).
 
 ### Getting Started
 
