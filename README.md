@@ -1,8 +1,11 @@
 # <h1 align="center"> TrueWallet Contracts </h1>
 
-**This repository contains the smart contract suite used in TrueWallet project**
+<h3 align="center"> This repository contains the smart contract suite used in TrueWallet project </h3>
+<br>
 
 ![Github Actions](https://github.com/devanonon/hardhat-foundry-template/workflows/test/badge.svg)
+
+### This repository is a hybrid [hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#quick-start) and [foundry](https://book.getfoundry.sh/getting-started/installation) environment. For installation follow the instruction on this links.
 
 ### Getting Started
 
