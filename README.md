@@ -1,6 +1,6 @@
-# <h1 align="center"> Foundry x Hardhat Template </h1>
+# <h1 align="center"> TrueWallet Contracts </h1>
 
-**Template repository for getting started quickly with Foundry and Hardhat in one project**
+**This repository contains the smart contract suite used in TrueWallet project**
 
 ![Github Actions](https://github.com/devanonon/hardhat-foundry-template/workflows/test/badge.svg)
 
