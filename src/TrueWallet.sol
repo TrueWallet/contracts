@@ -60,9 +60,34 @@ contract TrueWallet is IWallet, Owned {
         _validateAndUpdateNonce(userOp);
     }
 
+    /// @notice Method called by entryPoint or owner to execute the calldata supplied by a wallet
+    /// @param target - Address to send calldata payload for execution
+    /// @param value - Amount of ETH to forward to target
+    /// @param payload - Calldata to send to target for execution
+    function execute(address target, uint256 value, bytes calldata payload) external {
+        _requireFromEntryPointOrOwner();
+        _call(target, value, payload);
+    }
+
+    /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
+    function executeBatch(address[] calldata target, bytes[] calldata payload) external {
+        _requireFromEntryPointOrOwner();
+        require(target.length == payload.length, "TrueWallet: Wrong array length");
+        for (uint256 i; i < target.length; ) {
+            _call(target[i], 0, payload[i]);
+            unchecked { i++; }
+        }
+    }
+
 
     /////////////////  INTERNAL METHODS ///////////////
     
+
+    /// @notice Validate that only the entryPoint or Owner is able to call a method
+    function _requireFromEntryPointOrOwner() internal view {
+        require(msg.sender == address(entryPoint) || msg.sender == owner, "TrueWallet: Only entryPoint or owner can call this method");
+    }
+
     /// @notice Validate that only the entryPoint is able to call a method
     function _requireFromEntryPoint() internal view {
         require(msg.sender == address(entryPoint), "TrueWallet: Only entryPoint can call this method");
@@ -78,5 +103,15 @@ contract TrueWallet is IWallet, Owned {
     /// @notice Validate and update the nonce storage variable
     function _validateAndUpdateNonce(UserOperation calldata userOp) internal {
         require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+    }
+
+    /// @notice Perform and validate the function call
+    function _call(address target, uint256 value, bytes memory data) internal {
+        (bool success, bytes memory result) = target.call{value : value}(data);
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
     }
 }
