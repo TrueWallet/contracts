@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {IWallet} from "./IWallet.sol";
+import {IAccount} from "./interfaces/IAccount.sol";
 import {UserOperation} from "./UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
@@ -11,8 +11,7 @@ import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 // 1. Updateable entrypoint
 // 2. Nonce for replay detection
 // 3. ECDSA for signature validation
-contract TrueWallet is IWallet {
-
+contract TrueWallet is IAccount {
     /// @notice EntryPoint contract in ERC-4337 system
     address public entryPoint;
 
@@ -22,8 +21,14 @@ contract TrueWallet is IWallet {
 
     /////////////////  EVENTS ///////////////
 
-    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
-    event OwnershipTransferred(address indexed sender, address indexed newOwner);
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
+    event OwnershipTransferred(
+        address indexed sender,
+        address indexed newOwner
+    );
 
     /////////////////  MODIFIERS ///////////////
 
@@ -63,7 +68,7 @@ contract TrueWallet is IWallet {
     /////////////////  CONSTRUCTOR ///////////////
 
     constructor(address _entryPoint, address _owner) {
-        if ( _entryPoint == address(0) || _owner == address(0)) {
+        if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
         entryPoint = _entryPoint;
@@ -77,7 +82,7 @@ contract TrueWallet is IWallet {
 
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
-        if ( _newEntryPoint == address(0)) revert ZeroAddressProvided();
+        if (_newEntryPoint == address(0)) revert ZeroAddressProvided();
         entryPoint = _newEntryPoint;
         emit UpdateEntryPoint(_newEntryPoint, entryPoint);
     }
@@ -107,16 +112,25 @@ contract TrueWallet is IWallet {
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata payload
+    ) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
-    function executeBatch(address[] calldata target, bytes[] calldata payload) external onlyEntryPointOrOwner {
+    function executeBatch(
+        address[] calldata target,
+        bytes[] calldata payload
+    ) external onlyEntryPointOrOwner {
         if (target.length != payload.length) revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], 0, payload[i]);
-            unchecked { i++; }
+            unchecked {
+                i++;
+            }
         }
     }
 
@@ -129,7 +143,10 @@ contract TrueWallet is IWallet {
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
@@ -138,7 +155,7 @@ contract TrueWallet is IWallet {
 
     /// @notice Perform and validate the function call
     function _call(address target, uint256 value, bytes memory data) internal {
-        (bool success, bytes memory result) = target.call{value : value}(data);
+        (bool success, bytes memory result) = target.call{value: value}(data);
         if (!success) {
             assembly {
                 revert(add(result, 32), mload(result))

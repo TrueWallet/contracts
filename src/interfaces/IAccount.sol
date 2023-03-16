@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {UserOperation} from "./UserOperation.sol";
+import {UserOperation} from "../UserOperation.sol";
 
-interface IWallet {
-
+interface IAccount {
     /**
-     * Validate user's signature and nonce
-     * the entryPoint will make the call to the recipient only if this validation call returns successfully.
+     * Validate user's signature and nonce.
+     * The entryPoint will make the call to the recipient only if this validation call returns successfully.
      *
      * @dev Must validate caller is the entryPoint.
      *      Must validate the signature and nonce
