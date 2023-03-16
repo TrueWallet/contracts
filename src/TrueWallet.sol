@@ -13,7 +13,7 @@ import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 // 3. ECDSA for signature validation
 contract TrueWallet is IWallet {
 
-    /// @notice Constant ENTRY_POINT contract in ERC-4337 system
+    /// @notice EntryPoint contract in ERC-4337 system
     address public entryPoint;
 
     /// @notice Nonce used for replay protection
@@ -29,20 +29,43 @@ contract TrueWallet is IWallet {
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        require(msg.sender == address(entryPoint) || msg.sender == owner, "TrueWallet: Only entryPoint or owner can call this method");
+        if (msg.sender != address(entryPoint) && msg.sender != owner) {
+            revert InvalidEntryPointOrOwner();
+        }
         _;
     }
 
-    modifier onlyOwner() virtual {
+    modifier onlyOwner() {
         // directly from EOA owner, or through the account itself (which gets redirected through execute())
-        require(msg.sender == owner || msg.sender == address(this), "TrueWallet: Only owner can call this method");
+        if (msg.sender != owner && msg.sender != address(this)) {
+            revert InvalidOwner();
+        }
         _;
     }
 
+    /////////////////  ERRORS ///////////////
+
+    /// @dev Reverts in case not valid entryPoint or owner
+    error InvalidEntryPointOrOwner();
+
+    /// @dev Reverts in case not valid owner
+    error InvalidOwner();
+
+    /// @dev Reverts when zero address is assigned
+    error ZeroAddressProvided();
+
+    /// @dev Reverts when array argument size mismatch
+    error LengthMismatch();
+
+    /// @dev Reverts in case not valid signature
+    error InvalidSignature();
 
     /////////////////  CONSTRUCTOR ///////////////
 
     constructor(address _entryPoint, address _owner) {
+        if ( _entryPoint == address(0) || _owner == address(0)) {
+            revert ZeroAddressProvided();
+        }
         entryPoint = _entryPoint;
         owner = _owner;
     }
@@ -54,6 +77,7 @@ contract TrueWallet is IWallet {
 
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
+        if ( _newEntryPoint == address(0)) revert ZeroAddressProvided();
         entryPoint = _newEntryPoint;
         emit UpdateEntryPoint(_newEntryPoint, entryPoint);
     }
@@ -89,8 +113,8 @@ contract TrueWallet is IWallet {
 
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
     function executeBatch(address[] calldata target, bytes[] calldata payload) external onlyEntryPointOrOwner {
-        require(target.length == payload.length, "TrueWallet: Wrong array length");
-        for (uint256 i = 0; i < target.length; ) {
+        if (target.length != payload.length) revert LengthMismatch();
+        for (uint256 i; i < target.length; ) {
             _call(target[i], 0, payload[i]);
             unchecked { i++; }
         }
@@ -102,14 +126,14 @@ contract TrueWallet is IWallet {
         emit OwnershipTransferred(msg.sender, newOwner);
     }
 
-
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
-        require(signer == owner, "TrueWallet: Invalid signature");
+        if (signer != owner) revert InvalidSignature();
+        // require(signer == owner, "TrueWallet: Invalid signature");
     }
 
     /// @notice Perform and validate the function call
