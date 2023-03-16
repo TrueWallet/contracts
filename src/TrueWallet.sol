@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import {IWallet} from "./IWallet.sol";
 import {UserOperation} from "./UserOperation.sol";
-import {Owned} from "solmate/auth/Owned.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
 /// @notice TrueWallet - Smart contract wallet compatible with ERC-4337
@@ -12,25 +11,46 @@ import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 // 1. Updateable entrypoint
 // 2. Nonce for replay detection
 // 3. ECDSA for signature validation
-contract TrueWallet is IWallet, Owned {
-
-    event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
+contract TrueWallet is IWallet {
 
     /// @notice Constant ENTRY_POINT contract in ERC-4337 system
     address public entryPoint;
 
     /// @notice Nonce used for replay protection
-    uint256 public nonce;
+    uint96 public nonce;
+    address public owner;
 
+    /////////////////  EVENTS ///////////////
 
-    /// @notice Able to receive ETH
-    receive() external payable {}
+    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event OwnershipTransferred(address indexed sender, address indexed newOwner);
 
-    constructor(address _entryPoint) Owned(msg.sender) {
-        entryPoint = _entryPoint;
+    /////////////////  MODIFIERS ///////////////
+
+    /// @notice Validate that only the entryPoint or Owner is able to call a method
+    modifier onlyEntryPointOrOwner() {
+        require(msg.sender == address(entryPoint) || msg.sender == owner, "TrueWallet: Only entryPoint or owner can call this method");
+        _;
+    }
+
+    modifier onlyOwner() virtual {
+        // directly from EOA owner, or through the account itself (which gets redirected through execute())
+        require(msg.sender == owner || msg.sender == address(this), "TrueWallet: Only owner can call this method");
+        _;
     }
 
 
+    /////////////////  CONSTRUCTOR ///////////////
+
+    constructor(address _entryPoint, address _owner) {
+        entryPoint = _entryPoint;
+        owner = _owner;
+    }
+
+    /////////////////  FUNCTIONS ///////////////
+
+    /// @notice Able to receive ETH
+    receive() external payable {}
 
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
@@ -51,58 +71,45 @@ contract TrueWallet is IWallet, Owned {
         bytes32 userOpHash,
         address aggregator,
         uint256 missingWalletFunds
-    ) external override returns (uint256 deadline) {
-        // Ensure the request comes from the known entrypoint
-         _requireFromEntryPoint();
+    ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
         // Validate signature
-        _validateSignature(userOp, userOpHash);
-        // Validate nonce is correct - protect against replay attacks
-        _validateAndUpdateNonce(userOp);
+        // _validateSignature(userOp, userOpHash);  // TBD: signature creator
+
+        // Validate and update the nonce storage variable - protect against replay attacks
+        require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
     }
 
     /// @notice Method called by entryPoint or owner to execute the calldata supplied by a wallet
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(address target, uint256 value, bytes calldata payload) external {
-        _requireFromEntryPointOrOwner();
+    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
-    function executeBatch(address[] calldata target, bytes[] calldata payload) external {
-        _requireFromEntryPointOrOwner();
+    function executeBatch(address[] calldata target, bytes[] calldata payload) external onlyEntryPointOrOwner {
         require(target.length == payload.length, "TrueWallet: Wrong array length");
-        for (uint256 i; i < target.length; ) {
+        for (uint256 i = 0; i < target.length; ) {
             _call(target[i], 0, payload[i]);
             unchecked { i++; }
         }
     }
 
+    /// @notice Transfer ownership by owner
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        owner = newOwner;
+        emit OwnershipTransferred(msg.sender, newOwner);
+    }
+
 
     /////////////////  INTERNAL METHODS ///////////////
-    
-
-    /// @notice Validate that only the entryPoint or Owner is able to call a method
-    function _requireFromEntryPointOrOwner() internal view {
-        require(msg.sender == address(entryPoint) || msg.sender == owner, "TrueWallet: Only entryPoint or owner can call this method");
-    }
-
-    /// @notice Validate that only the entryPoint is able to call a method
-    function _requireFromEntryPoint() internal view {
-        require(msg.sender == address(entryPoint), "TrueWallet: Only entryPoint can call this method");
-    }
 
     /// @notice Validate the signature of the userOperation
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         require(signer == owner, "TrueWallet: Invalid signature");
-    }
-
-    /// @notice Validate and update the nonce storage variable
-    function _validateAndUpdateNonce(UserOperation calldata userOp) internal {
-        require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
     }
 
     /// @notice Perform and validate the function call
