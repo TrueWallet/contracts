@@ -21,14 +21,8 @@ contract TrueWallet is IAccount {
 
     /////////////////  EVENTS ///////////////
 
-    event UpdateEntryPoint(
-        address indexed newEntryPoint,
-        address indexed oldEntryPoint
-    );
-    event OwnershipTransferred(
-        address indexed sender,
-        address indexed newOwner
-    );
+    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event OwnershipTransferred(address indexed sender, address indexed newOwner);
 
     /////////////////  MODIFIERS ///////////////
 
@@ -40,8 +34,8 @@ contract TrueWallet is IAccount {
         _;
     }
 
+    /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
     modifier onlyOwner() {
-        // directly from EOA owner, or through the account itself (which gets redirected through execute())
         if (msg.sender != owner && msg.sender != address(this)) {
             revert InvalidOwner();
         }
@@ -102,7 +96,7 @@ contract TrueWallet is IAccount {
         uint256 missingWalletFunds
     ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
         // Validate signature
-        // _validateSignature(userOp, userOpHash);  // TBD: signature creator
+        _validateSignature(userOp, userOpHash);
 
         // Validate and update the nonce storage variable - protect against replay attacks
         require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
@@ -112,19 +106,12 @@ contract TrueWallet is IAccount {
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(
-        address target,
-        uint256 value,
-        bytes calldata payload
-    ) external onlyEntryPointOrOwner {
+    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
-    function executeBatch(
-        address[] calldata target,
-        bytes[] calldata payload
-    ) external onlyEntryPointOrOwner {
+    function executeBatch(address[] calldata target, bytes[] calldata payload) external onlyEntryPointOrOwner {
         if (target.length != payload.length) revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], 0, payload[i]);
@@ -143,14 +130,10 @@ contract TrueWallet is IAccount {
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(
-        UserOperation calldata userOp,
-        bytes32 userOpHash
-    ) internal view {
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
-        address signer = ECDSA.recover(messageHash, userOp.signature);
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+        // bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
+        address signer = ECDSA.recover(userOpHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
-        // require(signer == owner, "TrueWallet: Invalid signature");
     }
 
     /// @notice Perform and validate the function call

@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/TrueWallet.sol";
 import {UserOperation} from "src/UserOperation.sol";
 import {MockSetter} from "./mock/MockSetter.sol";
+import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
 contract TrueWalletTest is Test {
     TrueWallet wallet;
@@ -43,29 +44,17 @@ contract TrueWalletTest is Test {
 
     function testValidateUserOp() public {
         assertEq(wallet.nonce(), 0);
-        bytes memory payload = abi.encodeWithSignature("setValue(uint256)", 1);
 
-        UserOperation memory userOp = UserOperation({
-            sender: address(wallet),
-            nonce: wallet.nonce(),
-            initCode: "",
-            callData: payload,
-            callGasLimit: 1e6,
-            verificationGasLimit: 1e6,
-            preVerificationGas: 1e6,
-            maxFeePerGas: 1e6,
-            maxPriorityFeePerGas: 1e6,
-            paymasterAndData: "",
-            signature: ""
-        });
+        (UserOperation memory userOp, bytes32 digest) = getUserOperation(
+            address(wallet), wallet.nonce(), abi.encodeWithSignature("setValue(uint256)", 1), ownerPrivateKey, vm);
 
         address aggregator = address(12);
-        uint256 missingWalletFunds = 5e6;
+        uint256 missingWalletFunds = 0;
 
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
-            keccak256(payload),
+            digest,
             aggregator,
             missingWalletFunds
         );
@@ -157,4 +146,47 @@ contract TrueWalletTest is Test {
 
         assertEq(setter.value(), 0);
     }
+
+    function getUserOperation(address sender, uint256 nonce, bytes memory callData, uint256 ownerPrivateKey, Vm vm)
+        public
+        returns (UserOperation memory, bytes32)
+    {
+        // Signature is generated over the userOperation, entryPoint and chainId
+        bytes memory message = abi.encode(
+            sender,
+            nonce,
+            "",     // initCode
+            callData,
+            1e6,    // callGasLimit
+            1e6,    // verificationGasLimit
+            1e6,    // preVerificationGas
+            1e6,    // maxFeePerGas,
+            1e6,    // maxPriorityFeePerGas,
+            "",     // paymasterAndData,
+            address(entryPoint), // entryPoint
+            0x1     // chainId
+        );
+    
+        bytes32 digest = ECDSA.toEthSignedMessageHash(message);
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        bytes memory signature = bytes.concat(r, s, bytes1(v));
+
+        UserOperation memory userOp = UserOperation({
+            sender: sender,
+            nonce: nonce,
+            initCode: "",
+            callData: callData,
+            callGasLimit: 1e6,
+            verificationGasLimit: 1e6,
+            preVerificationGas: 1e6,
+            maxFeePerGas: 1e6,
+            maxPriorityFeePerGas: 1e6,
+            paymasterAndData: "",
+            signature: signature
+        });
+
+        return (userOp, digest);
+    }
+
 }
