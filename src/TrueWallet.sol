@@ -5,23 +5,20 @@ import {IAccount} from "./interfaces/IAccount.sol";
 import {UserOperation} from "./UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 
-/// @notice TrueWallet - Smart contract wallet compatible with ERC-4337
-
-// Wallet features:
-// 1. Updateable entrypoint
-// 2. Nonce for replay detection
-// 3. ECDSA for signature validation
+/// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount {
     /// @notice EntryPoint contract in ERC-4337 system
     address public entryPoint;
 
     /// @notice Nonce used for replay protection
+    /// @dev Explicit sizes of nonce, to fit a single storage cell with "owner"
     uint96 public nonce;
     address public owner;
 
     /////////////////  EVENTS ///////////////
 
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
 
     /////////////////  MODIFIERS ///////////////
@@ -82,7 +79,7 @@ contract TrueWallet is IAccount {
     }
 
     /// @notice Validate that the userOperation is valid. Requirements:
-    // 1. Only calleable by EntryPoint
+    // 1. Only calleable by EntryPoint or owner
     // 2. Signature is that of the contract owner
     // 3. Nonce is correct
     /// @param userOp - ERC-4337 User Operation
@@ -98,8 +95,14 @@ contract TrueWallet is IAccount {
         // Validate signature
         _validateSignature(userOp, userOpHash);
 
-        // Validate and update the nonce storage variable - protect against replay attacks
-        require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+        // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
+        if (userOp.initCode.length == 0) {
+            // Validate and update the nonce storage variable - protect against replay attacks
+            require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+        }
+
+        _prefundEntryPoint(missingWalletFunds);
+        return 0;
     }
 
     /// @notice Method called by entryPoint or owner to execute the calldata supplied by a wallet
@@ -134,6 +137,20 @@ contract TrueWallet is IAccount {
         // bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(userOpHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
+    }
+
+    /// @notice Pay the EntryPoint in ETH ahead of time for the transaction that it will execute
+    ///         Amount to pay may be zero, if the entryPoint has sufficient funds or if a paymaster is used
+    ///         to pay the entryPoint through other means
+    /// @param amount - Amount of ETH to pay the entryPoint
+    function _prefundEntryPoint(uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        (bool success,) = payable(entryPoint).call{value: amount}("");
+        require(success, "TrueWallet: ETH entrypoint payment failed");
+        emit PayPrefund(address(this), amount);
     }
 
     /// @notice Perform and validate the function call

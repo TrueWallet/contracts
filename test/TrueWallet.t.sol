@@ -147,6 +147,32 @@ contract TrueWalletTest is Test {
         assertEq(setter.value(), 0);
     }
 
+    function testPrefundEntryPoint() public {
+        vm.deal(address(wallet), 1 ether);
+
+        assertEq(wallet.nonce(), 0);
+
+        uint256 balanceBefore = address(entryPoint).balance;
+
+        (UserOperation memory userOp, bytes32 digest) = getUserOperation(
+            address(wallet), wallet.nonce(), abi.encodeWithSignature("setValue(uint256)", 1), ownerPrivateKey, vm);
+
+        address aggregator = address(12);
+        uint256 missingWalletFunds = 0.001 ether;
+
+        vm.prank(address(entryPoint));
+        uint256 deadline = wallet.validateUserOp(
+            userOp,
+            digest,
+            aggregator,
+            missingWalletFunds
+        );
+        assertEq(deadline, 0);
+        assertEq(wallet.nonce(), 1);
+
+        assertEq(address(entryPoint).balance, balanceBefore + missingWalletFunds);
+    }
+
     function getUserOperation(address sender, uint256 nonce, bytes memory callData, uint256 ownerPrivateKey, Vm vm)
         public
         returns (UserOperation memory, bytes32)
@@ -188,5 +214,4 @@ contract TrueWalletTest is Test {
 
         return (userOp, digest);
     }
-
 }
