@@ -6,7 +6,9 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/TrueWallet.sol";
 import {UserOperation} from "src/UserOperation.sol";
 import {MockSetter} from "./mock/MockSetter.sol";
+import {MockERC20} from "./mock/MockERC20.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 
 contract TrueWalletTest is Test {
     TrueWallet wallet;
@@ -171,6 +173,56 @@ contract TrueWalletTest is Test {
         assertEq(wallet.nonce(), 1);
 
         assertEq(address(entryPoint).balance, balanceBefore + missingWalletFunds);
+    }
+
+    function testWithdrawERC20() public {
+        MockERC20 token = new MockERC20();
+        token.mint(address(wallet), 1 ether);
+
+        assertEq(token.balanceOf(address(entryPoint)), 0);
+
+        vm.prank(address(ownerAddress));
+        wallet.withdrawERC20(address(token), address(entryPoint), 1 ether);
+
+        assertEq(token.balanceOf(address(entryPoint)), 1 ether);
+    }
+
+    function testWithdrawERC20NotOwner() public {
+        MockERC20 token = new MockERC20();
+        token.mint(address(wallet), 1 ether);
+
+        assertEq(token.balanceOf(address(entryPoint)), 0);
+
+        address notOwner = address(13);
+        vm.prank(address(notOwner));
+        vm.expectRevert();
+        wallet.withdrawERC20(address(token), address(entryPoint), 1 ether);
+
+        assertEq(token.balanceOf(address(entryPoint)), 0 ether);
+    }
+
+    function testWithdrawETH() public {
+        vm.deal(address(wallet), 1 ether);
+
+        assertEq(address(entryPoint).balance, 0);
+
+        vm.prank(address(ownerAddress));
+        wallet.withdrawETH(address(entryPoint), 1 ether);
+
+        assertEq(address(entryPoint).balance, 1 ether);
+    }
+
+    function testWithdrawETHNotOwner() public {
+        vm.deal(address(wallet), 1 ether);
+
+        assertEq(address(entryPoint).balance, 0);
+
+        address notOwner = address(13);
+        vm.prank(address(notOwner));
+        vm.expectRevert();
+        wallet.withdrawETH(address(entryPoint), 1 ether);
+
+        assertEq(address(entryPoint).balance, 0 ether);
     }
 
     function getUserOperation(address sender, uint256 nonce, bytes memory callData, uint256 ownerPrivateKey, Vm vm)

@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import {IAccount} from "./interfaces/IAccount.sol";
 import {UserOperation} from "./UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount {
@@ -20,6 +22,8 @@ contract TrueWallet is IAccount {
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
+    event WithdrawERC20(address token, address indexed to, uint256 amount);
+    event WithdrawETH(address indexed to, uint256 amount);
 
     /////////////////  MODIFIERS ///////////////
 
@@ -128,6 +132,20 @@ contract TrueWallet is IAccount {
     function transferOwnership(address newOwner) public virtual onlyOwner {
         owner = newOwner;
         emit OwnershipTransferred(msg.sender, newOwner);
+    }
+
+    /////////////////  EMERGENCY RECOVERY ///////////////
+
+    /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
+    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
+        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+        emit WithdrawERC20(token, to, amount);
+    }
+
+    /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
+    function withdrawETH(address to, uint256 amount) external onlyOwner {
+        SafeTransferLib.safeTransferETH(to, amount);
+        emit WithdrawETH(to, amount);
     }
 
     /////////////////  INTERNAL METHODS ///////////////
