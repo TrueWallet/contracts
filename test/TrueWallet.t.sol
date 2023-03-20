@@ -207,7 +207,7 @@ contract TrueWalletTest is Test {
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
-        wallet.withdrawETH(address(entryPoint), 1 ether);
+        wallet.withdrawETH(payable(address(entryPoint)), 1 ether);
 
         assertEq(address(entryPoint).balance, 1 ether);
     }
@@ -220,7 +220,7 @@ contract TrueWalletTest is Test {
         address notOwner = address(13);
         vm.prank(address(notOwner));
         vm.expectRevert();
-        wallet.withdrawETH(address(entryPoint), 1 ether);
+        wallet.withdrawETH(payable(address(entryPoint)), 1 ether);
 
         assertEq(address(entryPoint).balance, 0 ether);
     }

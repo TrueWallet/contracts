@@ -3,6 +3,8 @@ pragma solidity ^0.8.17;
 
 import {UserOperation} from "../UserOperation.sol";
 
+// Note: From https://github.com/eth-infinitism/account-abstraction
+
 interface IAccount {
     /**
      * Validate user's signature and nonce.
