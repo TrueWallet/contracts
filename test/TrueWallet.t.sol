@@ -24,15 +24,15 @@ contract TrueWalletTest is Test {
 
     function testSetupState() public {
         assertEq(wallet.owner(), address(ownerAddress));
-        assertEq(wallet.entryPoint(), address(11));
+        assertEq(address(wallet.entryPoint()), address(11));
     }
 
     function testUpdateEntryPoint() public {
-        assertEq(wallet.entryPoint(), address(entryPoint));
+        assertEq(address(wallet.entryPoint()), address(entryPoint));
         address newEntryPoint = address(12);
         vm.prank(address(ownerAddress));
         wallet.setEntryPoint(newEntryPoint);
-        assertEq(wallet.entryPoint(), address(newEntryPoint));
+        assertEq(address(wallet.entryPoint()), address(newEntryPoint));
     }
 
     function testUpdateEntryPointNotOwner() public {
@@ -41,7 +41,7 @@ contract TrueWalletTest is Test {
         vm.prank(address(notOwner));
         vm.expectRevert();
         wallet.setEntryPoint(newEntryPoint);
-        assertEq(wallet.entryPoint(), address(entryPoint));
+        assertEq(address(wallet.entryPoint()), address(entryPoint));
     }
 
     function testValidateUserOp() public {

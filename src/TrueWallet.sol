@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {IAccount} from "./interfaces/IAccount.sol";
+import {IEntryPoint} from "./interfaces/IEntryPoint.sol";
 import {UserOperation} from "./UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
@@ -10,7 +11,7 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount {
     /// @notice EntryPoint contract in ERC-4337 system
-    address public entryPoint;
+    IEntryPoint public entryPoint;
 
     /// @notice Nonce used for replay protection
     /// @dev Explicit sizes of nonce, to fit a single storage cell with "owner"
@@ -66,7 +67,7 @@ contract TrueWallet is IAccount {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
-        entryPoint = _entryPoint;
+        entryPoint = IEntryPoint(_entryPoint);
         owner = _owner;
     }
 
@@ -78,8 +79,8 @@ contract TrueWallet is IAccount {
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
         if (_newEntryPoint == address(0)) revert ZeroAddressProvided();
-        entryPoint = _newEntryPoint;
-        emit UpdateEntryPoint(_newEntryPoint, entryPoint);
+        emit UpdateEntryPoint(_newEntryPoint, address(entryPoint));
+        entryPoint = IEntryPoint(_newEntryPoint);
     }
 
     /// @notice Validate that the userOperation is valid. Requirements:
@@ -143,7 +144,7 @@ contract TrueWallet is IAccount {
     }
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(address to, uint256 amount) external onlyOwner {
+    function withdrawETH(address payable to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
     }
@@ -166,7 +167,7 @@ contract TrueWallet is IAccount {
             return;
         }
 
-        (bool success,) = payable(entryPoint).call{value: amount}("");
+        (bool success,) = payable(address(entryPoint)).call{value: amount}("");
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }

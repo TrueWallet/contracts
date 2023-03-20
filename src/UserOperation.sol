@@ -54,7 +54,7 @@ library UserOperationLib {
     }
 
     function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
-        //lighter signature scheme. must match UserOp.ts#packUserOp
+        // lighter signature scheme. must match UserOp.ts#packUserOp
         bytes calldata sig = userOp.signature;
         // copy directly the userOp from calldata up to (but not including) the signature.
         // this encoding depends on the ABI encoding of calldata, but is much lighter to copy
