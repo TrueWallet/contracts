@@ -13,7 +13,7 @@ interface IStakeManager {
 
     event Withdrawn(address indexed account, address withdrawAddress, uint256 amount);
 
-    /// Emitted once a stake is scheduled for withdrawal
+    /// Emitted when stake or unstake delay are modified
     event StakeLocked(address indexed account, uint256 totalStaked, uint256 withdrawTime);
 
     /// Emitted once a stake is scheduled for withdrawal

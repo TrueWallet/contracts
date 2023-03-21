@@ -12,61 +12,15 @@ import "./interfaces/IStakeManager.sol";
  * Stake is value locked for at least "unstakeDelay" by a paymaster.
  */
 abstract contract StakeManager is IStakeManager {
-    // /**
-    //  * Minimum time (in seconds) required to lock a paymaster stake before it can be withdraw.
-    //  */
-    // uint32 public immutable unstakeDelaySec;
 
-    // /**
-    //  * Minimum value required to stake for a paymaster
-    //  */
-    // uint256 public immutable paymasterStake;
-
-    // constructor(uint256 _paymasterStake, uint32 _unstakeDelaySec) {
-    //     unstakeDelaySec = _unstakeDelaySec;
-    //     paymasterStake = _paymasterStake;
-    // }
-
-    // event Deposited(address indexed account, uint256 totalDeposit);
-
-    // event Withdrawn(address indexed account, address withdrawAddress, uint256 amount);
-
-    // /// Emitted once a stake is scheduled for withdrawal
-    // event StakeLocked(address indexed account, uint256 totalStaked, uint256 withdrawTime);
-
-    // /// Emitted once a stake is scheduled for withdrawal
-    // event StakeUnlocked(address indexed account, uint256 withdrawTime);
-
-    // event StakeWithdrawn(address indexed account, address withdrawAddress, uint256 amount);
-
-    // /**
-    //  * @param deposit the account's deposit.
-    //  * @param staked true if this account is staked as a paymaster.
-    //  * @param stake actual amount of ether staked for this paymaster. must be above paymasterStake.
-    //  * @param unstakeDelaySec minimum delay to withdraw the stake. must be above the global unstakeDelaySec.
-    //  * @param withdrawTime - first block timestamp where 'withdrawStake' will be callable, or zero if already locked.
-    //  * @dev sizes were chosen so that (deposit,staked) fit into one cell (used during handleOps)
-    //  *    and the rest fit into a 2nd cell.
-    //  *    112 bit allows for 2^15 eth
-    //  *    64 bit for full timestamp
-    //  *    32 bit allow 150 years for unstake delay
-    //  */
-    // struct DepositInfo {
-    //     uint112 deposit;
-    //     bool staked;
-    //     uint112 stake;
-    //     uint32 unstakeDelaySec;
-    //     uint64 withdrawTime;
-    // }
-
-    /// maps paymaster to their deposits and stakes
+    /// @dev maps paymaster to their deposits and stakes
     mapping(address => DepositInfo) public deposits;
 
     function getDepositInfo(address account) public view returns (DepositInfo memory info) {
         return deposits[account];
     }
 
-    /// return the deposit (for gas payment) of the account
+    /// @dev return the deposit (for gas payment) of the account
     function balanceOf(address account) public view returns (uint256) {
         return deposits[account].deposit;
     }
