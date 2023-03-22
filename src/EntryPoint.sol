@@ -6,15 +6,14 @@ pragma solidity ^0.8.17;
 /* solhint-disable reason-string */
 /* solhint-disable avoid-tx-origin */
 
-import {StakeManager} from "./StakeManager.sol";
-import {UserOperation, UserOperationLib} from "./UserOperation.sol";
 import {IAccount} from "./interfaces/IAccount.sol";
 import {IPaymaster} from "./interfaces/IPaymaster.sol";
 import {IEntryPoint} from "./interfaces/IEntryPoint.sol";
-import "./interfaces/IAggregatedAccount.sol";
-import "./SenderCreator.sol";
-
 import {ICreate2Deployer} from "./interfaces/ICreate2Deployer.sol";
+import {IAggregator, IAggregatedAccount} from "./interfaces/IAggregatedAccount.sol";
+import {UserOperation, UserOperationLib} from "./UserOperation.sol";
+import {StakeManager} from "./StakeManager.sol";
+import {SenderCreator} from "./SenderCreator.sol";
 
 /**
  * Account-Abstraction (EIP-4337) singleton EntryPoint implementation.
@@ -37,12 +36,12 @@ contract EntryPoint is IEntryPoint, StakeManager {
     function _compensate(address payable beneficiary, uint256 amount) internal {
         require(beneficiary != address(0), "invalid beneficiary");
         (bool success,) = beneficiary.call{value: amount}("");
-        require(success);
+        require(success, "failed send to beneficiary");
     }
 
     /**
      * Execute a user op.
-     * @param opIndex into into the opInfo array.
+     * @param opIndex index into the opInfo array.
      * @param userOp the userOp to execute.
      * @param opInfo the opInfo filled by validatePrepayment for this userOp.
      * @return collected the total amount this userOp paid.
@@ -222,7 +221,7 @@ contract EntryPoint is IEntryPoint, StakeManager {
 
     /**
      * Simulate a call to account.validateUserOp and paymaster.validatePaymasterUserOp.
-     * @dev this method always revert. Successful result is SimulationResult error. other errors are failures.
+     * @dev This method always revert. Successful result is SimulationResult error. Other errors are failures.
      * @dev The node must also verify it doesn't use banned opcodes, and that it doesn't reference storage outside the account's data.
      * @param userOp the user operation to validate.
      */
@@ -337,9 +336,9 @@ contract EntryPoint is IEntryPoint, StakeManager {
 
     /**
      * In case the request has a paymaster:
-     * validate paymaster is staked and has enough deposit.
-     * call paymaster.validatePaymasterUserOp.
-     * revert with proper FailedOp in case paymaster reverts.
+     * validate paymaster is staked and has enough deposit
+     * call paymaster.validatePaymasterUserOp
+     * revert with proper FailedOp in case paymaster reverts
      * decrement paymaster's deposit
      */
     function _validatePaymasterPrepayment(
@@ -503,7 +502,7 @@ contract EntryPoint is IEntryPoint, StakeManager {
             uint256 maxFeePerGas = mUserOp.maxFeePerGas;
             uint256 maxPriorityFeePerGas = mUserOp.maxPriorityFeePerGas;
             if (maxFeePerGas == maxPriorityFeePerGas) {
-                //legacy mode (for networks that don't support basefee opcode)
+                // legacy mode (for networks that don't support basefee opcode)
                 return maxFeePerGas;
             }
             return min(maxFeePerGas, maxPriorityFeePerGas + block.basefee);

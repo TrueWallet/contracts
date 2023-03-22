@@ -153,8 +153,8 @@ contract TrueWallet is IAccount {
 
     /// @notice Validate the signature of the userOperation
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
-        // bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
-        address signer = ECDSA.recover(userOpHash, userOp.signature);
+        bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
+        address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
     }
 

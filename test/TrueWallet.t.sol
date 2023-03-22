@@ -5,26 +5,32 @@ import "forge-std/Test.sol";
 
 import {TrueWallet} from "src/TrueWallet.sol";
 import {UserOperation} from "src/UserOperation.sol";
+import {EntryPoint} from "src/EntryPoint.sol";
 import {MockSetter} from "./mock/MockSetter.sol";
 import {MockERC20} from "./mock/MockERC20.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
+import {getUserOperation} from "./unit/Fixtures.sol";
 
 contract TrueWalletTest is Test {
     TrueWallet wallet;
     MockSetter setter;
-    address entryPoint = address(11);
+    EntryPoint entryPoint;
     address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
     uint256 ownerPrivateKey =uint256(0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6);
+    uint256 chainId = block.chainid;
 
     function setUp() public {
-        wallet = new TrueWallet(entryPoint, ownerAddress);
+        entryPoint = new EntryPoint();
+        wallet = new TrueWallet(address(entryPoint), ownerAddress);
         setter = new MockSetter();
+
+        vm.deal(address(wallet), 5 ether);
     }
 
     function testSetupState() public {
         assertEq(wallet.owner(), address(ownerAddress));
-        assertEq(address(wallet.entryPoint()), address(11));
+        assertEq(address(wallet.entryPoint()), address(entryPoint));
     }
 
     function testUpdateEntryPoint() public {
@@ -47,8 +53,15 @@ contract TrueWalletTest is Test {
     function testValidateUserOp() public {
         assertEq(wallet.nonce(), 0);
 
-        (UserOperation memory userOp, bytes32 digest) = getUserOperation(
-            address(wallet), wallet.nonce(), abi.encodeWithSignature("setValue(uint256)", 1), ownerPrivateKey, vm);
+        (UserOperation memory userOp, bytes32 userOpHash) = getUserOperation(
+            address(wallet),
+            wallet.nonce(),
+            abi.encodeWithSignature("setValue(uint256)", 1),
+            address(entryPoint),
+            uint8(chainId),
+            ownerPrivateKey,
+            vm
+        );
 
         address aggregator = address(12);
         uint256 missingWalletFunds = 0;
@@ -56,7 +69,7 @@ contract TrueWalletTest is Test {
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
-            digest,
+            userOpHash,
             aggregator,
             missingWalletFunds
         );
@@ -157,7 +170,14 @@ contract TrueWalletTest is Test {
         uint256 balanceBefore = address(entryPoint).balance;
 
         (UserOperation memory userOp, bytes32 digest) = getUserOperation(
-            address(wallet), wallet.nonce(), abi.encodeWithSignature("setValue(uint256)", 1), ownerPrivateKey, vm);
+            address(wallet),
+            wallet.nonce(),
+            abi.encodeWithSignature("setValue(uint256)", 1),
+            address(entryPoint),
+            uint8(chainId),
+            ownerPrivateKey,
+            vm
+        );
 
         address aggregator = address(12);
         uint256 missingWalletFunds = 0.001 ether;
@@ -223,47 +243,5 @@ contract TrueWalletTest is Test {
         wallet.withdrawETH(payable(address(entryPoint)), 1 ether);
 
         assertEq(address(entryPoint).balance, 0 ether);
-    }
-
-    function getUserOperation(address sender, uint256 nonce, bytes memory callData, uint256 ownerPrivateKey, Vm vm)
-        public
-        returns (UserOperation memory, bytes32)
-    {
-        // Signature is generated over the userOperation, entryPoint and chainId
-        bytes memory message = abi.encode(
-            sender,
-            nonce,
-            "",     // initCode
-            callData,
-            1e6,    // callGasLimit
-            1e6,    // verificationGasLimit
-            1e6,    // preVerificationGas
-            1e6,    // maxFeePerGas,
-            1e6,    // maxPriorityFeePerGas,
-            "",     // paymasterAndData,
-            address(entryPoint), // entryPoint
-            0x1     // chainId
-        );
-    
-        bytes32 digest = ECDSA.toEthSignedMessageHash(message);
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
-        bytes memory signature = bytes.concat(r, s, bytes1(v));
-
-        UserOperation memory userOp = UserOperation({
-            sender: sender,
-            nonce: nonce,
-            initCode: "",
-            callData: callData,
-            callGasLimit: 1e6,
-            verificationGasLimit: 1e6,
-            preVerificationGas: 1e6,
-            maxFeePerGas: 1e6,
-            maxPriorityFeePerGas: 1e6,
-            paymasterAndData: "",
-            signature: signature
-        });
-
-        return (userOp, digest);
     }
 }
