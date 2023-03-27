@@ -3,10 +3,10 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import {Paymaster} from "src/Paymaster.sol";
+import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {TrueWallet} from "src/TrueWallet.sol";
-import {UserOperation} from "src/UserOperation.sol";
-import {EntryPoint} from "src/EntryPoint.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 
@@ -15,7 +15,10 @@ contract PaymasterTest is Test {
     Paymaster paymaster;
     EntryPoint entryPoint;
     address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
-    uint256 ownerPrivateKey =uint256(0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6);
+    uint256 ownerPrivateKey =
+        uint256(
+            0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+        );
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);

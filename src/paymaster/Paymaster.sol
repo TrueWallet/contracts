@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {IPaymaster} from "src/interfaces/IPaymaster.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
-import {UserOperation} from "./UserOperation.sol";
 import {Owned} from "solmate/auth/Owned.sol";
+import {ITruePaymaster} from "./ITruePaymaster.sol";
+import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
+import {UserOperation} from "../interfaces/UserOperation.sol";
 
-// Based on Paymaster in: https://github.com/eth-infinitism/account-abstraction 
-contract Paymaster is IPaymaster, Owned {
+// Based on Paymaster in: https://github.com/eth-infinitism/account-abstraction
+contract Paymaster is ITruePaymaster, Owned {
     IEntryPoint public entryPoint;
 
     event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
@@ -50,16 +50,21 @@ contract Paymaster is IPaymaster, Owned {
     /// @notice Validates that the paymaster will pay for the user transaction. Custom checks can be performed here, to ensure for example
     ///         that the user has sufficient funds to pay for the transaction. It could just return an empty context and deadline to allow
     ///         all transactions by everyone to be paid for through this paymaster.
-    function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
-        external
-        returns (bytes memory context, uint256 deadline)
-    {
+    function validatePaymasterUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 maxCost
+    ) external returns (bytes memory context, uint256 deadline) {
         // Pay for all transactions from everyone, with no check
         return ("", 0);
     }
 
     /// @notice Handler for charging the sender (smart wallet) for the transaction after it has been paid for by the paymaster
-    function postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) external onlyEntryPoint {}
+    function postOp(
+        PostOpMode mode,
+        bytes calldata context,
+        uint256 actualGasCost
+    ) external onlyEntryPoint {}
 
     ///// STAKE MANAGEMENT
 

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-// Note: From https://github.com/eth-infinitism/account-abstraction
-
 /**
  * Manage deposits and stakes.
  * Deposit is just a balance used to pay for UserOperations (either by a paymaster or an account).

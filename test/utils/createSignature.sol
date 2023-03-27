@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {Vm} from "forge-std/Test.sol";
-import {UserOperation} from "src/UserOperation.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 

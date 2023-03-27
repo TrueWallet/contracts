@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 /* solhint-disable avoid-low-level-calls */
 /* solhint-disable not-rely-on-time */
 
-import "./interfaces/IStakeManager.sol";
+import "../interfaces/IStakeManager.sol";
 
 /**
  * Manage deposits and stakes.

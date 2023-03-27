@@ -6,8 +6,8 @@ import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
 import {TrueWallet} from "src/TrueWallet.sol";
 
-/// @title WalletFactory contract to deploy user smart wallets
-contract WalletFactory is Ownable, Pausable {
+/// @title TrueWalletFactory contract to deploy user smart wallets
+contract TrueWalletFactory is Ownable, Pausable {
     constructor() Ownable() Pausable() {}
 
     /// @notice Deploy a smart wallet, with an entryPoint and Owner specified by the user
@@ -52,12 +52,12 @@ contract WalletFactory is Ownable, Pausable {
             );
     }
 
-    /// @notice Pause the WalletFactory to prevent new wallet creation. OnlyOwner
+    /// @notice Pause the TrueWalletFactory to prevent new wallet creation. OnlyOwner
     function pause() public onlyOwner {
         _pause();
     }
 
-    /// @notice Unpause the WalletFactory to allow new wallet creation. OnlyOwner
+    /// @notice Unpause the TrueWalletFactory to allow new wallet creation. OnlyOwner
     function unpause() public onlyOwner {
         _unpause();
     }

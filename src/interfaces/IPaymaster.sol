@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {UserOperation} from "../UserOperation.sol";
-
-// Note: Based on IPaymaster in https://github.com/eth-infinitism/account-abstraction
+import {UserOperation} from "./UserOperation.sol";
 
 /**
  * The interface exposed by a paymaster contract, who agrees to pay the gas for user's operations.
@@ -46,10 +44,4 @@ interface IPaymaster {
         opReverted, // user op reverted. still has to pay for gas.
         postOpReverted //user op succeeded, but caused postOp to revert. Now its a 2nd call, after user's op was deliberately reverted.
     }
-
-    /// @notice Get the Paymaster stake on the entryPoint, which is used for DDOS protection.
-    function getStake() external view returns (uint112);
-
-    /// @notice Get the Paymaster deposit on the entryPoint, which is used to pay for gas.
-    function getDeposit() external view returns (uint112);
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
+import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IAccount} from "./interfaces/IAccount.sol";
 import {IEntryPoint} from "./interfaces/IEntryPoint.sol";
-import {UserOperation} from "./UserOperation.sol";
-import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import {UserOperation} from "./interfaces/UserOperation.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount {
@@ -30,7 +30,7 @@ contract TrueWallet is IAccount {
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint) && msg.sender != owner) {
+        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -167,7 +167,7 @@ contract TrueWallet is IAccount {
             return;
         }
 
-        (bool success,) = payable(address(entryPoint)).call{value: amount}("");
+        (bool success, ) = payable(address(entryPoint)).call{value: amount}("");
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }

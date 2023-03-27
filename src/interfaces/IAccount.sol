@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {UserOperation} from "../UserOperation.sol";
-
-// Note: From https://github.com/eth-infinitism/account-abstraction
+import {UserOperation} from "./UserOperation.sol";
 
 interface IAccount {
     /**

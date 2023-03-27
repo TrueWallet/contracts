@@ -4,20 +4,23 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 
 import {TrueWallet} from "src/TrueWallet.sol";
-import {UserOperation} from "src/UserOperation.sol";
-import {EntryPoint} from "src/EntryPoint.sol";
-import {MockSetter} from "./mock/MockSetter.sol";
-import {MockERC20} from "./mock/MockERC20.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {MockSetter} from "../mock/MockSetter.sol";
+import {MockERC20} from "../mock/MockERC20.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
-import {getUserOperation} from "./unit/Fixtures.sol";
+import {getUserOperation} from "./Fixtures.sol";
 
 contract TrueWalletTest is Test {
     TrueWallet wallet;
     MockSetter setter;
     EntryPoint entryPoint;
     address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
-    uint256 ownerPrivateKey =uint256(0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6);
+    uint256 ownerPrivateKey =
+        uint256(
+            0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+        );
     uint256 chainId = block.chainid;
 
     function setUp() public {
@@ -80,7 +83,10 @@ contract TrueWalletTest is Test {
     function testExecuteByEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
+        bytes memory payload = abi.encodeWithSelector(
+            setter.setValue.selector,
+            1
+        );
 
         vm.prank(address(entryPoint));
         wallet.execute(address(setter), 0, payload);
@@ -91,7 +97,10 @@ contract TrueWalletTest is Test {
     function testExecuteByOwner() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
+        bytes memory payload = abi.encodeWithSelector(
+            setter.setValue.selector,
+            1
+        );
 
         vm.prank(address(ownerAddress));
         wallet.execute(address(setter), 0, payload);
@@ -102,7 +111,10 @@ contract TrueWalletTest is Test {
     function testExecuteNotEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
+        bytes memory payload = abi.encodeWithSelector(
+            setter.setValue.selector,
+            1
+        );
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
@@ -192,7 +204,10 @@ contract TrueWalletTest is Test {
         assertEq(deadline, 0);
         assertEq(wallet.nonce(), 1);
 
-        assertEq(address(entryPoint).balance, balanceBefore + missingWalletFunds);
+        assertEq(
+            address(entryPoint).balance,
+            balanceBefore + missingWalletFunds
+        );
     }
 
     function testWithdrawERC20() public {
