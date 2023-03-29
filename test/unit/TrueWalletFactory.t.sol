@@ -14,7 +14,7 @@ contract TrueWalletFactoryTest is Test {
     bytes32 salt;
 
     function setUp() public {
-        factory = new TrueWalletFactory();
+        factory = new TrueWalletFactory(address(this));
         entryPoint = new EntryPoint();
 
         salt = keccak256(

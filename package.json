@@ -11,8 +11,14 @@
     "build": "forge build",
     "test": "forge test",
     "compile": "forge compile",
-    "compilehh": "npx hardhat compile",
-    "testhh": "npx hardhat test"
+    "deployEntryPoint:goerli": "source .env && forge script script/DeployEntryPoint.s.sol:DeployEntryPointScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify -vvvv",
+    "deployWallet:goerli": "source .env && forge script script/DeployWallet.s.sol:DeployWalletScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify -vvvv",
+    "deployFactory:goerli": "source .env && forge script script/DeployFactory.s.sol:DeployFactoryScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
+    "deployPaymaster:goerli": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
+    "deployEntryPoint:mumbai": "source .env && forge script script/DeployEntryPoint.s.sol:DeployEntryPointScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
+    "deployWallet:mumbai": "source .env && forge script script/DeployWallet.s.sol:DeployWalletScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
+    "deployFactory:mumbai": "source .env && forge script script/DeployFactory.s.sol:DeployFactoryScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
+    "deployPaymaster:mumbai": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv"
   },
   "keywords": [],
   "author": "VitalR",

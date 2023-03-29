@@ -8,7 +8,7 @@ import {TrueWallet} from "src/TrueWallet.sol";
 
 /// @title TrueWalletFactory contract to deploy user smart wallets
 contract TrueWalletFactory is Ownable, Pausable {
-    constructor() Ownable() Pausable() {}
+    constructor(address _owner) Ownable() Pausable() {}
 
     /// @notice Deploy a smart wallet, with an entryPoint and Owner specified by the user
     ///         Intended that all wallets are deployed through this factory, so if no initCode is passed
