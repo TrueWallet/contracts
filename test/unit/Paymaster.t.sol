@@ -10,7 +10,7 @@ import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 
-contract PaymasterTest is Test {
+contract PaymasterUnitTest is Test {
     TrueWallet wallet;
     Paymaster paymaster;
     EntryPoint entryPoint;

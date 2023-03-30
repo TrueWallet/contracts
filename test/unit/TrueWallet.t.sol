@@ -12,7 +12,7 @@ import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {getUserOperation} from "./Fixtures.sol";
 
-contract TrueWalletTest is Test {
+contract TrueWalletUnitTest is Test {
     TrueWallet wallet;
     MockSetter setter;
     EntryPoint entryPoint;

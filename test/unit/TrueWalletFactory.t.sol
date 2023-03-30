@@ -7,7 +7,7 @@ import {TrueWallet} from "src/TrueWallet.sol";
 import {TrueWalletFactory} from "src/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 
-contract TrueWalletFactoryTest is Test {
+contract TrueWalletFactoryUnitTest is Test {
     TrueWalletFactory factory;
     EntryPoint entryPoint;
     address walletOwner = address(12);
