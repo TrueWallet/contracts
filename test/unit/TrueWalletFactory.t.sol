@@ -3,8 +3,8 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import {TrueWallet} from "src/TrueWallet.sol";
-import {TrueWalletFactory} from "src/TrueWalletFactory.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 
 contract TrueWalletFactoryUnitTest is Test {

@@ -3,8 +3,8 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import {IWallet} from "src/IWallet.sol";
-import {IWalletFactory} from "src/IWalletFactory.sol";
+import {IWallet} from "src/wallet/IWallet.sol";
+import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";

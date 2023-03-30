@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 
-import {TrueWallet} from "src/TrueWallet.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 

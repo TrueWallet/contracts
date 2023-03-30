@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
-import {TrueWallet} from "src/TrueWallet.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
 
 /// @title TrueWalletFactory contract to deploy user smart wallets
 contract TrueWalletFactory is Ownable, Pausable {

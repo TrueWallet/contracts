@@ -4,9 +4,9 @@ pragma solidity ^0.8.17;
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
-import {IAccount} from "./interfaces/IAccount.sol";
-import {IEntryPoint} from "./interfaces/IEntryPoint.sol";
-import {UserOperation} from "./interfaces/UserOperation.sol";
+import {IAccount} from "src/interfaces/IAccount.sol";
+import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount {

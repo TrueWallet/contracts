@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
 
-import {TrueWallet} from "src/TrueWallet.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../mock/MockSetter.sol";

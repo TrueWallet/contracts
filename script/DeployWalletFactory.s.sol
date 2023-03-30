@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
 
-import {TrueWalletFactory} from "src/TrueWalletFactory.sol";
+import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
 contract DeployFactoryScript is Script {
