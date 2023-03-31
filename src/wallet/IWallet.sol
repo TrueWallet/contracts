@@ -35,7 +35,7 @@ interface IWallet {
     function entryPoint() external view returns (address);
 
     /// @notice Get the nonce on the wallet
-    function nonce() external view returns (uint256);
+    function nonce() external view returns (uint96);
 
     /// @notice Method called by the entryPoint to execute a userOperation
     function execute(address target, uint256 value, bytes calldata payload) external;
