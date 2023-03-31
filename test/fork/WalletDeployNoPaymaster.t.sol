@@ -11,7 +11,7 @@ import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
-contract EntToEndTestWalletDeploy is Test {
+contract WalletDeployNoPaymasterEntToEndTest is Test {
     IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
 
@@ -68,7 +68,9 @@ contract EntToEndTestWalletDeploy is Test {
     }
 
     /// @notice Validate that the WalletFactory deploys a smart wallet
-    function testWalletFactoryDeploy() public {
+    function testWalletDeploy() public {
+        uint256 initialAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
+
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
@@ -84,5 +86,8 @@ contract EntToEndTestWalletDeploy is Test {
         assertGt(codeSize, 0);
         assertEq(deployedWallet.owner(), walletOwner);
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
+
+        uint256 finalAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
+        assertGt(finalAccountDepositBalance, initialAccountDepositBalance);
     }
 }
