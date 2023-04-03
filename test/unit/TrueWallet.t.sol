@@ -8,6 +8,7 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../mock/MockSetter.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
+import {MockERC721} from "../mock/MockERC721.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {getUserOperation} from "./Fixtures.sol";
@@ -23,10 +24,15 @@ contract TrueWalletUnitTest is Test {
         );
     uint256 chainId = block.chainid;
 
+    MockERC20 erc20token;
+    MockERC721 erc721token;
+
     function setUp() public {
         entryPoint = new EntryPoint();
         wallet = new TrueWallet(address(entryPoint), ownerAddress);
         setter = new MockSetter();
+        erc20token = new MockERC20();
+        erc721token = new MockERC721("Token", "TKN");
 
         vm.deal(address(wallet), 5 ether);
     }
@@ -258,5 +264,85 @@ contract TrueWalletUnitTest is Test {
         wallet.withdrawETH(payable(address(entryPoint)), 1 ether);
 
         assertEq(address(entryPoint).balance, 0 ether);
+    }
+
+    function testTransferERC721FromToWallet() public {
+        address from = address(0xABCD);
+        
+        erc721token.mint(from, 1237);
+
+        vm.prank(from);
+        erc721token.setApprovalForAll(address(this), true);
+
+        erc721token.safeTransferFrom(from, address(wallet), 1237);
+
+        assertEq(erc721token.getApproved(1237), address(0));
+        assertEq(erc721token.ownerOf(1237), address(wallet));
+        assertEq(erc721token.balanceOf(address(wallet)), 1);
+        assertEq(erc721token.balanceOf(from), 0);
+    }
+
+    function testTransferERC721FromWalletTo() public {
+        testTransferERC721FromToWallet();
+
+        address to = address(0xABCD);
+        assertEq(erc721token.balanceOf(address(to)), 0);
+
+        address target = address(erc721token);
+        bytes memory payload = abi.encodeWithSelector(
+            erc721token.transferFrom.selector,
+            address(wallet),
+            to,
+            1237
+        );
+
+        vm.prank(address(entryPoint));
+        wallet.execute(target, 0, payload);
+
+        assertEq(erc721token.balanceOf(address(to)), 1);
+        assertEq(erc721token.ownerOf(1237), address(to));
+        assertEq(erc721token.balanceOf(address(wallet)), 0);
+    }
+
+    function testBatchTransferERC721FromWalletTo() public {
+        testTransferERC721FromToWallet();
+
+        address from = address(0xABCD);
+        erc721token.mint(from, 1238);
+
+        vm.prank(from);
+        erc721token.setApprovalForAll(address(this), true);
+        erc721token.safeTransferFrom(from, address(wallet), 1238);
+
+        address to = address(0xABCD);
+        assertEq(erc721token.balanceOf(address(to)), 0);
+        assertEq(erc721token.ownerOf(1237), address(wallet));
+        assertEq(erc721token.ownerOf(1238), address(wallet));
+        assertEq(erc721token.balanceOf(address(wallet)), 2);
+
+        address[] memory target = new address[](2);
+        target[0] = address(erc721token);
+        target[1] = address(erc721token);
+        bytes[] memory payloads = new bytes[](2);
+        payloads[0] = abi.encodeWithSelector(
+            erc721token.transferFrom.selector,
+            address(wallet),
+            to,
+            1237
+        );
+        payloads[1] = abi.encodeWithSelector(
+            erc721token.transferFrom.selector,
+            address(wallet),
+            to,
+            1238
+        );
+
+        vm.prank(address(entryPoint));
+        wallet.executeBatch(target, payloads);
+
+        assertEq(erc721token.balanceOf(address(to)), 2);
+        assertEq(erc721token.ownerOf(1237), address(to));
+        assertEq(erc721token.ownerOf(1238), address(to));
+        assertEq(erc721token.balanceOf(address(wallet)), 0);
     }
 }

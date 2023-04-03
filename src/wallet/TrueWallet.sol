@@ -7,9 +7,10 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {DefaultCallbackHandler} from "./DefaultCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract TrueWallet is IAccount {
+contract TrueWallet is IAccount, DefaultCallbackHandler {
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -180,5 +181,10 @@ contract TrueWallet is IAccount {
                 revert(add(result, 32), mload(result))
             }
         }
+    }
+
+    /// @notice Support ERC165, query if a contract implements an interface
+    function supportsInterface(bytes4 _interfaceID) public view override(DefaultCallbackHandler) returns (bool) {
+        return supportsInterface(_interfaceID);
     }
 }
