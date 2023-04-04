@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
+import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
+import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
@@ -26,6 +28,8 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event WithdrawERC20(address token, address indexed to, uint256 amount);
     event WithdrawETH(address indexed to, uint256 amount);
+    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
@@ -148,6 +152,18 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
     function withdrawETH(address payable to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
+    }
+
+    /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
+    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+        IERC721(collection).safeTransferFrom(address(this), to, tokenId);
+        emit WithdrawERC721(collection, tokenId, to);
+    }
+
+    /// @notice Withdraw ERC1155 tokens from the wallet. Permissioned to only the owner
+    function withdrawERC1155(address collection, uint256 tokenId, address to, uint256 amount) external onlyOwner {
+        IERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
+        emit WithdrawERC1155(collection, tokenId, amount, to);
     }
 
     /////////////////  INTERNAL METHODS ///////////////

@@ -453,4 +453,68 @@ contract TrueWalletUnitTest is Test {
         assertEq(erc1155token.balanceOf(address(to1), 1237), 35);
         assertEq(erc1155token.balanceOf(address(wallet), 1237), 0);
     }
+
+    function testWithdrawERC721() public {
+        testSafeMintERC721ToWallet();
+
+        assertEq(erc721token.balanceOf(address(wallet)), 1);
+
+        address to = address(0xCD);
+        assertEq(erc721token.balanceOf(address(to)), 0);
+
+        vm.prank(address(ownerAddress));
+        wallet.withdrawERC721(address(erc721token), 1237, to);
+
+        assertEq(erc721token.balanceOf(address(to)), 1);
+        assertEq(erc721token.ownerOf(1237), address(to));
+    }
+
+    function testWithdrawERC721NotOwner() public {
+        testSafeMintERC721ToWallet();
+
+        assertEq(erc721token.balanceOf(address(wallet)), 1);
+
+        address to = address(0xCD);
+        assertEq(erc721token.balanceOf(address(to)), 0);
+
+        address notOwner = address(13);
+        vm.prank(address(notOwner));
+        vm.expectRevert();
+        wallet.withdrawERC721(address(erc721token), 1237, to);
+
+        assertEq(erc721token.balanceOf(address(to)), 0);
+        assertEq(erc721token.balanceOf(address(wallet)), 1);
+    }
+
+    function testWithdrawERC1155() public {
+        testMintERC1155ToWallet();
+
+        assertEq(erc1155token.balanceOf(address(wallet), 1237), 1);
+
+        address to = address(0xCD);
+        assertEq(erc1155token.balanceOf(address(to), 1237), 0);
+
+        vm.prank(address(ownerAddress));
+        wallet.withdrawERC1155(address(erc1155token), 1237, to, 1);
+
+        assertEq(erc1155token.balanceOf(address(wallet), 1237), 0);
+        assertEq(erc1155token.balanceOf(address(to), 1237), 1);
+    }
+
+    function testWithdrawERC1155NotOwner() public {
+        testMintERC1155ToWallet();
+
+        assertEq(erc1155token.balanceOf(address(wallet), 1237), 1);
+
+        address to = address(0xCD);
+        assertEq(erc1155token.balanceOf(address(to), 1237), 0);
+
+        address notOwner = address(13);
+        vm.prank(address(notOwner));
+        vm.expectRevert();
+        wallet.withdrawERC1155(address(erc1155token), 1237, to, 1);
+
+        assertEq(erc1155token.balanceOf(address(wallet), 1237), 1);
+        assertEq(erc1155token.balanceOf(address(to), 1237), 0);
+    }
 }
