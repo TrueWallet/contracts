@@ -11,7 +11,7 @@
     "build": "forge build",
     "compile": "forge compile",
     "test": "forge test --match-contract UnitTest",
-    "test:fork": "source .env && forge test --match-contract EntToEndTest --rpc-url $MUMBAI_RPC_URL -vvvv",
+    "test:fork": "source .env && forge test --match-contract EntToEndTest --rpc-url $MUMBAI_RPC_URL -vvv",
     "deployEntryPoint:goerli": "source .env && forge script script/DeployEntryPoint.s.sol:DeployEntryPointScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify -vvvv",
     "deployWallet:goerli": "source .env && forge script script/DeployWallet.s.sol:DeployWalletScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify -vvvv",
     "deployFactory:goerli": "source .env && forge script script/DeployFactory.s.sol:DeployFactoryScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
