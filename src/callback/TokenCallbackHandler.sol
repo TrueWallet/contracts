@@ -2,15 +2,14 @@
 pragma solidity ^0.8.17;
 
 import "openzeppelin-contracts/utils/introspection/IERC165.sol";
-import "src/interfaces/IERC721TokenReceiver.sol";
-import "src/interfaces/IERC1155TokenReceiver.sol";
-import "src/interfaces/IERC777TokensRecipient.sol";
+import "openzeppelin-contracts/token/ERC721/IERC721Receiver.sol";
+import "openzeppelin-contracts/token/ERC1155/IERC1155Receiver.sol";
+import "openzeppelin-contracts/token/ERC777/IERC777Recipient.sol";
 
-contract DefaultCallbackHandler is
-    IERC721TokenReceiver,
-    IERC1155TokenReceiver,
-    IERC777TokensRecipient,
-    IERC165
+contract TokenCallbackHandler is
+    IERC721Receiver,
+    IERC1155Receiver,
+    IERC777Recipient
 {
     function onERC721Received(
         address,
@@ -56,8 +55,8 @@ contract DefaultCallbackHandler is
         bytes4 interfaceId
     ) external view virtual override returns (bool) {
         return
-            interfaceId == type(IERC1155TokenReceiver).interfaceId ||
-            interfaceId == type(IERC721TokenReceiver).interfaceId ||
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            interfaceId == type(IERC721Receiver).interfaceId ||
             interfaceId == type(IERC165).interfaceId;
     }
 }

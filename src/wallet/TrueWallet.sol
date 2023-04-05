@@ -9,10 +9,10 @@ import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {DefaultCallbackHandler} from "./DefaultCallbackHandler.sol";
+import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract TrueWallet is IAccount, DefaultCallbackHandler {
+contract TrueWallet is IAccount, TokenCallbackHandler {
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -23,19 +23,38 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
 
     /////////////////  EVENTS ///////////////
 
-    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(address indexed sender, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed sender,
+        address indexed newOwner
+    );
     event WithdrawERC20(address token, address indexed to, uint256 amount);
     event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event WithdrawERC721(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed to
+    );
+    event WithdrawERC1155(
+        address indexed collection,
+        uint256 indexed tokenId,
+        uint256 amount,
+        address indexed to
+    );
 
     /////////////////  MODIFIERS ///////////////
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
+        if (
+            msg.sender != address(entryPoint) &&
+            msg.sender != owner &&
+            msg.sender != address(this)
+        ) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -119,12 +138,19 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata payload
+    ) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
-    function executeBatch(address[] calldata target, bytes[] calldata payload) external onlyEntryPointOrOwner {
+    function executeBatch(
+        address[] calldata target,
+        bytes[] calldata payload
+    ) external onlyEntryPointOrOwner {
         if (target.length != payload.length) revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], 0, payload[i]);
@@ -143,33 +169,58 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
     /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
+    function withdrawERC20(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
         emit WithdrawERC20(token, to, amount);
     }
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(address payable to, uint256 amount) external onlyOwner {
+    function withdrawETH(
+        address payable to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+    function withdrawERC721(
+        address collection,
+        uint256 tokenId,
+        address to
+    ) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
         emit WithdrawERC721(collection, tokenId, to);
     }
 
     /// @notice Withdraw ERC1155 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC1155(address collection, uint256 tokenId, address to, uint256 amount) external onlyOwner {
-        IERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
+    function withdrawERC1155(
+        address collection,
+        uint256 tokenId,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
+        IERC1155(collection).safeTransferFrom(
+            address(this),
+            to,
+            tokenId,
+            amount,
+            ""
+        );
         emit WithdrawERC1155(collection, tokenId, amount, to);
     }
 
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
@@ -200,7 +251,9 @@ contract TrueWallet is IAccount, DefaultCallbackHandler {
     }
 
     /// @notice Support ERC165, query if a contract implements an interface
-    function supportsInterface(bytes4 _interfaceID) public view override(DefaultCallbackHandler) returns (bool) {
+    function supportsInterface(
+        bytes4 _interfaceID
+    ) public view override(TokenCallbackHandler) returns (bool) {
         return supportsInterface(_interfaceID);
     }
 }
