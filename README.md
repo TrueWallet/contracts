@@ -5,36 +5,41 @@
 
 ![Github Actions](https://github.com/devanonon/hardhat-foundry-template/workflows/test/badge.svg)
 
-This repository is a hybrid [hardhat](https://hardhat.org/hardhat-runner/docs/getting-started#quick-start) and [foundry](https://book.getfoundry.sh/getting-started/installation) environment. For the Foundry installation follow the instructions through the [link](https://github.com/foundry-rs/foundry).
+## Features
++ Support [ERC-4337: Account Abstraction](https://eips.ethereum.org/EIPS/eip-4337)
 
-### Getting Started
 
- * Use Foundry: 
+## Getting Started
+
+### Install Foundry and Forge: [installation guide](https://book.getfoundry.sh/getting-started/installation)
+
+### Setup:
+```bash
+git clone <repo_link>
+```
+### Install dependencies:
 ```bash
 forge install
-forge test
 ```
-
- * Use Hardhat:
+### Compile contracts:
 ```bash
-npm install  ||  yarn
-npx hardhat test
+yarn build
+
 ```
-
-### Features
-
- * Write / run tests with either Hardhat or Foundry:
+### Run unit tests:
 ```bash
-forge test  ||  yarn test
-# or
-npx hardhat test  ||  yarn testhh
+yarn test
 ```
-
- * Install libraries with Foundry which work with Hardhat.
+### Add required .env variables:
 ```bash
-forge install rari-capital/solmate # Already in this repo, just an example
+cp .env.example .env
+```
+### Run fork tests:
+```bash
+yarn test::fork
 ```
 
-### Notes
-
-Whenever you install new libraries using Foundry, make sure to update your `remappings.txt` file by running `forge remappings > remappings.txt`. This is required because we use `hardhat-preprocessor` and the `remappings.txt` file to allow Hardhat to resolve libraries you install with Foundry.
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+* <a href='https://github.com/eth-infinitism/account-abstraction'>eth-infinitism/account-abstraction</a>
+* <a href='https://eips.ethereum.org/EIPS/eip-4337'>EIP-4337: Account Abstraction via Entry Point Contract specification </a>
