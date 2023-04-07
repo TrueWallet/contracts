@@ -39,4 +39,7 @@ interface IWallet {
 
     /// @notice Method called by the entryPoint to execute a userOperation
     function execute(address target, uint256 value, bytes calldata payload) external;
+
+    /// @notice Verifies that the signer is the owner of the signing contract
+    function isValidSignature(bytes32 messageHash, bytes memory signature) external view returns (bytes4);
 }

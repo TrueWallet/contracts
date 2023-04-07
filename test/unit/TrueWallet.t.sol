@@ -10,24 +10,25 @@ import {MockSetter} from "../mock/MockSetter.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
 import {MockERC721} from "../mock/MockERC721.sol";
 import {MockERC1155} from "../mock/MockERC1155.sol";
-import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
+import {MockSignatureChecker} from "../mock/MockSignatureChecker.sol";
 import {getUserOperation} from "./Fixtures.sol";
+import {createSignature, createSignature2} from "test/utils/createSignature.sol";
+import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
 contract TrueWalletUnitTest is Test {
     TrueWallet wallet;
     MockSetter setter;
     EntryPoint entryPoint;
     address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
-        );
+    uint256 ownerPrivateKey = 
+        uint256(0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6);
     uint256 chainId = block.chainid;
 
     MockERC20 erc20token;
     MockERC721 erc721token;
     MockERC1155 erc1155token;
+
+    MockSignatureChecker signatureChecker;
 
     function setUp() public {
         entryPoint = new EntryPoint();
@@ -36,6 +37,7 @@ contract TrueWalletUnitTest is Test {
         erc20token = new MockERC20();
         erc721token = new MockERC721("Token", "TKN");
         erc1155token = new MockERC1155();
+        signatureChecker = new MockSignatureChecker();
 
         vm.deal(address(wallet), 5 ether);
     }
@@ -92,10 +94,8 @@ contract TrueWalletUnitTest is Test {
     function testExecuteByEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = 
+            abi.encodeWithSelector(setter.setValue.selector, 1);
 
         vm.prank(address(entryPoint));
         wallet.execute(address(setter), 0, payload);
@@ -106,10 +106,8 @@ contract TrueWalletUnitTest is Test {
     function testExecuteByOwner() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = 
+            abi.encodeWithSelector(setter.setValue.selector, 1);
 
         vm.prank(address(ownerAddress));
         wallet.execute(address(setter), 0, payload);
@@ -120,10 +118,8 @@ contract TrueWalletUnitTest is Test {
     function testExecuteNotEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = 
+            abi.encodeWithSelector(setter.setValue.selector, 1);
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
@@ -516,5 +512,35 @@ contract TrueWalletUnitTest is Test {
 
         assertEq(erc1155token.balanceOf(address(wallet), 1237), 1);
         assertEq(erc1155token.balanceOf(address(to), 1237), 0);
+    }
+
+    function testIsValidSignature() public {
+        bytes32 messageHash = keccak256(abi.encode("Signed Message"));
+        bytes memory signature = createSignature2(messageHash, ownerPrivateKey, vm);
+
+        bool _sigValid = signatureChecker.isValidSignatureNow(
+            address(wallet),
+            ECDSA.toEthSignedMessageHash(messageHash),
+            signature
+        );
+
+        assertEq(_sigValid, true);
+    }
+
+    function testIsValidSignatureNotOwner() public {
+        // address notContractOwnerAddress = 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f; // envil account (8)
+        uint256 notContractOwnerPrivateKey =
+            uint256(0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97);
+        bytes32 messageHash = keccak256(abi.encode("Signed Message"));
+
+        bytes memory signature = createSignature2(messageHash, notContractOwnerPrivateKey, vm);
+
+        bool _sigValid = signatureChecker.isValidSignatureNow(
+            address(wallet),
+            ECDSA.toEthSignedMessageHash(messageHash),
+            signature
+        );
+
+        assertEq(_sigValid, false);
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
@@ -23,38 +23,19 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
 
     /////////////////  EVENTS ///////////////
 
-    event UpdateEntryPoint(
-        address indexed newEntryPoint,
-        address indexed oldEntryPoint
-    );
+    event UpdateEntryPoint(address indexed newEntryPoint,address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(
-        address indexed sender,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event WithdrawERC20(address token, address indexed to, uint256 amount);
     event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(
-        address indexed collection,
-        uint256 indexed tokenId,
-        address indexed to
-    );
-    event WithdrawERC1155(
-        address indexed collection,
-        uint256 indexed tokenId,
-        uint256 amount,
-        address indexed to
-    );
+    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (
-            msg.sender != address(entryPoint) &&
-            msg.sender != owner &&
-            msg.sender != address(this)
-        ) {
+        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -169,30 +150,19 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
     /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(
-        address token,
-        address to,
-        uint256 amount
-    ) external onlyOwner {
+    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
         emit WithdrawERC20(token, to, amount);
     }
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(
-        address payable to,
-        uint256 amount
-    ) external onlyOwner {
+    function withdrawETH(address payable to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(
-        address collection,
-        uint256 tokenId,
-        address to
-    ) external onlyOwner {
+    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
         emit WithdrawERC721(collection, tokenId, to);
     }
@@ -217,10 +187,7 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(
-        UserOperation calldata userOp,
-        bytes32 userOpHash
-    ) internal view {
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
@@ -248,6 +215,19 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
                 revert(add(result, 32), mload(result))
             }
         }
+    }
+
+    /////////////////  SUPPORT INTERFACES ///////////////
+
+    /// @notice Support ERC-1271, verifies that the signer is the owner of the signing contract
+    function isValidSignature(
+        bytes32 hash,
+        bytes memory signature
+    ) public view returns (bytes4 magicValue) {
+        return
+            ECDSA.recover(hash, signature) == owner
+                ? this.isValidSignature.selector
+                : bytes4(0);
     }
 
     /// @notice Support ERC165, query if a contract implements an interface
