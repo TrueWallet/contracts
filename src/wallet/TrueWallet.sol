@@ -130,11 +130,12 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
     /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
     function executeBatch(
         address[] calldata target,
+        uint256[] calldata value,
         bytes[] calldata payload
     ) external onlyEntryPointOrOwner {
-        if (target.length != payload.length) revert LengthMismatch();
+        if (target.length != payload.length && payload.length != value.length) revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
-            _call(target[i], 0, payload[i]);
+            _call(target[i], value[i], payload[i]);
             unchecked {
                 i++;
             }

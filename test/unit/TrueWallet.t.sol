@@ -138,9 +138,12 @@ contract TrueWalletUnitTest is Test {
         bytes[] memory payloads = new bytes[](2);
         payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
         payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
+        uint256[] memory values = new uint256[](2);
+        values[0] = uint256(0);
+        values[1] = uint256(0);
 
         vm.prank(address(entryPoint));
-        wallet.executeBatch(target, payloads);
+        wallet.executeBatch(target, values, payloads);
 
         assertEq(setter.value(), 2);
     }
@@ -154,9 +157,12 @@ contract TrueWalletUnitTest is Test {
         bytes[] memory payloads = new bytes[](2);
         payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
         payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
+        uint256[] memory values = new uint256[](2);
+        values[0] = uint256(0);
+        values[1] = uint256(0);
 
         vm.prank(address(ownerAddress));
-        wallet.executeBatch(target, payloads);
+        wallet.executeBatch(target, values, payloads);
 
         assertEq(setter.value(), 2);
     }
@@ -170,11 +176,14 @@ contract TrueWalletUnitTest is Test {
         bytes[] memory payloads = new bytes[](2);
         payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
         payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
+        uint256[] memory values = new uint256[](2);
+        values[0] = uint256(0);
+        values[1] = uint256(0);
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
         vm.expectRevert();
-        wallet.executeBatch(target, payloads);
+        wallet.executeBatch(target, values, payloads);
 
         assertEq(setter.value(), 0);
     }
@@ -358,9 +367,12 @@ contract TrueWalletUnitTest is Test {
             to,
             1238
         );
+        uint256[] memory values = new uint256[](2);
+        values[0] = uint256(0);
+        values[1] = uint256(0);
 
         vm.prank(address(entryPoint));
-        wallet.executeBatch(target, payloads);
+        wallet.executeBatch(target, values, payloads);
 
         assertEq(erc721token.balanceOf(address(to)), 2);
         assertEq(erc721token.ownerOf(1237), address(to));
@@ -441,9 +453,12 @@ contract TrueWalletUnitTest is Test {
             35,
             "testing 1237"
         );
+        uint256[] memory values = new uint256[](2);
+        values[0] = uint256(0);
+        values[1] = uint256(0);
 
         vm.prank(address(entryPoint));
-        wallet.executeBatch(target, payloads);
+        wallet.executeBatch(target, values, payloads);
 
         assertEq(erc1155token.balanceOf(address(to0), 1237), 35);
         assertEq(erc1155token.balanceOf(address(to1), 1237), 35);
