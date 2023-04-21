@@ -4,17 +4,27 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {TrueWalletUpgradeable} from "src/wallet/TrueWalletUpgradeable.sol";
 
 contract TrueWalletFactoryUnitTest is Test {
     TrueWalletFactory factory;
+    TrueWalletUpgradeable wallet;
     EntryPoint entryPoint;
     address walletOwner = address(12);
     bytes32 salt;
 
+    event AccountInitialized(
+        address indexed account,
+        address indexed entryPoint,
+        address owner
+    );
+
     function setUp() public {
-        factory = new TrueWalletFactory(address(this));
+        wallet = new TrueWalletUpgradeable();
+        factory = new TrueWalletFactory(address(wallet), address(this));
         entryPoint = new EntryPoint();
 
         salt = keccak256(
@@ -22,25 +32,41 @@ contract TrueWalletFactoryUnitTest is Test {
         );
     }
 
+    // Estimating gas for deployment 
     function testDeployWallet() public {
-        TrueWallet wallet = factory.deployWallet(
+        factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
         );
-
-        address computedWalletAddress = factory.computeAddress(
-            address(entryPoint),
-            walletOwner,
-            salt
-        );
-        assertEq(address(wallet), computedWalletAddress);
-        assertEq(address(wallet.entryPoint()), address(entryPoint));
-        assertEq(wallet.owner(), walletOwner);
     }
 
-    function testDeployWalletInCaseAlreadyDeployed() public {
-        address walletAddress = factory.computeAddress(
+    function testCreateWallet() public {
+        address computedWalletAddress = factory.getWalletAddress(
+            address(entryPoint),
+            walletOwner,
+            salt
+        );
+
+        vm.expectEmit(true, true, true, false);
+        emit AccountInitialized(
+            computedWalletAddress,
+            address(entryPoint),
+            address(walletOwner)
+        );
+        TrueWalletUpgradeable proxyWallet = factory.createWallet(
+            address(entryPoint),
+            walletOwner,
+            salt
+        );
+
+        assertEq(address(proxyWallet), computedWalletAddress);
+        assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
+        assertEq(proxyWallet.owner(), walletOwner);
+    }
+
+    function testCreateWalletInCaseAlreadyDeployed() public {
+        address walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             salt
@@ -49,13 +75,13 @@ contract TrueWalletFactoryUnitTest is Test {
         uint256 codeSize = walletAddress.code.length;
         assertTrue(codeSize == 0);
 
-        TrueWallet wallet = factory.deployWallet(
+        wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
         );
 
-        walletAddress = factory.computeAddress(
+        walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             salt
@@ -64,7 +90,7 @@ contract TrueWalletFactoryUnitTest is Test {
         codeSize = walletAddress.code.length;
         assertTrue(codeSize > 0);
         // Return the address even if the account is already deployed
-        TrueWallet wallet2 = factory.deployWallet(
+        TrueWalletUpgradeable wallet2 = factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
@@ -73,9 +99,9 @@ contract TrueWalletFactoryUnitTest is Test {
         assertEq(address(wallet), address(wallet2));
     }
 
-    function testDeployWalletWhenNotPaused() public {
+    function testCreateWalletWhenNotPaused() public {
         assertEq(factory.paused(), false);
-        TrueWallet wallet = factory.deployWallet(
+        wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
@@ -85,7 +111,7 @@ contract TrueWalletFactoryUnitTest is Test {
         factory.pause();
         assertEq(factory.paused(), true);
         vm.expectRevert();
-        TrueWallet wallet2 = factory.deployWallet(
+        factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt

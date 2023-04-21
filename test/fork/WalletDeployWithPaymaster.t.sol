@@ -32,7 +32,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
 
     function setUp() public {
         // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.computeAddress(address(entryPoint), walletOwner, salt);
+        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, salt);
         vm.deal(sender, 1 ether);
 
         // 1. Generate a userOperation
@@ -53,7 +53,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         // 2. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.deployWallet.selector, address(entryPoint), walletOwner, salt)
+            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, salt)
         );
         userOp.initCode = initCode;
 
@@ -91,7 +91,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress = walletFactory.computeAddress(address(entryPoint), walletOwner, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
