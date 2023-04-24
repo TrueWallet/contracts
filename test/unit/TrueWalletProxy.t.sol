@@ -4,35 +4,37 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {TrueWalletUpgradeable} from "src/wallet/TrueWalletUpgradeable.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockWalletUpgradeableV2} from "../mock/MockWalletUpgradeableV2.sol";
+import {MockWalletV2} from "../mock/MockWalletV2.sol";
 
 contract TrueWalletProxyUnitTest is Test {
     TrueWalletFactory factory;
     TrueWalletProxy proxy;
-    TrueWalletUpgradeable wallet;
+    TrueWallet wallet;
     EntryPoint entryPoint;
-    MockWalletUpgradeableV2 walletV2;
+    MockWalletV2 walletV2;
 
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey = 
-        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+    uint256 ownerPrivateKey =
+        uint256(
+            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+        );
     uint256 chainId = block.chainid;
 
     bytes32 salt;
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        wallet = new TrueWalletUpgradeable();
+        wallet = new TrueWallet();
         factory = new TrueWalletFactory(address(wallet), address(this));
-        walletV2 = new MockWalletUpgradeableV2();
+        walletV2 = new MockWalletV2();
 
         bytes memory data = abi.encodeCall(
-            TrueWalletUpgradeable.initialize,
+            TrueWallet.initialize,
             (address(entryPoint), ownerAddress)
-        ); 
+        );
 
         proxy = new TrueWalletProxy(address(wallet), data);
 
@@ -41,8 +43,8 @@ contract TrueWalletProxyUnitTest is Test {
         );
     }
 
-    function deployWallet() public returns (TrueWalletUpgradeable proxyWallet) {
-        TrueWalletUpgradeable proxyWallet = factory.createWallet(
+    function deployWallet() public returns (TrueWallet proxyWallet) {
+        TrueWallet proxyWallet = factory.createWallet(
             address(entryPoint),
             ownerAddress,
             salt
@@ -52,7 +54,7 @@ contract TrueWalletProxyUnitTest is Test {
     }
 
     function testUpgradeWallet() public {
-        TrueWalletUpgradeable proxyWallet = deployWallet();
+        TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), ownerAddress);
@@ -75,7 +77,7 @@ contract TrueWalletProxyUnitTest is Test {
     }
 
     function testUpgradeWalletNotOwner() public {
-        TrueWalletUpgradeable proxyWallet = deployWallet();
+        TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), ownerAddress);
@@ -95,7 +97,7 @@ contract TrueWalletProxyUnitTest is Test {
     }
 
     function testUpgradeWalletByEntryPoint() public {
-        TrueWalletUpgradeable proxyWallet = deployWallet();
+        TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), ownerAddress);
@@ -114,7 +116,7 @@ contract TrueWalletProxyUnitTest is Test {
     }
 
     function testProxy() public {
-        TrueWalletUpgradeable proxyWallet = TrueWalletUpgradeable(payable(address(proxy)));
+        TrueWallet proxyWallet = TrueWallet(payable(address(proxy)));
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), ownerAddress);

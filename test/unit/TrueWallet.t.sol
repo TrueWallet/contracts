@@ -4,6 +4,7 @@ pragma solidity ^0.8.17;
 import "forge-std/Test.sol";
 
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../mock/MockSetter.sol";
@@ -17,11 +18,13 @@ import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography
 
 contract TrueWalletUnitTest is Test {
     TrueWallet wallet;
+    TrueWallet walletImpl;
+    TrueWalletProxy proxy;
     MockSetter setter;
     EntryPoint entryPoint;
-    address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
+    address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey = 
-        uint256(0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6);
+        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     uint256 chainId = block.chainid;
 
     MockERC20 erc20token;
@@ -32,12 +35,20 @@ contract TrueWalletUnitTest is Test {
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        wallet = new TrueWallet(address(entryPoint), ownerAddress);
+        walletImpl = new TrueWallet();
         setter = new MockSetter();
         erc20token = new MockERC20();
         erc721token = new MockERC721("Token", "TKN");
         erc1155token = new MockERC1155();
         signatureChecker = new MockSignatureChecker();
+
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize,
+            (address(entryPoint), ownerAddress)
+        ); 
+
+        TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
+        wallet = TrueWallet(payable(address(proxy)));
 
         vm.deal(address(wallet), 5 ether);
     }

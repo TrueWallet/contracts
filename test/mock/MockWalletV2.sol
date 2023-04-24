@@ -15,7 +15,12 @@ import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.so
 import {Upgradeable} from "src/utils/Upgradeable.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenCallbackHandler {
+contract MockWalletV2 is
+    IAccount,
+    Initializable,
+    Upgradeable,
+    TokenCallbackHandler
+{
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -26,20 +31,43 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
 
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
-    event UpdateEntryPoint(address indexed newEntryPoint,address indexed oldEntryPoint);
+    event AccountInitialized(
+        address indexed account,
+        address indexed entryPoint,
+        address owner
+    );
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(address indexed sender, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed sender,
+        address indexed newOwner
+    );
     event WithdrawERC20(address token, address indexed to, uint256 amount);
     event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event WithdrawERC721(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed to
+    );
+    event WithdrawERC1155(
+        address indexed collection,
+        uint256 indexed tokenId,
+        uint256 amount,
+        address indexed to
+    );
 
     /////////////////  MODIFIERS ///////////////
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
+        if (
+            msg.sender != address(entryPoint) &&
+            msg.sender != owner &&
+            msg.sender != address(this)
+        ) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -81,7 +109,10 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
     /// @notice Initialize function to setup the true wallet contract
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
-    function initialize(address _entryPoint, address _owner) initializer public {
+    function initialize(
+        address _entryPoint,
+        address _owner
+    ) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
@@ -149,7 +180,8 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
         uint256[] calldata value,
         bytes[] calldata payload
     ) external onlyEntryPointOrOwner {
-        if (target.length != payload.length && payload.length != value.length) revert LengthMismatch();
+        if (target.length != payload.length && payload.length != value.length)
+            revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], value[i], payload[i]);
             unchecked {
@@ -165,14 +197,20 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
     }
 
     /// @notice Perform implementation upgrade
-    function upgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+    function upgradeTo(
+        address newImplementation
+    ) external onlyEntryPointOrOwner {
         _upgradeTo(newImplementation);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
+    function withdrawERC20(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
         emit WithdrawERC20(token, to, amount);
     }
@@ -184,7 +222,11 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+    function withdrawERC721(
+        address collection,
+        uint256 tokenId,
+        address to
+    ) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
         emit WithdrawERC721(collection, tokenId, to);
     }
@@ -209,7 +251,10 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner) revert InvalidSignature();
@@ -239,8 +284,8 @@ contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenC
         }
     }
 
-   /// @dev Required by the OZ UUPS module
-   function _authorizeUpgrade(address) internal onlyOwner {}
+    /// @dev Required by the OZ UUPS module
+    function _authorizeUpgrade(address) internal onlyOwner {}
 
     /////////////////  SUPPORT INTERFACES ///////////////
 

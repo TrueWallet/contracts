@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 
 import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
@@ -12,21 +13,29 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 
 contract PaymasterUnitTest is Test {
     TrueWallet wallet;
+    TrueWallet walletImpl;
+    TrueWalletProxy proxy;
     Paymaster paymaster;
     EntryPoint entryPoint;
-    address ownerAddress = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720; // envil account (9)
+    address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
-        uint256(
-            0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
-        );
+        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
 
     function setUp() public {
         entryPoint = new EntryPoint();
-        wallet = new TrueWallet(address(entryPoint), ownerAddress);
+        walletImpl = new TrueWallet();
         paymaster = new Paymaster(address(entryPoint), ownerAddress);
+
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize,
+            (address(entryPoint), ownerAddress)
+        ); 
+
+        TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
+        wallet = TrueWallet(payable(address(proxy)));
     }
 
     function testSetupState() public {

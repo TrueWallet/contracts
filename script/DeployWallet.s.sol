@@ -21,7 +21,7 @@ contract DeployWalletScript is Script {
 
     function run() public {
         vm.broadcast(deployerPrivateKey);
-        wallet = new TrueWallet(entryPoint, owner);
+        wallet = new TrueWallet();
         vm.stopBroadcast();
     }
 }

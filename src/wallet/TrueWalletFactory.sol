@@ -4,8 +4,8 @@ pragma solidity ^0.8.17;
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
-import {TrueWalletUpgradeable} from "src/wallet/TrueWalletUpgradeable.sol";
-import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
+import {TrueWallet} from "./TrueWallet.sol";
+import {TrueWalletProxy} from "./TrueWalletProxy.sol";
 
 /// @title TrueWalletFactory contract to deploy user smart wallets
 contract TrueWalletFactory is Ownable, Pausable {
@@ -28,19 +28,19 @@ contract TrueWalletFactory is Ownable, Pausable {
         address entryPoint,
         address walletOwner,
         bytes32 salt
-    ) external whenNotPaused returns (TrueWalletUpgradeable) {
+    ) external whenNotPaused returns (TrueWallet) {
         address walletAddress = getWalletAddress(entryPoint, walletOwner, salt);
 
         // Determine if a wallet is already deployed at this address, if so return that
         uint256 codeSize = walletAddress.code.length;
         if (codeSize > 0) {
-            return TrueWalletUpgradeable(payable(walletAddress));
+            return TrueWallet(payable(walletAddress));
         } else {
             // Deploy the wallet
-            TrueWalletUpgradeable wallet = TrueWalletUpgradeable(payable(new TrueWalletProxy{salt: bytes32(salt)}(
+            TrueWallet wallet = TrueWallet(payable(new TrueWalletProxy{salt: bytes32(salt)}(
                 walletImplementation,
                 abi.encodeCall(
-                    TrueWalletUpgradeable.initialize,
+                    TrueWallet.initialize,
                     (entryPoint, walletOwner)
                 )))
             );
@@ -60,7 +60,7 @@ contract TrueWalletFactory is Ownable, Pausable {
             abi.encode(
                 walletImplementation,
                 abi.encodeCall(
-                    TrueWalletUpgradeable.initialize,
+                    TrueWallet.initialize,
                     (entryPoint, walletOwner)
                 )
             )

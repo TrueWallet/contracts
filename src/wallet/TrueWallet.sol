@@ -6,13 +6,15 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
+import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
+import {Upgradeable} from "src/utils/Upgradeable.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract TrueWallet is IAccount, TokenCallbackHandler {
+contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandler {
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -23,6 +25,7 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
 
     /////////////////  EVENTS ///////////////
 
+    event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
     event UpdateEntryPoint(address indexed newEntryPoint,address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
@@ -68,17 +71,29 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
 
     /////////////////  CONSTRUCTOR ///////////////
 
-    constructor(address _entryPoint, address _owner) {
+    /// @dev This prevents initialization of the implementation contract itself
+    constructor() {
+        _disableInitializers();
+        // solhint-disable-previous-line no-empty-blocks
+    }
+
+    /// @notice Initialize function to setup the true wallet contract
+    /// @param  _entryPoint trused entrypoint
+    /// @param  _owner wallet sign key address
+    function initialize(address _entryPoint, address _owner) initializer public {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
         entryPoint = IEntryPoint(_entryPoint);
         owner = _owner;
+
+        emit AccountInitialized(address(this), address(_entryPoint), _owner);
     }
 
     /////////////////  FUNCTIONS ///////////////
 
     /// @notice Able to receive ETH
+    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
     /// @notice Set the entrypoint contract, restricted to onlyOwner
@@ -146,6 +161,11 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
     function transferOwnership(address newOwner) public virtual onlyOwner {
         owner = newOwner;
         emit OwnershipTransferred(msg.sender, newOwner);
+    }
+
+    /// @notice Perform implementation upgrade
+    function upgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+        _upgradeTo(newImplementation);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
@@ -217,6 +237,9 @@ contract TrueWallet is IAccount, TokenCallbackHandler {
             }
         }
     }
+
+   /// @dev Required by the OZ UUPS module
+   function _authorizeUpgrade(address) internal onlyOwner {}
 
     /////////////////  SUPPORT INTERFACES ///////////////
 

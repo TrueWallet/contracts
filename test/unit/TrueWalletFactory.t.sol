@@ -7,11 +7,11 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {TrueWalletUpgradeable} from "src/wallet/TrueWalletUpgradeable.sol";
+import {TrueWallet} from "src/wallet/TrueWallet.sol";
 
 contract TrueWalletFactoryUnitTest is Test {
     TrueWalletFactory factory;
-    TrueWalletUpgradeable wallet;
+    TrueWallet wallet;
     EntryPoint entryPoint;
     address walletOwner = address(12);
     bytes32 salt;
@@ -23,7 +23,7 @@ contract TrueWalletFactoryUnitTest is Test {
     );
 
     function setUp() public {
-        wallet = new TrueWalletUpgradeable();
+        wallet = new TrueWallet();
         factory = new TrueWalletFactory(address(wallet), address(this));
         entryPoint = new EntryPoint();
 
@@ -54,7 +54,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             address(walletOwner)
         );
-        TrueWalletUpgradeable proxyWallet = factory.createWallet(
+        TrueWallet proxyWallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
@@ -90,7 +90,7 @@ contract TrueWalletFactoryUnitTest is Test {
         codeSize = walletAddress.code.length;
         assertTrue(codeSize > 0);
         // Return the address even if the account is already deployed
-        TrueWalletUpgradeable wallet2 = factory.createWallet(
+        TrueWallet wallet2 = factory.createWallet(
             address(entryPoint),
             walletOwner,
             salt
