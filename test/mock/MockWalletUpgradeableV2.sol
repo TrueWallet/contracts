@@ -15,7 +15,7 @@ import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.so
 import {Upgradeable} from "src/utils/Upgradeable.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract TrueWalletUpgradeable is IAccount, Initializable, Upgradeable, TokenCallbackHandler {
+contract MockWalletUpgradeableV2 is IAccount, Initializable, Upgradeable, TokenCallbackHandler {
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -178,7 +178,7 @@ contract TrueWalletUpgradeable is IAccount, Initializable, Upgradeable, TokenCal
     }
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(address payable to, uint256 amount) external onlyOwner {
+    function withdrawETH(address payable to, uint256 amount) external {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
     }
