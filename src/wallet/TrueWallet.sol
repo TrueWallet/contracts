@@ -7,14 +7,14 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {Upgradeable} from "src/utils/Upgradeable.sol";
+import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandler {
+contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
     /// @notice EntryPoint contract in ERC-4337 system
     IEntryPoint public entryPoint;
 
@@ -23,10 +23,13 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
     uint96 public nonce;
     address public owner;
 
+    /// @notice Upgrade delay which update take effect
+    uint32 public upgradeDelay;
+
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
-    event UpdateEntryPoint(address indexed newEntryPoint,address indexed oldEntryPoint);
+    event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
+    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event WithdrawERC20(address token, address indexed to, uint256 amount);
@@ -36,14 +39,6 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
 
     /////////////////  MODIFIERS ///////////////
 
-    /// @notice Validate that only the entryPoint or Owner is able to call a method
-    modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
-            revert InvalidEntryPointOrOwner();
-        }
-        _;
-    }
-
     /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
     modifier onlyOwner() {
         if (msg.sender != owner && msg.sender != address(this)) {
@@ -52,16 +47,27 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
         _;
     }
 
-    /////////////////  ERRORS ///////////////
+    /// @notice Validate that only the entryPoint or Owner is able to call a method
+    modifier onlyEntryPointOrOwner() {
+        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
+            revert InvalidEntryPointOrOwner();
+        }
+        _;
+    }
 
-    /// @dev Reverts in case not valid entryPoint or owner
-    error InvalidEntryPointOrOwner();
+    /////////////////  ERRORS ///////////////
 
     /// @dev Reverts in case not valid owner
     error InvalidOwner();
 
+    /// @dev Reverts in case not valid entryPoint or owner
+    error InvalidEntryPointOrOwner();
+
     /// @dev Reverts when zero address is assigned
     error ZeroAddressProvided();
+
+    /// @dev Reverts when upgrade delay is invalid
+    error InvalidUpgradeDelay();
 
     /// @dev Reverts when array argument size mismatch
     error LengthMismatch();
@@ -80,14 +86,23 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
     /// @notice Initialize function to setup the true wallet contract
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
-    function initialize(address _entryPoint, address _owner) initializer public {
+    /// @param  _upgradeDelay upgrade delay which update take effect
+    function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
         entryPoint = IEntryPoint(_entryPoint);
         owner = _owner;
 
-        emit AccountInitialized(address(this), address(_entryPoint), _owner);
+        if (_upgradeDelay < 2 days) revert InvalidUpgradeDelay();
+        upgradeDelay = _upgradeDelay;
+
+        emit AccountInitialized(
+            address(this),
+            address(_entryPoint),
+            _owner,
+            _upgradeDelay
+        );
     }
 
     /////////////////  FUNCTIONS ///////////////
@@ -148,7 +163,8 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
         uint256[] calldata value,
         bytes[] calldata payload
     ) external onlyEntryPointOrOwner {
-        if (target.length != payload.length && payload.length != value.length) revert LengthMismatch();
+        if (target.length != payload.length && payload.length != value.length)
+            revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], value[i], payload[i]);
             unchecked {
@@ -163,9 +179,9 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
         emit OwnershipTransferred(msg.sender, newOwner);
     }
 
-    /// @notice Perform implementation upgrade
-    function upgradeTo(address newImplementation) external onlyEntryPointOrOwner {
-        _upgradeTo(newImplementation);
+    /// @dev preUpgradeTo is called before upgrading the wallet
+    function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+        _preUpgradeTo(newImplementation, upgradeDelay);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
@@ -238,8 +254,8 @@ contract TrueWallet is IAccount, Initializable, Upgradeable, TokenCallbackHandle
         }
     }
 
-   /// @dev Required by the OZ UUPS module
-   function _authorizeUpgrade(address) internal onlyOwner {}
+    /// @dev Required by the OZ UUPS module
+    function _authorizeUpgrade(address) internal onlyOwner {}
 
     /////////////////  SUPPORT INTERFACES ///////////////
 

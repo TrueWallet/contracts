@@ -27,6 +27,7 @@ contract VerifyingPaymasterUnitTest is Test {
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
+    uint32 upgradeDelay = 172800; // 2 days in seconds
 
     function setUp() public {
         entryPoint = new EntryPoint();
@@ -35,7 +36,7 @@ contract VerifyingPaymasterUnitTest is Test {
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress)
+            (address(entryPoint), ownerAddress, upgradeDelay)
         ); 
 
         TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);

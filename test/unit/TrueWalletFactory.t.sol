@@ -15,11 +15,13 @@ contract TrueWalletFactoryUnitTest is Test {
     EntryPoint entryPoint;
     address walletOwner = address(12);
     bytes32 salt;
+    uint32 upgradeDelay = 172800; // 2 days in seconds
 
     event AccountInitialized(
         address indexed account,
         address indexed entryPoint,
-        address owner
+        address owner,
+        uint32 upgradeDelay
     );
 
     function setUp() public {
@@ -28,7 +30,7 @@ contract TrueWalletFactoryUnitTest is Test {
         entryPoint = new EntryPoint();
 
         salt = keccak256(
-            abi.encodePacked(address(factory), address(entryPoint))
+            abi.encodePacked(address(factory), address(entryPoint), upgradeDelay)
         );
     }
 
@@ -37,6 +39,7 @@ contract TrueWalletFactoryUnitTest is Test {
         factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
     }
@@ -45,30 +48,35 @@ contract TrueWalletFactoryUnitTest is Test {
         address computedWalletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
 
-        vm.expectEmit(true, true, true, false);
+        vm.expectEmit(true, true, true, true);
         emit AccountInitialized(
             computedWalletAddress,
             address(entryPoint),
-            address(walletOwner)
+            address(walletOwner),
+            upgradeDelay
         );
         TrueWallet proxyWallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
 
         assertEq(address(proxyWallet), computedWalletAddress);
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), walletOwner);
+        assertEq(proxyWallet.upgradeDelay(), upgradeDelay);
     }
 
     function testCreateWalletInCaseAlreadyDeployed() public {
         address walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
         // Determine if a wallet is already deployed at this address
@@ -78,12 +86,14 @@ contract TrueWalletFactoryUnitTest is Test {
         wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
 
         walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
         // Determine if a wallet is already deployed at this address
@@ -93,6 +103,7 @@ contract TrueWalletFactoryUnitTest is Test {
         TrueWallet wallet2 = factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
 
@@ -104,6 +115,7 @@ contract TrueWalletFactoryUnitTest is Test {
         wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
         assertEq(wallet.owner(), walletOwner);
@@ -114,6 +126,7 @@ contract TrueWalletFactoryUnitTest is Test {
         factory.createWallet(
             address(entryPoint),
             walletOwner,
+            upgradeDelay,
             salt
         );
     }

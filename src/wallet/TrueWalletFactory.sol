@@ -27,9 +27,10 @@ contract TrueWalletFactory is Ownable, Pausable {
     function createWallet(
         address entryPoint,
         address walletOwner,
+        uint32 upgradeDelay,
         bytes32 salt
     ) external whenNotPaused returns (TrueWallet) {
-        address walletAddress = getWalletAddress(entryPoint, walletOwner, salt);
+        address walletAddress = getWalletAddress(entryPoint, walletOwner, upgradeDelay, salt);
 
         // Determine if a wallet is already deployed at this address, if so return that
         uint256 codeSize = walletAddress.code.length;
@@ -41,7 +42,7 @@ contract TrueWalletFactory is Ownable, Pausable {
                 walletImplementation,
                 abi.encodeCall(
                     TrueWallet.initialize,
-                    (entryPoint, walletOwner)
+                    (entryPoint, walletOwner, upgradeDelay)
                 )))
             );
 
@@ -53,6 +54,7 @@ contract TrueWalletFactory is Ownable, Pausable {
     function getWalletAddress(
         address entryPoint,
         address walletOwner,
+        uint32 upgradeDelay,
         bytes32 salt
     ) public view returns (address) {
         bytes memory deploymentData = abi.encodePacked(
@@ -61,7 +63,7 @@ contract TrueWalletFactory is Ownable, Pausable {
                 walletImplementation,
                 abi.encodeCall(
                     TrueWallet.initialize,
-                    (entryPoint, walletOwner)
+                    (entryPoint, walletOwner, upgradeDelay)
                 )
             )
         );

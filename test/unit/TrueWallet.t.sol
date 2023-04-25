@@ -33,6 +33,8 @@ contract TrueWalletUnitTest is Test {
 
     MockSignatureChecker signatureChecker;
 
+    uint32 upgradeDelay = 172800; // 2 days in seconds
+
     function setUp() public {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
@@ -44,7 +46,7 @@ contract TrueWalletUnitTest is Test {
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress)
+            (address(entryPoint), ownerAddress, upgradeDelay)
         ); 
 
         TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
@@ -554,7 +556,7 @@ contract TrueWalletUnitTest is Test {
     }
 
     function testIsValidSignatureNotOwner() public {
-        // address notContractOwnerAddress = 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f; // envil account (8)
+        // address notContractOwnerAddress = 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f; // anvil account (8)
         uint256 notContractOwnerPrivateKey =
             uint256(0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97);
         bytes32 messageHash = keccak256(abi.encode("Signed Message"));
