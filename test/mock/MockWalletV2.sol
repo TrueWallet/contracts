@@ -6,91 +6,61 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
+import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
+import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
+import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
-import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {Upgradeable} from "src/utils/Upgradeable.sol";
-
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract MockWalletV2 is
-    IAccount,
-    Initializable,
-    Upgradeable,
-    TokenCallbackHandler
-{
-    /// @notice EntryPoint contract in ERC-4337 system
-    IEntryPoint public entryPoint;
-
-    /// @notice Nonce used for replay protection
-    /// @dev Explicit sizes of nonce, to fit a single storage cell with "owner"
-    uint96 public nonce;
-    address public owner;
+contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
+    /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
+    using AccountStorage for AccountStorage.Layout;
 
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(
-        address indexed account,
-        address indexed entryPoint,
-        address owner
-    );
-    event UpdateEntryPoint(
-        address indexed newEntryPoint,
-        address indexed oldEntryPoint
-    );
+    event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
+    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(
-        address indexed sender,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event WithdrawERC20(address token, address indexed to, uint256 amount);
     event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(
-        address indexed collection,
-        uint256 indexed tokenId,
-        address indexed to
-    );
-    event WithdrawERC1155(
-        address indexed collection,
-        uint256 indexed tokenId,
-        uint256 amount,
-        address indexed to
-    );
+    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
-    /// @notice Validate that only the entryPoint or Owner is able to call a method
-    modifier onlyEntryPointOrOwner() {
-        if (
-            msg.sender != address(entryPoint) &&
-            msg.sender != owner &&
-            msg.sender != address(this)
-        ) {
-            revert InvalidEntryPointOrOwner();
+    /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
+    modifier onlyOwner() {
+        if (msg.sender != owner() && msg.sender != address(this)) {
+            revert InvalidOwner();
         }
         _;
     }
 
-    /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
-    modifier onlyOwner() {
-        if (msg.sender != owner && msg.sender != address(this)) {
-            revert InvalidOwner();
+    /// @notice Validate that only the entryPoint or Owner is able to call a method
+    modifier onlyEntryPointOrOwner() {
+        if (msg.sender != address(entryPoint()) && msg.sender != owner() && msg.sender != address(this)) {
+            revert InvalidEntryPointOrOwner();
         }
         _;
     }
 
     /////////////////  ERRORS ///////////////
 
-    /// @dev Reverts in case not valid entryPoint or owner
-    error InvalidEntryPointOrOwner();
-
     /// @dev Reverts in case not valid owner
     error InvalidOwner();
 
+    /// @dev Reverts in case not valid entryPoint or owner
+    error InvalidEntryPointOrOwner();
+
     /// @dev Reverts when zero address is assigned
     error ZeroAddressProvided();
+
+    /// @dev Reverts when upgrade delay is invalid
+    error InvalidUpgradeDelay();
 
     /// @dev Reverts when array argument size mismatch
     error LengthMismatch();
@@ -109,17 +79,25 @@ contract MockWalletV2 is
     /// @notice Initialize function to setup the true wallet contract
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
-    function initialize(
-        address _entryPoint,
-        address _owner
-    ) public initializer {
+    /// @param  _upgradeDelay upgrade delay which update take effect
+    function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
-        entryPoint = IEntryPoint(_entryPoint);
-        owner = _owner;
 
-        emit AccountInitialized(address(this), address(_entryPoint), _owner);
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.entryPoint = IEntryPoint(_entryPoint);
+        layout.owner = _owner;
+
+        if (_upgradeDelay < 5 days) revert InvalidUpgradeDelay();
+        layout.logicUpgrade.upgradeDelay = _upgradeDelay;
+
+        emit AccountInitialized(
+            address(this),
+            address(_entryPoint),
+            _owner,
+            _upgradeDelay
+        );
     }
 
     /////////////////  FUNCTIONS ///////////////
@@ -128,11 +106,24 @@ contract MockWalletV2 is
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
+    function entryPoint() public view returns (IEntryPoint) {
+        return AccountStorage.layout().entryPoint;
+    }
+
+    function nonce() public view returns (uint256) {
+        return AccountStorage.layout().nonce;
+    }
+
+    function owner() public view returns (address) {
+        return AccountStorage.layout().owner;
+    }
+
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
         if (_newEntryPoint == address(0)) revert ZeroAddressProvided();
-        emit UpdateEntryPoint(_newEntryPoint, address(entryPoint));
-        entryPoint = IEntryPoint(_newEntryPoint);
+        emit UpdateEntryPoint(_newEntryPoint, address(entryPoint()));
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.entryPoint = IEntryPoint(_newEntryPoint);
     }
 
     /// @notice Validate that the userOperation is valid. Requirements:
@@ -155,7 +146,7 @@ contract MockWalletV2 is
         // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
         if (userOp.initCode.length == 0) {
             // Validate and update the nonce storage variable - protect against replay attacks
-            require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+            require(AccountStorage.layout().nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
         }
 
         _prefundEntryPoint(missingWalletFunds);
@@ -192,25 +183,20 @@ contract MockWalletV2 is
 
     /// @notice Transfer ownership by owner
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        owner = newOwner;
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.owner = newOwner;
         emit OwnershipTransferred(msg.sender, newOwner);
     }
 
-    /// @notice Perform implementation upgrade
-    function upgradeTo(
-        address newImplementation
-    ) external onlyEntryPointOrOwner {
-        _upgradeTo(newImplementation);
+    /// @dev preUpgradeTo is called before upgrading the wallet
+    function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+        _preUpgradeTo(newImplementation);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(
-        address token,
-        address to,
-        uint256 amount
-    ) external onlyOwner {
+    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
         emit WithdrawERC20(token, to, amount);
     }
@@ -222,11 +208,7 @@ contract MockWalletV2 is
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(
-        address collection,
-        uint256 tokenId,
-        address to
-    ) external onlyOwner {
+    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
         emit WithdrawERC721(collection, tokenId, to);
     }
@@ -251,13 +233,10 @@ contract MockWalletV2 is
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(
-        UserOperation calldata userOp,
-        bytes32 userOpHash
-    ) internal view {
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
-        if (signer != owner) revert InvalidSignature();
+        if (signer != owner()) revert InvalidSignature();
     }
 
     /// @notice Pay the EntryPoint in ETH ahead of time for the transaction that it will execute
@@ -269,7 +248,7 @@ contract MockWalletV2 is
             return;
         }
 
-        (bool success, ) = payable(address(entryPoint)).call{value: amount}("");
+        (bool success, ) = payable(address(entryPoint())).call{value: amount}("");
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }
@@ -295,7 +274,7 @@ contract MockWalletV2 is
         bytes memory signature
     ) public view returns (bytes4 magicValue) {
         return
-            ECDSA.recover(hash, signature) == owner
+            ECDSA.recover(hash, signature) == owner()
                 ? this.isValidSignature.selector
                 : bytes4(0);
     }

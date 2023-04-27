@@ -2,14 +2,24 @@
 pragma solidity ^0.8.17;
 
 import "openzeppelin-contracts/utils/Address.sol";
-import "./ImplementationSlot.sol";
 
-abstract contract Upgradeable is ImplementationSlot {
-    // The mask of the lower 160 bits for addresses.
+abstract contract Upgradeable {
+    /**
+     * @dev Storage slot with the address of the current implementation.
+     * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
+     * validated in the constructor.
+     */
+    bytes32 internal constant _IMPLEMENTATION_SLOT =
+        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    /**
+     * @dev @dev The mask of the lower 160 bits for addresses.
+     */
     uint256 private constant _BITMASK_ADDRESS = (1 << 160) - 1;
 
-    // The `Upgraded` event signature is given by:
-    // `keccak256(bytes("Upgraded(address)"))`.
+    /**
+     * @dev The `Upgraded` event signature is given by: `keccak256(bytes("Upgraded(address)"))`.
+     */
     bytes32 private constant _UPGRADED_EVENT_SIGNATURE =
         0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b;
 

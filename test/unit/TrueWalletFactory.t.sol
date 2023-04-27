@@ -69,7 +69,7 @@ contract TrueWalletFactoryUnitTest is Test {
         assertEq(address(proxyWallet), computedWalletAddress);
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertEq(proxyWallet.owner(), walletOwner);
-        assertEq(proxyWallet.upgradeDelay(), upgradeDelay);
+        // assertEq(proxyWallet.upgradeDelay(), upgradeDelay);
     }
 
     function testCreateWalletInCaseAlreadyDeployed() public {

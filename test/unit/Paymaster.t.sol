@@ -35,7 +35,7 @@ contract PaymasterUnitTest is Test {
             (address(entryPoint), ownerAddress, upgradeDelay)
         ); 
 
-        TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
+        proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
     }
 

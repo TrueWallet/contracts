@@ -8,6 +8,7 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
+import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
@@ -15,16 +16,8 @@ import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
-    /// @notice EntryPoint contract in ERC-4337 system
-    IEntryPoint public entryPoint;
-
-    /// @notice Nonce used for replay protection
-    /// @dev Explicit sizes of nonce, to fit a single storage cell with "owner"
-    uint96 public nonce;
-    address public owner;
-
-    /// @notice Upgrade delay which update take effect
-    uint32 public upgradeDelay;
+    /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
+    using AccountStorage for AccountStorage.Layout;
 
     /////////////////  EVENTS ///////////////
 
@@ -41,7 +34,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
 
     /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
     modifier onlyOwner() {
-        if (msg.sender != owner && msg.sender != address(this)) {
+        if (msg.sender != owner() && msg.sender != address(this)) {
             revert InvalidOwner();
         }
         _;
@@ -49,7 +42,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint) && msg.sender != owner && msg.sender != address(this)) {
+        if (msg.sender != address(entryPoint()) && msg.sender != owner() && msg.sender != address(this)) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -91,11 +84,13 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
-        entryPoint = IEntryPoint(_entryPoint);
-        owner = _owner;
+
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.entryPoint = IEntryPoint(_entryPoint);
+        layout.owner = _owner;
 
         if (_upgradeDelay < 2 days) revert InvalidUpgradeDelay();
-        upgradeDelay = _upgradeDelay;
+        layout.logicUpgrade.upgradeDelay = _upgradeDelay;
 
         emit AccountInitialized(
             address(this),
@@ -111,11 +106,29 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
+    /// @notice Returns the entryPoint address
+    function entryPoint() public view returns (IEntryPoint) {
+        return AccountStorage.layout().entryPoint;
+    }
+
+    /// @notice Returns the contract nonce
+    function nonce() public view returns (uint256) {
+        return AccountStorage.layout().nonce;
+    }
+
+    /// @notice Returns the contract owner
+    function owner() public view returns (address) {
+        return AccountStorage.layout().owner;
+    }
+
     /// @notice Set the entrypoint contract, restricted to onlyOwner
     function setEntryPoint(address _newEntryPoint) external onlyOwner {
         if (_newEntryPoint == address(0)) revert ZeroAddressProvided();
-        emit UpdateEntryPoint(_newEntryPoint, address(entryPoint));
-        entryPoint = IEntryPoint(_newEntryPoint);
+
+        emit UpdateEntryPoint(_newEntryPoint, address(entryPoint()));
+        
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.entryPoint = IEntryPoint(_newEntryPoint);
     }
 
     /// @notice Validate that the userOperation is valid. Requirements:
@@ -138,7 +151,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
         if (userOp.initCode.length == 0) {
             // Validate and update the nonce storage variable - protect against replay attacks
-            require(nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+            require(AccountStorage.layout().nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
         }
 
         _prefundEntryPoint(missingWalletFunds);
@@ -175,13 +188,14 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
 
     /// @notice Transfer ownership by owner
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        owner = newOwner;
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.owner = newOwner;
         emit OwnershipTransferred(msg.sender, newOwner);
     }
 
-    /// @dev preUpgradeTo is called before upgrading the wallet
+    /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
-        _preUpgradeTo(newImplementation, upgradeDelay);
+        _preUpgradeTo(newImplementation);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
@@ -227,7 +241,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
-        if (signer != owner) revert InvalidSignature();
+        if (signer != owner()) revert InvalidSignature();
     }
 
     /// @notice Pay the EntryPoint in ETH ahead of time for the transaction that it will execute
@@ -239,7 +253,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
             return;
         }
 
-        (bool success, ) = payable(address(entryPoint)).call{value: amount}("");
+        (bool success, ) = payable(address(entryPoint())).call{value: amount}("");
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }
@@ -265,7 +279,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         bytes memory signature
     ) public view returns (bytes4 magicValue) {
         return
-            ECDSA.recover(hash, signature) == owner
+            ECDSA.recover(hash, signature) == owner()
                 ? this.isValidSignature.selector
                 : bytes4(0);
     }

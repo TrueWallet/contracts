@@ -10,6 +10,7 @@ import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockWalletV2} from "../mock/MockWalletV2.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
 import {MockERC721} from "../mock/MockERC721.sol";
+import {ILogicUpgradeControl} from "src/interfaces/ILogicUpgradeControl.sol";
 
 contract TrueWalletProxyUnitTest is Test {
     TrueWallet wallet;
@@ -54,10 +55,17 @@ contract TrueWalletProxyUnitTest is Test {
             upgradeDelay,
             salt
         );
-
-        return proxyWallet;
     }
-/*
+
+    function preUpgrade(TrueWallet proxyWallet) public {
+        proxyWallet.preUpgradeTo(address(walletV2));
+        vm.warp(block.timestamp + upgradeDelay);
+    }
+
+    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
+        encoded = abi.encodeWithSignature(error);
+    }
+
     function testUpgradeWallet() public {
         TrueWallet proxyWallet = deployWallet();
 
@@ -74,14 +82,24 @@ contract TrueWalletProxyUnitTest is Test {
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
-        proxyWallet.upgradeTo(address(walletV2));
+        preUpgrade(proxyWallet);
+
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        assertEq(address(walletV2), layout.pendingImplementation);
+        assertEq(layout.activateTime, upgradeDelay + 1);
+
+        proxyWallet.upgrade();
 
         vm.prank(address(notOwner));
         proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 1 ether);
+
+        ILogicUpgradeControl.UpgradeLayout memory layoutAfter = proxyWallet.logicUpgradeInfo();
+        assertEq(address(0), layoutAfter.pendingImplementation);
+        assertEq(layoutAfter.activateTime, 0);
     }
 
-    function testUpgradeWalletNotOwner() public {
+    function testPreUpgradeWalletNeitherOwnerNorEntryPoint() public {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
@@ -98,7 +116,7 @@ contract TrueWalletProxyUnitTest is Test {
 
         vm.prank(address(notOwner));
         vm.expectRevert();
-        proxyWallet.upgradeTo(address(walletV2));
+        preUpgrade(proxyWallet);
     }
 
     function testUpgradeWalletByEntryPoint() public {
@@ -112,7 +130,8 @@ contract TrueWalletProxyUnitTest is Test {
         vm.deal(address(proxyWallet), 1 ether);
 
         vm.prank(address(entryPoint));
-        proxyWallet.upgradeTo(address(walletV2));
+        preUpgrade(proxyWallet);
+        proxyWallet.upgrade();
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
@@ -136,7 +155,8 @@ contract TrueWalletProxyUnitTest is Test {
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
-        proxyWallet.upgradeTo(address(walletV2));
+        preUpgrade(proxyWallet);
+        proxyWallet.upgrade();
 
         vm.prank(address(notOwner));
         proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
@@ -164,8 +184,12 @@ contract TrueWalletProxyUnitTest is Test {
         assertEq(erc721token.ownerOf(1237), address(proxyWallet));
         assertEq(erc721token.balanceOf(address(proxyWallet)), 1);
 
-        vm.startPrank(address(ownerAddress));
-        proxyWallet.upgradeTo(address(walletV2));
+        vm.prank(address(ownerAddress));
+        preUpgrade(proxyWallet);
+        proxyWallet.upgrade();
+
+        assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
+        assertEq(proxyWallet.owner(), ownerAddress);
 
         assertEq(address(proxyWallet).balance, 2 ether);
         assertEq(erc20token.balanceOf(address(proxyWallet)), 1 ether);
@@ -175,11 +199,66 @@ contract TrueWalletProxyUnitTest is Test {
         address to = address(0xABCD);
 
         proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        vm.startPrank(address(ownerAddress));
         proxyWallet.withdrawERC20(address(erc20token), address(entryPoint), 1 ether);
         proxyWallet.withdrawERC721(address(erc721token), 1237, to);
 
         assertEq(address(proxyWallet).balance, 1 ether);
         assertEq(erc20token.balanceOf(address(proxyWallet)), 0);
         assertEq(erc721token.balanceOf(address(proxyWallet)), 0);
-    } */
+    } 
+
+    function testPreUpgradeToZeroAddress() public {
+        TrueWallet proxyWallet = deployWallet();
+
+        assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
+        assertEq(proxyWallet.owner(), ownerAddress);
+
+        assertEq(address(entryPoint).balance, 0);
+
+        vm.prank(address(ownerAddress));
+        proxyWallet.preUpgradeTo(address(0));
+
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        assertEq(layout.pendingImplementation, address(0));
+        assertEq(layout.activateTime, 0);
+    }
+
+    function testUpgradeInCaseZeroAddress() public {
+        TrueWallet proxyWallet = deployWallet();
+
+        assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
+        assertEq(proxyWallet.owner(), ownerAddress);
+
+        assertEq(address(entryPoint).balance, 0);
+
+        vm.prank(address(ownerAddress));
+        proxyWallet.preUpgradeTo(address(0));
+
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        assertEq(layout.pendingImplementation, address(0));
+        assertEq(layout.activateTime, 0);
+
+        vm.expectRevert(encodeError("UpgradeDelayNotElapsed()"));
+        proxyWallet.upgrade();
+    }
+
+    function testUpgradeWhenActivateTimeNotStarted() public {
+        TrueWallet proxyWallet = deployWallet();
+
+        assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
+        assertEq(proxyWallet.owner(), ownerAddress);
+
+        assertEq(address(entryPoint).balance, 0);
+
+        vm.prank(address(ownerAddress));
+        proxyWallet.preUpgradeTo(address(walletV2));
+
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        assertEq(layout.pendingImplementation, address(walletV2));
+        assertEq(layout.activateTime, upgradeDelay + 1);
+
+        vm.expectRevert(encodeError("UpgradeDelayNotElapsed()"));
+        proxyWallet.upgrade();
+    }
 }
