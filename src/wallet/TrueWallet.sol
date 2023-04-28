@@ -176,7 +176,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         uint256[] calldata value,
         bytes[] calldata payload
     ) external onlyEntryPointOrOwner {
-        if (target.length != payload.length && payload.length != value.length)
+        if (target.length != payload.length || payload.length != value.length)
             revert LengthMismatch();
         for (uint256 i; i < target.length; ) {
             _call(target[i], value[i], payload[i]);

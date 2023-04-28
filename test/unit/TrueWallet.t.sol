@@ -55,6 +55,10 @@ contract TrueWalletUnitTest is Test {
         vm.deal(address(wallet), 5 ether);
     }
 
+    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
+        encoded = abi.encodeWithSignature(error);
+    }
+
     function testSetupState() public {
         assertEq(wallet.owner(), address(ownerAddress));
         assertEq(address(wallet.entryPoint()), address(entryPoint));
@@ -72,7 +76,7 @@ contract TrueWalletUnitTest is Test {
         address newEntryPoint = address(12);
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.setEntryPoint(newEntryPoint);
         assertEq(address(wallet.entryPoint()), address(entryPoint));
     }
@@ -136,24 +140,32 @@ contract TrueWalletUnitTest is Test {
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidEntryPointOrOwner()"));
         wallet.execute(address(setter), 0, payload);
 
         assertEq(setter.value(), 0);
     }
 
-    function testExecuteBatchByEntryPoint() public {
-        assertEq(setter.value(), 0);
-
+    function createBatchData() public view returns (address[] memory, uint256[] memory, bytes[] memory) {
         address[] memory target = new address[](2);
         target[0] = address(setter);
         target[1] = address(setter);
-        bytes[] memory payloads = new bytes[](2);
-        payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
-        payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
+
         uint256[] memory values = new uint256[](2);
         values[0] = uint256(0);
         values[1] = uint256(0);
+
+        bytes[] memory payloads = new bytes[](2);
+        payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
+        payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
+
+        return (target, values, payloads);
+    }
+
+    function testExecuteBatchByEntryPoint() public {
+        assertEq(setter.value(), 0);
+
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         vm.prank(address(entryPoint));
         wallet.executeBatch(target, values, payloads);
@@ -164,15 +176,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchByOwner() public {
         assertEq(setter.value(), 0);
 
-        address[] memory target = new address[](2);
-        target[0] = address(setter);
-        target[1] = address(setter);
-        bytes[] memory payloads = new bytes[](2);
-        payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
-        payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
-        uint256[] memory values = new uint256[](2);
-        values[0] = uint256(0);
-        values[1] = uint256(0);
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         vm.prank(address(ownerAddress));
         wallet.executeBatch(target, values, payloads);
@@ -183,19 +187,53 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchNotEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        address[] memory target = new address[](2);
-        target[0] = address(setter);
-        target[1] = address(setter);
-        bytes[] memory payloads = new bytes[](2);
-        payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
-        payloads[1] = abi.encodeWithSelector(setter.setValue.selector, 2);
-        uint256[] memory values = new uint256[](2);
-        values[0] = uint256(0);
-        values[1] = uint256(0);
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidEntryPointOrOwner()"));
+        wallet.executeBatch(target, values, payloads);
+
+        assertEq(setter.value(), 0);
+    }
+
+    function testExecuteBatchLengthMismatch() public {
+        assertEq(setter.value(), 0);
+
+        (, uint256[] memory values, bytes[] memory payloads) = createBatchData();
+        address[] memory target = new address[](1);
+        target[0] = address(setter);
+ 
+        vm.prank(address(ownerAddress));
+        vm.expectRevert(encodeError("LengthMismatch()"));
+        wallet.executeBatch(target, values, payloads);
+
+        assertEq(setter.value(), 0);
+    }
+
+    function testExecuteBatchLengthMismatch2() public {
+        assertEq(setter.value(), 0);
+
+        (address[] memory target, , bytes[] memory payloads) = createBatchData();
+        uint256[] memory values = new uint256[](1);
+        values[0] = uint256(0);
+ 
+        vm.prank(address(ownerAddress));
+        vm.expectRevert(encodeError("LengthMismatch()"));
+        wallet.executeBatch(target, values, payloads);
+
+        assertEq(setter.value(), 0);
+    }
+
+    function testExecuteBatchLengthMismatch3() public {
+        assertEq(setter.value(), 0);
+
+        (address[] memory target, uint256[] memory values, ) = createBatchData();
+        bytes[] memory payloads = new bytes[](1);
+        payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
+ 
+        vm.prank(address(ownerAddress));
+        vm.expectRevert(encodeError("LengthMismatch()"));
         wallet.executeBatch(target, values, payloads);
 
         assertEq(setter.value(), 0);
@@ -257,7 +295,7 @@ contract TrueWalletUnitTest is Test {
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.withdrawERC20(address(token), address(entryPoint), 1 ether);
 
         assertEq(token.balanceOf(address(entryPoint)), 0 ether);
@@ -281,7 +319,7 @@ contract TrueWalletUnitTest is Test {
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.withdrawETH(payable(address(entryPoint)), 1 ether);
 
         assertEq(address(entryPoint).balance, 0 ether);
@@ -503,7 +541,7 @@ contract TrueWalletUnitTest is Test {
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.withdrawERC721(address(erc721token), 1237, to);
 
         assertEq(erc721token.balanceOf(address(to)), 0);
@@ -535,7 +573,7 @@ contract TrueWalletUnitTest is Test {
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        vm.expectRevert();
+        vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.withdrawERC1155(address(erc1155token), 1237, to, 1);
 
         assertEq(erc1155token.balanceOf(address(wallet), 1237), 1);
@@ -570,5 +608,36 @@ contract TrueWalletUnitTest is Test {
         );
 
         assertEq(_sigValid, false);
+    }
+
+    function testInitializeWithZeroEntryPointAddress() public {
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize,
+            (address(0), ownerAddress, upgradeDelay)
+        ); 
+
+        vm.expectRevert(encodeError("ZeroAddressProvided()"));
+        proxy = new TrueWalletProxy(address(walletImpl), data);
+    }
+
+    function testInitializeWithZeroOwnerAddress() public {
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize,
+            (address(entryPoint), address(0), upgradeDelay)
+        ); 
+
+        vm.expectRevert(encodeError("ZeroAddressProvided()"));
+        proxy = new TrueWalletProxy(address(walletImpl), data);
+    }
+
+    function testInitializeWithInvalidUpgradeDelay() public {
+        upgradeDelay = 172799; // < 2 days in seconds
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize,
+            (address(entryPoint), address(ownerAddress), upgradeDelay)
+        ); 
+
+        vm.expectRevert(encodeError("InvalidUpgradeDelay()"));
+        proxy = new TrueWalletProxy(address(walletImpl), data);
     }
 }
