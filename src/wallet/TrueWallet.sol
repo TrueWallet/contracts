@@ -131,10 +131,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         layout.entryPoint = IEntryPoint(_newEntryPoint);
     }
 
-    /// @notice Validate that the userOperation is valid. Requirements:
-    // 1. Only calleable by EntryPoint or owner
-    // 2. Signature is that of the contract owner
-    // 3. Nonce is correct
+    /// @notice Validate that the userOperation is valid
     /// @param userOp - ERC-4337 User Operation
     /// @param userOpHash - Hash of the user operation, entryPoint address and chainId
     /// @param aggregator - Signature aggregator
@@ -198,18 +195,35 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         _preUpgradeTo(newImplementation);
     }
 
-    /////////////////  EMERGENCY RECOVERY ///////////////
+    /////////////////  DEPOSITE MANAGER ///////////////
 
-    /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit WithdrawERC20(token, to, amount);
+    /// @notice Returns the wallet's deposit in EntryPoint
+    function getDeposite() public view returns (uint256) {
+        return entryPoint().balanceOf(address(this));
     }
+
+    /// @notice Add to the deposite of the wallet in EntryPoint. Deposit is used to pay user gas fees
+    function addDeposite() public payable {
+        entryPoint().depositTo{value: msg.value}(address(this));
+    }
+
+    /// @notice Withdraw funds from the wallet's deposite in EntryPoint
+    function withdrawDepositeTo(address payable to, uint256 amount) public onlyOwner {
+        entryPoint().withdrawTo(to, amount);
+    }
+
+    /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
     function withdrawETH(address payable to, uint256 amount) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit WithdrawETH(to, amount);
+    }
+
+    /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
+    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
+        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+        emit WithdrawERC20(token, to, amount);
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner

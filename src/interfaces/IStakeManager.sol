@@ -9,7 +9,7 @@ pragma solidity ^0.8.17;
 interface IStakeManager {
     event Deposited(address indexed account, uint256 totalDeposit);
 
-    event Withdrawn(address indexed account, address withdrawAddress, uint256 amount);
+    event Withdrawn(address indexed account, address withdrawAddress, uint256 withdrawAmount);
 
     /// Emitted when stake or unstake delay are modified
     event StakeLocked(address indexed account, uint256 totalStaked, uint256 withdrawTime);
@@ -17,7 +17,7 @@ interface IStakeManager {
     /// Emitted once a stake is scheduled for withdrawal
     event StakeUnlocked(address indexed account, uint256 withdrawTime);
 
-    event StakeWithdrawn(address indexed account, address withdrawAddress, uint256 amount);
+    event StakeWithdrawn(address indexed account, address withdrawAddress, uint256 withdrawAmount);
 
     /**
      * @param deposit the account's deposit.

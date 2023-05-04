@@ -29,7 +29,7 @@ abstract contract StakeManager is IStakeManager {
         depositTo(msg.sender);
     }
 
-    function internalIncrementDeposit(address account, uint256 amount) internal {
+    function _incrementDeposit(address account, uint256 amount) internal {
         DepositInfo storage info = deposits[account];
         uint256 newAmount = info.deposit + amount;
         require(newAmount <= type(uint112).max, "deposit overflow");
@@ -40,7 +40,7 @@ abstract contract StakeManager is IStakeManager {
      * Add to the deposit of the given account
      */
     function depositTo(address account) public payable {
-        internalIncrementDeposit(account, msg.value);
+        _incrementDeposit(account, msg.value);
         DepositInfo storage info = deposits[account];
         emit Deposited(account, info.deposit);
     }
@@ -100,7 +100,7 @@ abstract contract StakeManager is IStakeManager {
      * @param withdrawAmount the amount to withdraw.
      */
     function withdrawTo(address payable withdrawAddress, uint256 withdrawAmount) external {
-        DepositInfo memory info = deposits[msg.sender];
+        DepositInfo storage info = deposits[msg.sender];
         require(withdrawAmount <= info.deposit, "Withdraw amount too large");
         info.deposit = uint112(info.deposit - withdrawAmount);
         emit Withdrawn(msg.sender, withdrawAddress, withdrawAmount);

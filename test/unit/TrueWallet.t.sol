@@ -52,7 +52,7 @@ contract TrueWalletUnitTest is Test {
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
 
-        vm.deal(address(wallet), 5 ether);
+        // vm.deal(address(wallet), 5 ether);
     }
 
     function encodeError(string memory error) internal pure returns (bytes memory encoded) {
@@ -639,5 +639,29 @@ contract TrueWalletUnitTest is Test {
 
         vm.expectRevert(encodeError("InvalidUpgradeDelay()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);
+    }
+
+    function testAddAndWithdrawDeposite() public {
+        assertEq(wallet.getDeposite(), 0);
+        
+        wallet.addDeposite{value: 0.5 ether}();
+        
+        assertEq(wallet.getDeposite(), 0.5 ether);
+
+        address notOwner = address(12);
+        vm.prank(address(notOwner));
+        vm.expectRevert(encodeError("InvalidOwner()"));
+        wallet.withdrawDepositeTo(payable(address(ownerAddress)), 0.3 ether);
+        assertEq(wallet.getDeposite(), 0.5 ether);
+
+        assertEq(address(notOwner).balance, 0);
+        vm.startPrank(address(ownerAddress));
+        vm.expectRevert("Withdraw amount too large");
+        wallet.withdrawDepositeTo(payable(address(notOwner)), 0.51 ether);
+        assertEq(wallet.getDeposite(), 0.5 ether);
+
+        wallet.withdrawDepositeTo(payable(address(notOwner)), 0.3 ether);
+        assertEq(address(notOwner).balance, 0.3 ether);
+        assertEq(wallet.getDeposite(), 0.2 ether);
     }
 }

@@ -618,7 +618,7 @@ contract EntryPoint is IEntryPoint, StakeManager {
                 );
             }
             uint256 refund = opInfo.prefund - actualGasCost;
-            internalIncrementDeposit(refundAddress, refund);
+            _incrementDeposit(refundAddress, refund);
             bool success = mode == IPaymaster.PostOpMode.opSucceeded;
             emit UserOperationEvent(
                 opInfo.userOpHash,
