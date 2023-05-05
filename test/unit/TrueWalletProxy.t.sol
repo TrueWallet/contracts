@@ -23,7 +23,9 @@ contract TrueWalletProxyUnitTest is Test {
 
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
-        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+        uint256(
+            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+        );
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes32 salt;
@@ -44,7 +46,11 @@ contract TrueWalletProxyUnitTest is Test {
         proxy = new TrueWalletProxy(address(wallet), data);
 
         salt = keccak256(
-            abi.encodePacked(address(factory), address(entryPoint), upgradeDelay)
+            abi.encodePacked(
+                address(factory),
+                address(entryPoint),
+                upgradeDelay
+            )
         );
     }
 
@@ -62,7 +68,9 @@ contract TrueWalletProxyUnitTest is Test {
         vm.warp(block.timestamp + upgradeDelay);
     }
 
-    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
+    function encodeError(
+        string memory error
+    ) internal pure returns (bytes memory encoded) {
         encoded = abi.encodeWithSignature(error);
     }
 
@@ -78,23 +86,25 @@ contract TrueWalletProxyUnitTest is Test {
         address notOwner = address(13);
         vm.prank(address(notOwner));
         vm.expectRevert();
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
         preUpgrade(proxyWallet);
 
-        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet
+            .logicUpgradeInfo();
         assertEq(address(walletV2), layout.pendingImplementation);
         assertEq(layout.activateTime, upgradeDelay + 1);
 
         proxyWallet.upgrade();
 
         vm.prank(address(notOwner));
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 1 ether);
 
-        ILogicUpgradeControl.UpgradeLayout memory layoutAfter = proxyWallet.logicUpgradeInfo();
+        ILogicUpgradeControl.UpgradeLayout memory layoutAfter = proxyWallet
+            .logicUpgradeInfo();
         assertEq(address(0), layoutAfter.pendingImplementation);
         assertEq(layoutAfter.activateTime, 0);
     }
@@ -111,7 +121,7 @@ contract TrueWalletProxyUnitTest is Test {
         address notOwner = address(13);
         vm.prank(address(notOwner));
         vm.expectRevert();
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(notOwner));
@@ -135,7 +145,7 @@ contract TrueWalletProxyUnitTest is Test {
 
         address notOwner = address(13);
         vm.prank(address(notOwner));
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 1 ether);
     }
 
@@ -151,7 +161,7 @@ contract TrueWalletProxyUnitTest is Test {
         address notOwner = address(13);
         vm.prank(address(notOwner));
         vm.expectRevert();
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
@@ -159,7 +169,7 @@ contract TrueWalletProxyUnitTest is Test {
         proxyWallet.upgrade();
 
         vm.prank(address(notOwner));
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         assertEq(address(entryPoint).balance, 1 ether);
     }
 
@@ -195,18 +205,22 @@ contract TrueWalletProxyUnitTest is Test {
         assertEq(erc20token.balanceOf(address(proxyWallet)), 1 ether);
         assertEq(erc721token.ownerOf(1237), address(proxyWallet));
         assertEq(erc721token.balanceOf(address(proxyWallet)), 1);
-        
+
         address to = address(0xABCD);
 
-        proxyWallet.withdrawETH(payable(address(entryPoint)), 1 ether);
+        proxyWallet.transferETH(payable(address(entryPoint)), 1 ether);
         vm.startPrank(address(ownerAddress));
-        proxyWallet.withdrawERC20(address(erc20token), address(entryPoint), 1 ether);
-        proxyWallet.withdrawERC721(address(erc721token), 1237, to);
+        proxyWallet.transferERC20(
+            address(erc20token),
+            address(entryPoint),
+            1 ether
+        );
+        proxyWallet.transferERC721(address(erc721token), 1237, to);
 
         assertEq(address(proxyWallet).balance, 1 ether);
         assertEq(erc20token.balanceOf(address(proxyWallet)), 0);
         assertEq(erc721token.balanceOf(address(proxyWallet)), 0);
-    } 
+    }
 
     function testPreUpgradeToZeroAddress() public {
         TrueWallet proxyWallet = deployWallet();
@@ -219,7 +233,8 @@ contract TrueWalletProxyUnitTest is Test {
         vm.prank(address(ownerAddress));
         proxyWallet.preUpgradeTo(address(0));
 
-        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet
+            .logicUpgradeInfo();
         assertEq(layout.pendingImplementation, address(0));
         assertEq(layout.activateTime, 0);
     }
@@ -235,7 +250,8 @@ contract TrueWalletProxyUnitTest is Test {
         vm.prank(address(ownerAddress));
         proxyWallet.preUpgradeTo(address(0));
 
-        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet
+            .logicUpgradeInfo();
         assertEq(layout.pendingImplementation, address(0));
         assertEq(layout.activateTime, 0);
 
@@ -254,7 +270,8 @@ contract TrueWalletProxyUnitTest is Test {
         vm.prank(address(ownerAddress));
         proxyWallet.preUpgradeTo(address(walletV2));
 
-        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet.logicUpgradeInfo();
+        ILogicUpgradeControl.UpgradeLayout memory layout = proxyWallet
+            .logicUpgradeInfo();
         assertEq(layout.pendingImplementation, address(walletV2));
         assertEq(layout.activateTime, upgradeDelay + 1);
 

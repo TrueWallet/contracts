@@ -1,20 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
+import {IAccount} from "src/interfaces/IAccount.sol";
+import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {AccountStorage} from "src/utils/AccountStorage.sol";
+import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
+import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
+import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
-import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
-import {AccountStorage} from "src/utils/AccountStorage.sol";
-import {IAccount} from "src/interfaces/IAccount.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
+import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
+/// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
+///      It allows to receive and manage assets using the owner account of the smart contract wallet
 contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
@@ -25,10 +27,11 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
-    event WithdrawERC20(address token, address indexed to, uint256 amount);
-    event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event ReceivedETH(address indexed sender, uint256 indexed amount);
+    event TransferedETH(address indexed to, uint256 amount);
+    event TransferedERC20(address token, address indexed to, uint256 amount);
+    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
@@ -102,9 +105,10 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
 
     /////////////////  FUNCTIONS ///////////////
 
-    /// @notice Able to receive ETH
-    // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
+    /// @dev This function is a special fallback function that is triggered when the contract receives Ether
+    receive() external payable {
+        emit ReceivedETH(msg.sender, msg.value);
+    }
 
     /// @notice Returns the entryPoint address
     function entryPoint() public view returns (IEntryPoint) {
@@ -126,7 +130,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         if (_newEntryPoint == address(0)) revert ZeroAddressProvided();
 
         emit UpdateEntryPoint(_newEntryPoint, address(entryPoint()));
-        
+
         AccountStorage.Layout storage layout = AccountStorage.layout();
         layout.entryPoint = IEntryPoint(_newEntryPoint);
     }
@@ -148,7 +152,10 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
         if (userOp.initCode.length == 0) {
             // Validate and update the nonce storage variable - protect against replay attacks
-            require(AccountStorage.layout().nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+            require(
+                AccountStorage.layout().nonce++ == userOp.nonce,
+                "TrueWallet: Invalid nonce"
+            );
         }
 
         _prefundEntryPoint(missingWalletFunds);
@@ -159,11 +166,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(
-        address target,
-        uint256 value,
-        bytes calldata payload
-    ) external onlyEntryPointOrOwner {
+    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
@@ -195,6 +198,43 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
         _preUpgradeTo(newImplementation);
     }
 
+    /////////////////  ASSETS MANAGER ///////////////
+
+    /// @notice Transfer ETH out of the wallet. Permissioned to only the owner
+    function transferETH(address payable to,uint256 amount) external onlyOwner {
+        SafeTransferLib.safeTransferETH(to, amount);
+        emit TransferedETH(to, amount);
+    }
+
+    /// @notice Transfer ERC20 tokens out of the wallet. Permissioned to only the owner
+    function transferERC20(address token,address to,uint256 amount) external onlyOwner {
+        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+        emit TransferedERC20(token, to, amount);
+    }
+
+    /// @notice Transfer ERC721 tokens out of the wallet. Permissioned to only the owner
+    function transferERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+        IERC721(collection).safeTransferFrom(address(this), to, tokenId);
+        emit TransferedERC721(collection, tokenId, to);
+    }
+
+    /// @notice Transfer ERC1155 tokens out of the wallet. Permissioned to only the owner
+    function transferERC1155(
+        address collection,
+        uint256 tokenId,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
+        IERC1155(collection).safeTransferFrom(
+            address(this),
+            to,
+            tokenId,
+            amount,
+            ""
+        );
+        emit TransferedERC1155(collection, tokenId, amount, to);
+    }
+
     /////////////////  DEPOSITE MANAGER ///////////////
 
     /// @notice Returns the wallet's deposit in EntryPoint
@@ -208,51 +248,20 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     }
 
     /// @notice Withdraw funds from the wallet's deposite in EntryPoint
-    function withdrawDepositeTo(address payable to, uint256 amount) public onlyOwner {
-        entryPoint().withdrawTo(to, amount);
-    }
-
-    /////////////////  EMERGENCY RECOVERY ///////////////
-
-    /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(address payable to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransferETH(to, amount);
-        emit WithdrawETH(to, amount);
-    }
-
-    /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit WithdrawERC20(token, to, amount);
-    }
-
-    /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
-        IERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit WithdrawERC721(collection, tokenId, to);
-    }
-
-    /// @notice Withdraw ERC1155 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC1155(
-        address collection,
-        uint256 tokenId,
-        address to,
+    function withdrawDepositeTo(
+        address payable to,
         uint256 amount
-    ) external onlyOwner {
-        IERC1155(collection).safeTransferFrom(
-            address(this),
-            to,
-            tokenId,
-            amount,
-            ""
-        );
-        emit WithdrawERC1155(collection, tokenId, amount, to);
+    ) public onlyOwner {
+        entryPoint().withdrawTo(to, amount);
     }
 
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner()) revert InvalidSignature();
@@ -267,7 +276,9 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
             return;
         }
 
-        (bool success, ) = payable(address(entryPoint())).call{value: amount}("");
+        (bool success, ) = payable(address(entryPoint())).call{value: amount}(
+            ""
+        );
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }

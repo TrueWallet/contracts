@@ -15,20 +15,45 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
+contract MockWalletV2 is
+    IAccount,
+    Initializable,
+    LogicUpgradeControl,
+    TokenCallbackHandler
+{
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
-    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event AccountInitialized(
+        address indexed account,
+        address indexed entryPoint,
+        address owner,
+        uint32 upgradeDelay
+    );
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(address indexed sender, address indexed newOwner);
-    event WithdrawERC20(address token, address indexed to, uint256 amount);
-    event WithdrawETH(address indexed to, uint256 amount);
-    event WithdrawERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event WithdrawERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event OwnershipTransferred(
+        address indexed sender,
+        address indexed newOwner
+    );
+    event TransferedERC20(address token, address indexed to, uint256 amount);
+    event TransferedETH(address indexed to, uint256 amount);
+    event TransferedERC721(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed to
+    );
+    event TransferedERC1155(
+        address indexed collection,
+        uint256 indexed tokenId,
+        uint256 amount,
+        address indexed to
+    );
 
     /////////////////  MODIFIERS ///////////////
 
@@ -42,7 +67,11 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint()) && msg.sender != owner() && msg.sender != address(this)) {
+        if (
+            msg.sender != address(entryPoint()) &&
+            msg.sender != owner() &&
+            msg.sender != address(this)
+        ) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -80,7 +109,11 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
     /// @param  _upgradeDelay upgrade delay which update take effect
-    function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay) public initializer {
+    function initialize(
+        address _entryPoint,
+        address _owner,
+        uint32 _upgradeDelay
+    ) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
@@ -146,7 +179,10 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
         // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
         if (userOp.initCode.length == 0) {
             // Validate and update the nonce storage variable - protect against replay attacks
-            require(AccountStorage.layout().nonce++ == userOp.nonce, "TrueWallet: Invalid nonce");
+            require(
+                AccountStorage.layout().nonce++ == userOp.nonce,
+                "TrueWallet: Invalid nonce"
+            );
         }
 
         _prefundEntryPoint(missingWalletFunds);
@@ -189,32 +225,42 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
     }
 
     /// @dev preUpgradeTo is called before upgrading the wallet
-    function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+    function preUpgradeTo(
+        address newImplementation
+    ) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
     }
 
     /////////////////  EMERGENCY RECOVERY ///////////////
 
     /// @notice Withdraw ERC20 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOwner {
+    function transferERC20(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit WithdrawERC20(token, to, amount);
+        emit TransferedERC20(token, to, amount);
     }
 
     /// @notice Withdraw ETH from the wallet. Permissioned to only the owner
-    function withdrawETH(address payable to, uint256 amount) external {
+    function transferETH(address payable to, uint256 amount) external {
         SafeTransferLib.safeTransferETH(to, amount);
-        emit WithdrawETH(to, amount);
+        emit TransferedETH(to, amount);
     }
 
     /// @notice Withdraw ERC721 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+    function transferERC721(
+        address collection,
+        uint256 tokenId,
+        address to
+    ) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit WithdrawERC721(collection, tokenId, to);
+        emit TransferedERC721(collection, tokenId, to);
     }
 
     /// @notice Withdraw ERC1155 tokens from the wallet. Permissioned to only the owner
-    function withdrawERC1155(
+    function transferERC1155(
         address collection,
         uint256 tokenId,
         address to,
@@ -227,13 +273,16 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
             amount,
             ""
         );
-        emit WithdrawERC1155(collection, tokenId, amount, to);
+        emit TransferedERC1155(collection, tokenId, amount, to);
     }
 
     /////////////////  INTERNAL METHODS ///////////////
 
     /// @notice Validate the signature of the userOperation
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal view {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal view {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
         if (signer != owner()) revert InvalidSignature();
@@ -248,7 +297,9 @@ contract MockWalletV2 is IAccount, Initializable, LogicUpgradeControl, TokenCall
             return;
         }
 
-        (bool success, ) = payable(address(entryPoint())).call{value: amount}("");
+        (bool success, ) = payable(address(entryPoint())).call{value: amount}(
+            ""
+        );
         require(success, "TrueWallet: ETH entrypoint payment failed");
         emit PayPrefund(address(this), amount);
     }
