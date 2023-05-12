@@ -38,16 +38,6 @@ cp .env.example .env
 ```bash
 yarn test::fork
 ```
-### Generate documentation:
-```bash
-forge doc
-```
-### Generate and serve documentation locally on port 4000:
-```bash
-forge doc --serve --port 4000
-```
-
-
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
