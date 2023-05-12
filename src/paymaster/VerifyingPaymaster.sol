@@ -11,7 +11,7 @@ import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 import "src/helper/Helpers.sol";
 
-import "lib/forge-std/src/console.sol";
+import "forge-std/console.sol";
 
 /**
  * A paymaster that uses external service to decide whether to pay for the UserOp.

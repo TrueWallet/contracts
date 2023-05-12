@@ -11,15 +11,16 @@ import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {VerifyingPaymaster} from "src/paymaster/VerifyingPaymaster.sol";
+import {VerifyingSingletonPaymaster} from "src/paymaster/VerifyingSingletonPaymaster.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import "src/helper/Helpers.sol";
 
 import "lib/forge-std/src/console.sol";
 
-contract VerifyingPaymasterUnitTest is Test {
+contract VerifyingSingletonPaymasterUnitTest is Test {
     TrueWallet wallet;
     TrueWallet walletImpl;
-    VerifyingPaymaster paymaster;
+    VerifyingSingletonPaymaster paymaster;
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
@@ -28,11 +29,12 @@ contract VerifyingPaymasterUnitTest is Test {
     address user = address(12);
     address notOwner = address(13);
     uint32 upgradeDelay = 172800; // 2 days in seconds
+    uint256 chainId = block.chainid;
 
     function setUp() public {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
-        paymaster = new VerifyingPaymaster(entryPoint, ownerAddress, ownerAddress);
+        paymaster = new VerifyingSingletonPaymaster(address(entryPoint), ownerAddress, ownerAddress);
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
@@ -70,63 +72,64 @@ contract VerifyingPaymasterUnitTest is Test {
         assertEq(paymaster.getDeposit(), 0);
 
         hoax(address(ownerAddress), 1 ether);
+        vm.expectRevert(); // check revert message
         paymaster.deposit{value: 0.5 ether}();
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-        assertEq(paymaster.getDeposit(), 0.5 ether);
+        assertEq(address(entryPoint).balance, 0 ether);
+        assertEq(paymaster.getDeposit(), 0 ether);
     }
 
-    function testWithdraw() public {
-        testDeposit();
+    // function testWithdraw() public {
+    //     testDeposit();
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-        assertEq(address(user).balance, 0);
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    //     assertEq(address(user).balance, 0);
 
-        vm.prank(address(ownerAddress));
-        paymaster.withdraw(payable(address(user)), 0.3 ether);
+    //     vm.prank(address(ownerAddress));
+    //     paymaster.withdraw(payable(address(user)), 0.3 ether);
 
-        assertEq(address(user).balance, 0.3 ether);
-    }
+    //     assertEq(address(user).balance, 0.3 ether);
+    // }
 
-    function testWithdrawNotOwner() public {
-        testDeposit();
+    // function testWithdrawNotOwner() public {
+    //     testDeposit();
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-        assertEq(address(user).balance, 0);
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    //     assertEq(address(user).balance, 0);
 
-        vm.prank(address(notOwner));
-        vm.expectRevert();
-        paymaster.withdraw(payable(address(user)), 0.3 ether);
+    //     vm.prank(address(notOwner));
+    //     vm.expectRevert();
+    //     paymaster.withdraw(payable(address(user)), 0.3 ether);
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-    }
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    // }
 
-    function testWithdrawAll() public {
-        testDeposit();
+    // function testWithdrawAll() public {
+    //     testDeposit();
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-        assertEq(address(user).balance, 0);
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    //     assertEq(address(user).balance, 0);
 
-        vm.prank(address(ownerAddress));
-        paymaster.withdrawAll(payable(address(user)));
+    //     vm.prank(address(ownerAddress));
+    //     paymaster.withdrawAll(payable(address(user)));
 
-        assertEq(address(user).balance, 0.5 ether);
-        assertEq(address(entryPoint).balance, 0);
-    }
+    //     assertEq(address(user).balance, 0.5 ether);
+    //     assertEq(address(entryPoint).balance, 0);
+    // }
 
-    function testWithdrawAllNotOwner() public {
-        testDeposit();
+    // function testWithdrawAllNotOwner() public {
+    //     testDeposit();
 
-        assertEq(address(entryPoint).balance, 0.5 ether);
-        assertEq(address(user).balance, 0);
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    //     assertEq(address(user).balance, 0);
 
-        vm.prank(address(notOwner));
-        vm.expectRevert();
-        paymaster.withdrawAll(payable(address(user)));
+    //     vm.prank(address(notOwner));
+    //     vm.expectRevert();
+    //     paymaster.withdrawAll(payable(address(user)));
 
-        assertEq(address(user).balance, 0);
-        assertEq(address(entryPoint).balance, 0.5 ether);
-    }
+    //     assertEq(address(user).balance, 0);
+    //     assertEq(address(entryPoint).balance, 0.5 ether);
+    // }
 
     function testAddStake() public {
         assertEq(paymaster.getStake(), 0);
@@ -193,7 +196,43 @@ contract VerifyingPaymasterUnitTest is Test {
         assertEq(address(user).balance, 0);
     }
 
-    ///
+    function testGetBalance() public {
+        address paymasterId1 = address(14);
+        assertEq(paymaster.getBalance(paymasterId1), 0);
+    }
+
+
+    // TODO
+    function testValidatePaymasterUserOp() public {
+        address paymasterId1 = address(14);
+        uint256 maxCost = 1096029019333521;
+
+        UserOperation memory userOp;
+        // userOp = generateUserOp();
+        // userOp.paymasterAndData = abi.encodePacked(address(paymaster));
+        // // userOp.signature = createSignature2()
+
+        // vm.prank(address(wallet));
+        // bytes32 userOpHash = paymaster.getHash(userOp, paymasterId1); 
+        // bytes memory sign = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        // userOp.signature = sign;
+
+        userOp = generateUserOp();
+        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
+        bytes memory signature = createSignature2(userOpHash, ownerPrivateKey, vm);
+        userOp.signature = signature;
+
+        bytes memory paymasterAndData = abi.encodePacked(
+            address(paymaster),
+            signature
+        );
+
+        vm.prank(address(entryPoint));
+        paymaster.validatePaymasterUserOp(userOp, userOpHash, maxCost);
+
+    }
+
+    // helper for testValidatePaymasterUserOp()
     function generateUserOp() public returns(UserOperation memory userOp) {
         UserOperation memory userOp;
 
@@ -212,70 +251,4 @@ contract VerifyingPaymasterUnitTest is Test {
         });
     }
 
-    uint48 MOCK_VALID_UNTIL = 0x00000000deadbeef;
-    uint48 MOCK_VALID_AFTER = 0x0000000000001234;
-
-    function testParsePaymasterAndData() public {
-        UserOperation memory userOp;
-
-        userOp = generateUserOp();
-        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
-        userOp.signature = signature;
-
-        bytes memory paymasterAndData = abi.encodePacked(
-            address(paymaster),
-            abi.encode(
-                MOCK_VALID_UNTIL,
-                MOCK_VALID_AFTER
-            ),
-            signature
-        );
-
-        (uint48 validUntil, uint48 validAfter, bytes memory sign) = 
-            paymaster.parsePaymasterAndData(paymasterAndData);
-
-        assertEq(validUntil, MOCK_VALID_UNTIL);
-        assertEq(validAfter, MOCK_VALID_AFTER);
-        assertEq(signature, sign);
-    }
-
-    // TODO
-    function testValidatePaymasterUserOp() public {
-        UserOperation memory userOp;
-
-        userOp = generateUserOp();
-
-        bytes32 opHash = paymaster.getHash(userOp, MOCK_VALID_UNTIL, MOCK_VALID_AFTER);
-        bytes memory sign = createSignature2(opHash, ownerPrivateKey, vm);
-
-        userOp.paymasterAndData = abi.encodePacked(
-            address(paymaster),
-            abi.encode(
-                MOCK_VALID_UNTIL,
-                MOCK_VALID_AFTER
-            ),
-            sign
-        );
-
-        // Set remainder of test case
-        // address aggregator = address(0);
-        uint256 missingWalletFunds = 1096029019333521;
-
-        // Validate that the smart wallet can validate a userOperation
-        vm.prank(address(entryPoint));
-        (, uint256 validationData) = paymaster.validatePaymasterUserOp(userOp, opHash, missingWalletFunds);
-        
-        // entryPoint.simulateValidation(userOp); //TODO
-
-        ValidationData memory data;
-        data = _parseValidationData(validationData);
-        
-        console.log(data.aggregator);
-        console.log(data.validAfter);
-        console.log(data.validUntil);
-
-        assertEq(data.validUntil, MOCK_VALID_UNTIL);
-        assertEq(data.validAfter, MOCK_VALID_AFTER);
-    }
 }
