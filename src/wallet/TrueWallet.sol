@@ -14,10 +14,14 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
+import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
+
+import "lib/forge-std/src/console.sol";
+
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
-contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
+contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeControl, TokenCallbackHandler {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
@@ -196,6 +200,24 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
+    }
+
+
+    /// @notice Lets the owner add a guardians for its wallet
+    /// @param guardians List of guardians' addresses
+    /// @param threshold Required number of guardians to confirm replacement
+    function addGuardianWithThreshold(address[] calldata guardians, uint256 threshold) external onlyOwner {
+        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
+    }
+
+    /// @notice Transfer ownership once recovery requiest is completed successfully. Managed by guardians
+    function transferOwnershipAfterRecovery(address newOwner) public onlyGuardian {
+        // verify is guardian action allowed, only during recovery
+        console.log("msg.sender ", msg.sender);
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        layout.owner = newOwner;
+        console.log("transferOwnershipAfterRecovery");
+        emit OwnershipTransferred(msg.sender, newOwner);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
