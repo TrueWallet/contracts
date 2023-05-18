@@ -6,6 +6,7 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
+import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
@@ -14,9 +15,7 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
-import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
-
-import "lib/forge-std/src/console.sol";
+import "forge-std/console.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
@@ -202,22 +201,11 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
         _preUpgradeTo(newImplementation);
     }
 
-
-    /// @notice Lets the owner add a guardians for its wallet
+    /// @notice Lets the owner add a guardians for it wallet
     /// @param guardians List of guardians' addresses
     /// @param threshold Required number of guardians to confirm replacement
-    function addGuardianWithThreshold(address[] calldata guardians, uint256 threshold) external onlyOwner {
-        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
-    }
-
-    /// @notice Transfer ownership once recovery requiest is completed successfully. Managed by guardians
-    function transferOwnershipAfterRecovery(address newOwner) public onlyGuardian {
-        // verify is guardian action allowed, only during recovery
-        console.log("msg.sender ", msg.sender);
-        AccountStorage.Layout storage layout = AccountStorage.layout();
-        layout.owner = newOwner;
-        console.log("transferOwnershipAfterRecovery");
-        emit OwnershipTransferred(msg.sender, newOwner);
+    function setGuardianWithThreshold(address[] calldata guardians, uint256 threshold) external onlyOwner {
+        SocialRecovery._setGuardianWithThreshold(guardians, threshold);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
