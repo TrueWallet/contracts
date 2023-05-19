@@ -10,18 +10,6 @@ contract SocialRecovery {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
-    /// @dev Required number of guardians to confirm recovery
-    uint256 public threshold;
-    /// @dev The list of guardians addresses
-    address[] public guardians;
-
-    /// @dev isGuardian mapping maps guardian's address to guardian status
-    mapping (address => bool) public isGuardian;
-    /// @dev isExecuted mapping maps data hash to execution status
-    mapping (bytes32 => bool) public isExecuted;
-    /// @dev isConfirmed mapping maps data hash to guardian's address to confirmation status
-    mapping (bytes32 => mapping (address => bool)) public isConfirmed;
-
     /// @dev Reverts in case not valid guardian
     error InvalidGuardian();
     /// @dev Reverts in case not valid threshold
@@ -42,24 +30,26 @@ contract SocialRecovery {
 
     /// @dev Only guardian modifier
     modifier onlyGuardian() {
-        if (!isGuardian[msg.sender]) revert InvalidGuardian();
+        if (!isGuardian(msg.sender)) revert InvalidGuardian();
         _;
     }
 
     /// @notice Allows a guardian to confirm a recovery transaction
     /// @param recoveryHash transaction hash
     function confirmRecovery(bytes32 recoveryHash) public onlyGuardian {
-        if (isExecuted[recoveryHash]) revert RecoveryAlreadyExecuted();
-        isConfirmed[recoveryHash][msg.sender] = true;
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        if (layout.isExecuted[recoveryHash]) revert RecoveryAlreadyExecuted();
+        layout.isConfirmed[recoveryHash][msg.sender] = true;
     }
 
     /// @notice Lets the guardians execute the recovery request
     /// @param newOwner The new owner address
     function executeRecovery(address newOwner) public onlyGuardian {
-        bytes32 recoveryHash = getRecoveryHash(guardians, newOwner, threshold, _getWalletNonce());
-        if (isExecuted[recoveryHash] == true) revert RecoveryAlreadyExecuted();
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        bytes32 recoveryHash = getRecoveryHash(layout.guardians, newOwner, layout.threshold, _getWalletNonce());
+        if (layout.isExecuted[recoveryHash] == true) revert RecoveryAlreadyExecuted();
         if (!isConfirmedByRequiredGuardians(recoveryHash)) revert RecoveryNotEnoughConfirmations();
-        isExecuted[recoveryHash] = true;
+        layout.isExecuted[recoveryHash] = true;
         _transferOwnership(newOwner);
     }
 
@@ -67,22 +57,23 @@ contract SocialRecovery {
     /// @param _guardians List of guardians' addresses
     /// @param _threshold Required number of guardians to confirm replacement
     function _setGuardianWithThreshold(address[] calldata _guardians, uint256 _threshold) internal {
-        // if (_threshold <= _guardians.length);
-        if (_threshold == 0) revert InvalidThreshold(); // _threshold >= 2
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        if (_threshold > _guardians.length) revert InvalidThreshold();
+        if (_threshold == 0) revert InvalidThreshold();
         uint256 guardiansSize = _guardians.length;
         for (uint256 i; i < guardiansSize; ) {
             address guardian = _guardians[i];
             if (guardian == address(0)) revert ZeroAddressForGuardianProvided();
-            if (isGuardian[guardian]) revert DuplicateGuardianProvided();
-            isGuardian[guardian] = true;
+            if (layout.isGuardian[guardian]) revert DuplicateGuardianProvided();
+            layout.isGuardian[guardian] = true;
             unchecked {
                 i++;
             }
         }
-        guardians = _guardians;
-        threshold = _threshold;
+        layout.guardians = _guardians;
+        layout.threshold = _threshold;
 
-        emit GuardianSet(guardians, threshold);
+        emit GuardianSet(_guardians, _threshold);
     }
 
     /// @dev Transfer ownership once recovery requiest is completed successfully
@@ -93,21 +84,22 @@ contract SocialRecovery {
     }
 
     /// @dev Get wallet's nonce
-    function _getWalletNonce() internal returns (uint256) {
+    function _getWalletNonce() internal returns (uint96) {
         return AccountStorage.layout().nonce;
     }
 
     /// @dev Returns true if confirmation count is enough
     /// @param recoveryHash Data hash
-    /// @return Confirmation status
+    /// @return confirmation status
     function isConfirmedByRequiredGuardians(bytes32 recoveryHash) public view returns (bool) {
+        AccountStorage.Layout storage layout = AccountStorage.layout();
         uint256 confirmationCount;
         uint256 guardiansSize = guardiansCount();
         unchecked {
             for (uint256 i; i < guardiansSize; i++) {
-                if (isConfirmed[recoveryHash][guardians[i]])
+                if (layout.isConfirmed[recoveryHash][layout.guardians[i]])
                     confirmationCount++;
-                if (confirmationCount == threshold)
+                if (confirmationCount == layout.threshold)
                     return true;
             }
             return false;            
@@ -142,8 +134,28 @@ contract SocialRecovery {
         return keccak256(encodeRecoveryData(_guardians, _newOwner, _threshold, _nonce));
     }
 
+    /// @dev Retrieves the wallet threshold count. Required number of guardians to confirm recovery
+    function threshold() public view returns (uint256) {
+        return AccountStorage.layout().threshold;
+    }
+
+    /// @dev Gets the list of guaridans addresses
+    function getGuardians() public view returns (address[] memory) {
+        return AccountStorage.layout().guardians;
+    }
+
     /// @dev Returns the number of guardians for a wallet
     function guardiansCount() public view returns (uint256) {
-        return guardians.length;
+        return AccountStorage.layout().guardians.length;
+    }
+
+    /// @dev Checks if an account is a guardian for a wallet
+    function isGuardian(address guardian) public view returns (bool) {
+        return AccountStorage.layout().isGuardian[guardian];
+    }
+
+    /// @dev Checks if a recoveryHash is executed
+    function isExecuted(bytes32 recoveryHash) public view returns (bool) {
+        return AccountStorage.layout().isExecuted[recoveryHash];
     }
 }

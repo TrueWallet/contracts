@@ -44,6 +44,18 @@ library AccountStorage {
         /// └───────────────────┘
 
 
+
+        /// ┌───────────────────┐
+        /// │     guardian      │                                   // SocialRecovery.sol
+        uint256 threshold;                                          /// @dev Required number of guardians to confirm recovery  
+        address[] guardians;                                        /// @dev The list of guardians addresses
+        mapping (address => bool) isGuardian;                       /// @dev isGuardian mapping maps guardian's address to guardian status
+        mapping (bytes32 => bool) isExecuted;                       /// @dev isExecuted mapping maps data hash to execution status
+        mapping (bytes32 => mapping (address => bool)) isConfirmed; /// @dev isConfirmed mapping maps data hash to guardian's address to confirmation status
+        uint256[50] __gap_3;
+        /// └───────────────────┘
+
+
     }
 
     function layout() internal pure returns (Layout storage l) {

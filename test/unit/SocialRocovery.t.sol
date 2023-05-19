@@ -129,6 +129,23 @@ contract SocialRecoveryUnitTest is Test {
         assertEq(guardiansSize, 0);
     }
 
+    function testSetGuardianWithThresholdInvalidThreshold2() public {
+        address[] memory guardians = new address[](1);
+        guardians[0] = address(21);
+        uint256 threshold = 2;
+
+        vm.prank(ownerAddress);
+        vm.expectRevert(encodeError("InvalidThreshold()"));
+        wallet.setGuardianWithThreshold(guardians, threshold);
+
+        bool res = wallet.isGuardian(address(21));
+        assertFalse(res);
+        uint256 guardianThreshold = wallet.threshold();
+        assertEq(guardianThreshold, 0);
+        uint256 guardiansSize = wallet.guardiansCount();
+        assertEq(guardiansSize, 0);
+    }
+
     function testConfirmRecovery() public {
         address guardian1 = address(21);
 
