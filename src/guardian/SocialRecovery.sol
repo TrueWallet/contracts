@@ -24,7 +24,9 @@ contract SocialRecovery {
     error RecoveryNotEnoughConfirmations();
 
     /// @dev Emitted when guardians and threshold are set
-    event GuardianSet(address[] indexed guardians, uint256 threshold);
+    event GuardianAdded(address[] indexed guardians, uint256 threshold);
+    /// @dev Emitted when guardian is revoked
+    event GuardianRevoked(address indexed guardian);
     /// @dev Emitted when ownership is transfered after recovery execution
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
@@ -47,8 +49,10 @@ contract SocialRecovery {
     function executeRecovery(address newOwner) public onlyGuardian {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         bytes32 recoveryHash = getRecoveryHash(layout.guardians, newOwner, layout.threshold, _getWalletNonce());
-        if (layout.isExecuted[recoveryHash] == true) revert RecoveryAlreadyExecuted();
-        if (!isConfirmedByRequiredGuardians(recoveryHash)) revert RecoveryNotEnoughConfirmations();
+        if (layout.isExecuted[recoveryHash] == true)
+            revert RecoveryAlreadyExecuted();
+        if (!isConfirmedByRequiredGuardians(recoveryHash))
+            revert RecoveryNotEnoughConfirmations();
         layout.isExecuted[recoveryHash] = true;
         _transferOwnership(newOwner);
     }
@@ -56,7 +60,7 @@ contract SocialRecovery {
     /// @dev Lets the owner add a guardian for its wallet
     /// @param _guardians List of guardians' addresses
     /// @param _threshold Required number of guardians to confirm replacement
-    function _setGuardianWithThreshold(address[] calldata _guardians, uint256 _threshold) internal {
+    function _addGuardianWithThreshold(address[] calldata _guardians, uint256 _threshold) internal {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         if (_threshold > _guardians.length) revert InvalidThreshold();
         if (_threshold == 0) revert InvalidThreshold();
@@ -73,7 +77,37 @@ contract SocialRecovery {
         layout.guardians = _guardians;
         layout.threshold = _threshold;
 
-        emit GuardianSet(_guardians, _threshold);
+        emit GuardianAdded(_guardians, _threshold);
+    }
+
+    /// @notice Lets the owner revoke a guardian from the wallet
+    /// @param guardian The guardian address to revoke
+    /// @param threshold The new required number of guardians to confirm replacement
+    function _revokeGuardianWithThreshold(address guardian, uint256 threshold) internal {
+        if (!isGuardian(guardian)) revert InvalidGuardian();
+        address[] storage guardians = AccountStorage.layout().guardians;
+        uint256 guardiansSize = guardiansCount();
+        if (threshold > guardiansSize - 1) revert InvalidThreshold();
+        uint256 index;
+        unchecked {
+            for (uint256 i; i < guardiansSize; i++) {
+                if (guardians[i] == guardian) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index == guardiansSize - 1) {
+                guardians.pop();
+            } else {
+                for (uint256 j = index; j < guardiansSize - 1; j++) {
+                    guardians[j] = guardians[j + 1];
+                }
+                guardians.pop();
+            }
+        }
+        AccountStorage.layout().isGuardian[guardian] = false;
+
+        emit GuardianRevoked(guardian);
     }
 
     /// @dev Transfer ownership once recovery requiest is completed successfully
@@ -99,16 +133,15 @@ contract SocialRecovery {
             for (uint256 i; i < guardiansSize; i++) {
                 if (layout.isConfirmed[recoveryHash][layout.guardians[i]])
                     confirmationCount++;
-                if (confirmationCount == layout.threshold)
-                    return true;
+                if (confirmationCount == layout.threshold) return true;
             }
-            return false;            
+            return false;
         }
     }
 
     /// @dev Returns the bytes that are hashed
     function encodeRecoveryData(
-        address[] memory _guardians, 
+        address[] memory _guardians,
         address _newOwner,
         uint256 _threshold,
         uint256 _nonce
@@ -126,12 +159,15 @@ contract SocialRecovery {
 
     /// @dev Generates the recovery hash that could be signed by the guardian to authorize a recovery
     function getRecoveryHash(
-        address[] memory _guardians, 
+        address[] memory _guardians,
         address _newOwner,
         uint256 _threshold,
         uint256 _nonce
     ) public view returns (bytes32) {
-        return keccak256(encodeRecoveryData(_guardians, _newOwner, _threshold, _nonce));
+        return
+            keccak256(
+                encodeRecoveryData(_guardians, _newOwner, _threshold, _nonce)
+            );
     }
 
     /// @dev Retrieves the wallet threshold count. Required number of guardians to confirm recovery

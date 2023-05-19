@@ -201,11 +201,18 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
         _preUpgradeTo(newImplementation);
     }
 
-    /// @notice Lets the owner add a guardians for it wallet
+    /// @notice Lets the owner set guardians and threshold for the wallet
     /// @param guardians List of guardians' addresses
     /// @param threshold Required number of guardians to confirm replacement
-    function setGuardianWithThreshold(address[] calldata guardians, uint256 threshold) external onlyOwner {
-        SocialRecovery._setGuardianWithThreshold(guardians, threshold);
+    function addGuardianWithThreshold(address[] calldata guardians, uint256 threshold) external onlyOwner {
+        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
+    }
+
+    /// @notice Lets the owner revoke a guardian from the wallet and change threshold respectively
+    /// @param guardian The guardian address to revoke
+    /// @param threshold The new required number of guardians to confirm replacement
+    function revokeGuardianWithThreshold(address guardian, uint256 threshold) external onlyOwner {
+        SocialRecovery._revokeGuardianWithThreshold(guardian, threshold);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
