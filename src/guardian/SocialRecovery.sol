@@ -6,9 +6,13 @@ import {AccountStorage} from "src/utils/AccountStorage.sol";
 import "forge-std/console.sol";
 
 /// @title Social Recovery - Allows to replace an owner if guardians approve the replacement
+/// In this early version, recovery is possible to make at least by only one guardian
 contract SocialRecovery {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
+
+    /// @dev Recovery period after which recovery could be executed
+    uint256 public constant RECOVERY_PERIOD = 2 days;
 
     /// @dev Reverts in case not valid guardian
     error InvalidGuardian();
@@ -22,11 +26,17 @@ contract SocialRecovery {
     error RecoveryAlreadyExecuted();
     /// @dev Reverts when not enough confirmation from guardians for recovery requist
     error RecoveryNotEnoughConfirmations();
+    /// @dev Reverts when recovery period is still pending before execution
+    error RecoveryPeriodStillPending();
 
-    /// @dev Emitted when guardians and threshold are set
-    event GuardianAdded(address[] indexed guardians, uint256 threshold);
+    /// @dev Emitted when guardians and threshold are added
+    event GuardianAdded(address[] indexed guardians, uint16 threshold);
     /// @dev Emitted when guardian is revoked
     event GuardianRevoked(address indexed guardian);
+    /// @dev Emitted when recovery is confirmed by guardian
+    event RecoveryConfirmed(address indexed guardian, bytes32 indexed recoveryHash);
+    /// @dev Emitted when recovery is executed by guardian
+    event RecoveryExecuted(address indexed guardian, bytes32 indexed recoveryHash);
     /// @dev Emitted when ownership is transfered after recovery execution
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
@@ -42,25 +52,32 @@ contract SocialRecovery {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         if (layout.isExecuted[recoveryHash]) revert RecoveryAlreadyExecuted();
         layout.isConfirmed[recoveryHash][msg.sender] = true;
+        layout.executeAfter = uint64(block.timestamp + RECOVERY_PERIOD);
+        emit RecoveryConfirmed(msg.sender, recoveryHash);
     }
 
     /// @notice Lets the guardians execute the recovery request
+    /// This method should be called once current recoveryHash is gathered all required count of confirmations
     /// @param newOwner The new owner address
     function executeRecovery(address newOwner) public onlyGuardian {
         AccountStorage.Layout storage layout = AccountStorage.layout();
+        if (uint64(block.timestamp) < layout.executeAfter) revert RecoveryPeriodStillPending();
         bytes32 recoveryHash = getRecoveryHash(layout.guardians, newOwner, layout.threshold, _getWalletNonce());
         if (layout.isExecuted[recoveryHash] == true)
             revert RecoveryAlreadyExecuted();
         if (!isConfirmedByRequiredGuardians(recoveryHash))
             revert RecoveryNotEnoughConfirmations();
         layout.isExecuted[recoveryHash] = true;
+        layout.executeAfter = 0;
         _transferOwnership(newOwner);
+
+        emit RecoveryExecuted(msg.sender, recoveryHash);
     }
 
     /// @dev Lets the owner add a guardian for its wallet
     /// @param _guardians List of guardians' addresses
     /// @param _threshold Required number of guardians to confirm replacement
-    function _addGuardianWithThreshold(address[] calldata _guardians, uint256 _threshold) internal {
+    function _addGuardianWithThreshold(address[] calldata _guardians, uint16 _threshold) internal {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         if (_threshold > _guardians.length) revert InvalidThreshold();
         if (_threshold == 0) revert InvalidThreshold();
@@ -83,7 +100,7 @@ contract SocialRecovery {
     /// @notice Lets the owner revoke a guardian from the wallet
     /// @param guardian The guardian address to revoke
     /// @param threshold The new required number of guardians to confirm replacement
-    function _revokeGuardianWithThreshold(address guardian, uint256 threshold) internal {
+    function _revokeGuardianWithThreshold(address guardian, uint16 threshold) internal {
         if (!isGuardian(guardian)) revert InvalidGuardian();
         address[] storage guardians = AccountStorage.layout().guardians;
         uint256 guardiansSize = guardiansCount();
@@ -143,7 +160,7 @@ contract SocialRecovery {
     function encodeRecoveryData(
         address[] memory _guardians,
         address _newOwner,
-        uint256 _threshold,
+        uint16 _threshold,
         uint256 _nonce
     ) public view returns (bytes memory) {
         bytes32 recoveryHash = keccak256(
@@ -161,7 +178,7 @@ contract SocialRecovery {
     function getRecoveryHash(
         address[] memory _guardians,
         address _newOwner,
-        uint256 _threshold,
+        uint16 _threshold,
         uint256 _nonce
     ) public view returns (bytes32) {
         return
@@ -170,8 +187,13 @@ contract SocialRecovery {
             );
     }
 
+    /// @dev Execute recovery after
+    function executeAfter() public view returns (uint64) {
+        return AccountStorage.layout().executeAfter;
+    }
+
     /// @dev Retrieves the wallet threshold count. Required number of guardians to confirm recovery
-    function threshold() public view returns (uint256) {
+    function threshold() public view returns (uint16) {
         return AccountStorage.layout().threshold;
     }
 
@@ -188,6 +210,10 @@ contract SocialRecovery {
     /// @dev Checks if an account is a guardian for a wallet
     function isGuardian(address guardian) public view returns (bool) {
         return AccountStorage.layout().isGuardian[guardian];
+    }
+
+    function isConfirmedByGuardian(address guardian, bytes32 recoveryHash) public view returns (bool) {
+        return AccountStorage.layout().isConfirmed[recoveryHash][guardian];
     }
 
     /// @dev Checks if a recoveryHash is executed

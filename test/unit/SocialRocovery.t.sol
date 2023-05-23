@@ -20,8 +20,12 @@ contract SocialRecoveryUnitTest is Test {
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
 
-    event GuardianAdded(address[] indexed guardians, uint256 threshold);
+    event GuardianAdded(address[] indexed guardians, uint16 threshold);
     event GuardianRevoked(address indexed guardian);
+    event RecoveryExecuted(
+        address indexed guardian,
+        bytes32 indexed recoveryHash
+    );
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
     function setUp() public {
@@ -46,7 +50,7 @@ contract SocialRecoveryUnitTest is Test {
     function testSetGuardianWithThreshold() public {
         address[] memory guardians = new address[](1);
         guardians[0] = address(21);
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         vm.expectEmit(true, true, false, false);
@@ -64,7 +68,7 @@ contract SocialRecoveryUnitTest is Test {
     function testSetGuardianWithThresholdNotOwner() public {
         address[] memory guardians = new address[](1);
         guardians[0] = address(21);
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(address(12));
         vm.expectRevert(encodeError("InvalidOwner()"));
@@ -81,7 +85,7 @@ contract SocialRecoveryUnitTest is Test {
     function testSetGuardianWithThresholdZeroAddressForGuardian() public {
         address[] memory guardians = new address[](1);
         guardians[0] = address(0);
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         vm.expectRevert(encodeError("ZeroAddressForGuardianProvided()"));
@@ -99,7 +103,7 @@ contract SocialRecoveryUnitTest is Test {
         address[] memory guardians = new address[](2);
         guardians[0] = address(21);
         guardians[1] = address(21);
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         vm.expectRevert(encodeError("DuplicateGuardianProvided()"));
@@ -116,7 +120,7 @@ contract SocialRecoveryUnitTest is Test {
     function testSetGuardianWithThresholdInvalidThreshold() public {
         address[] memory guardians = new address[](1);
         guardians[0] = address(21);
-        uint256 threshold = 0;
+        uint16 threshold = 0;
 
         vm.prank(ownerAddress);
         vm.expectRevert(encodeError("InvalidThreshold()"));
@@ -133,7 +137,7 @@ contract SocialRecoveryUnitTest is Test {
     function testSetGuardianWithThresholdInvalidThreshold2() public {
         address[] memory guardians = new address[](1);
         guardians[0] = address(21);
-        uint256 threshold = 2;
+        uint16 threshold = 2;
 
         vm.prank(ownerAddress);
         vm.expectRevert(encodeError("InvalidThreshold()"));
@@ -151,13 +155,15 @@ contract SocialRecoveryUnitTest is Test {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
 
         bool res = wallet.isGuardian(address(guardian1));
         assertTrue(res);
+        assertEq(wallet.executeAfter(), 0);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
 
         address newOwner = address(22);
 
@@ -172,13 +178,105 @@ contract SocialRecoveryUnitTest is Test {
 
         hoax(address(guardian1), 0.5 ether);
         wallet.confirmRecovery(recoveryHash);
+
+        assertTrue(
+            wallet.isConfirmedByGuardian(address(guardian1), recoveryHash)
+        );
+        assertEq(wallet.executeAfter(), block.timestamp + 2 days);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
+    }
+
+    function testConfirmRecoveryWhenRecoveryStarted() public {
+        address guardian1 = address(21);
+        address guardian2 = address(22);
+        address[] memory guardians = new address[](2);
+        guardians[0] = guardian1;
+        guardians[1] = guardian2;
+        uint16 threshold = 2;
+
+        vm.prank(ownerAddress);
+        wallet.addGuardianWithThreshold(guardians, threshold);
+
+        bool res = wallet.isGuardian(address(guardian1));
+        assertTrue(res);
+        assertEq(wallet.executeAfter(), 0);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
+
+        address newOwner = address(22);
+
+        bytes32 recoveryHash = wallet.getRecoveryHash(
+            guardians,
+            newOwner,
+            threshold,
+            wallet.nonce()
+        );
+
+        assertFalse(wallet.isExecuted(recoveryHash));
+
+        hoax(address(guardian1), 0.5 ether);
+        wallet.confirmRecovery(recoveryHash);
+
+        assertTrue(
+            wallet.isConfirmedByGuardian(address(guardian1), recoveryHash)
+        );
+        assertEq(wallet.executeAfter(), block.timestamp + 2 days);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
+        assertFalse(wallet.isConfirmedByRequiredGuardians(recoveryHash));
+
+        vm.warp(block.timestamp + 1.9 days);
+        hoax(address(guardian2), 0.5 ether);
+        wallet.confirmRecovery(recoveryHash);
+        assertTrue(wallet.isConfirmedByRequiredGuardians(recoveryHash));
+    }
+
+    function testConfirmRecoveryTwiceByOneGuardian() public {
+        address guardian1 = address(21);
+        address guardian2 = address(22);
+        address[] memory guardians = new address[](2);
+        guardians[0] = guardian1;
+        guardians[1] = guardian2;
+        uint16 threshold = 2;
+
+        vm.prank(ownerAddress);
+        wallet.addGuardianWithThreshold(guardians, threshold);
+
+        bool res = wallet.isGuardian(address(guardian1));
+        assertTrue(res);
+        assertEq(wallet.executeAfter(), 0);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
+
+        address newOwner = address(22);
+
+        bytes32 recoveryHash = wallet.getRecoveryHash(
+            guardians,
+            newOwner,
+            threshold,
+            wallet.nonce()
+        );
+
+        assertFalse(wallet.isExecuted(recoveryHash));
+
+        hoax(address(guardian1), 0.5 ether);
+        wallet.confirmRecovery(recoveryHash);
+
+        assertTrue(
+            wallet.isConfirmedByGuardian(address(guardian1), recoveryHash)
+        );
+        assertEq(wallet.executeAfter(), block.timestamp + 2 days);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
+        assertFalse(wallet.isConfirmedByRequiredGuardians(recoveryHash));
+
+        vm.warp(block.timestamp + 1.9 days);
+        hoax(address(guardian1), 0.5 ether);
+        wallet.confirmRecovery(recoveryHash);
+        assertFalse(wallet.isConfirmedByRequiredGuardians(recoveryHash));
     }
 
     function testConfirmRecoveryNotGuardian() public {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -206,7 +304,7 @@ contract SocialRecoveryUnitTest is Test {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -228,6 +326,7 @@ contract SocialRecoveryUnitTest is Test {
         hoax(address(guardian1), 0.5 ether);
         wallet.confirmRecovery(recoveryHash);
 
+        vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));
         wallet.executeRecovery(newOwner);
 
@@ -240,13 +339,15 @@ contract SocialRecoveryUnitTest is Test {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
 
         bool res = wallet.isGuardian(address(guardian1));
         assertTrue(res);
+        assertEq(wallet.executeAfter(), 0);
+        assertEq(wallet.RECOVERY_PERIOD(), 2 days);
 
         address newOwner = address(22);
 
@@ -259,20 +360,27 @@ contract SocialRecoveryUnitTest is Test {
 
         hoax(address(guardian1), 0.5 ether);
         wallet.confirmRecovery(recoveryHash);
+        assertEq(
+            wallet.executeAfter(),
+            wallet.RECOVERY_PERIOD() + block.timestamp
+        );
 
         assertEq(wallet.owner(), address(ownerAddress));
 
+        vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));
+        vm.expectEmit(true, true, false, true);
+        emit RecoveryExecuted(address(guardian1), recoveryHash);
         wallet.executeRecovery(newOwner);
 
         assertEq(wallet.owner(), address(newOwner));
     }
-
+  
     function testExecuteRecoveryWhenIsExecuted() public {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -294,6 +402,7 @@ contract SocialRecoveryUnitTest is Test {
 
         assertEq(wallet.owner(), address(ownerAddress));
 
+        vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));
         wallet.executeRecovery(newOwner);
 
@@ -313,7 +422,7 @@ contract SocialRecoveryUnitTest is Test {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -330,6 +439,7 @@ contract SocialRecoveryUnitTest is Test {
             wallet.nonce()
         );
 
+        vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));
         vm.expectRevert(encodeError("RecoveryNotEnoughConfirmations()"));
         wallet.executeRecovery(newOwner);
@@ -337,11 +447,46 @@ contract SocialRecoveryUnitTest is Test {
         assertEq(wallet.owner(), address(ownerAddress));
     }
 
+    function testExecuteRecoveryWhenRecoveryPending() public {
+        address guardian1 = address(21);
+        address[] memory guardians = new address[](1);
+        guardians[0] = guardian1;
+        uint16 threshold = 1;
+
+        vm.prank(ownerAddress);
+        wallet.addGuardianWithThreshold(guardians, threshold);
+
+        bool res = wallet.isGuardian(address(guardian1));
+        assertTrue(res);
+
+        address newOwner = address(22);
+
+        bytes32 recoveryHash = wallet.getRecoveryHash(
+            guardians,
+            newOwner,
+            threshold,
+            wallet.nonce()
+        );
+
+        hoax(address(guardian1), 0.5 ether);
+        wallet.confirmRecovery(recoveryHash);
+
+        assertEq(wallet.owner(), address(ownerAddress));
+
+        vm.warp(block.timestamp + 1.9 days);
+        vm.prank(address(guardian1));
+        vm.expectRevert(encodeError("RecoveryPeriodStillPending()"));
+        wallet.executeRecovery(newOwner);
+
+        assertEq(wallet.owner(), address(ownerAddress));
+    }
+
+
     function testRevokeGuardianWithThreshold() public {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -349,6 +494,7 @@ contract SocialRecoveryUnitTest is Test {
         assertTrue(wallet.isGuardian(address(guardian1)));
 
         threshold = 0;
+        vm.warp(wallet.executeAfter());
         vm.prank(ownerAddress);
         vm.expectEmit(true, false, false, true);
         emit GuardianRevoked(address(guardian1));
@@ -366,11 +512,12 @@ contract SocialRecoveryUnitTest is Test {
         guardians[0] = guardian1;
         guardians[1] = guardian2;
         guardians[2] = guardian3;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
 
+        vm.warp(wallet.executeAfter());
         vm.prank(ownerAddress);
         wallet.revokeGuardianWithThreshold(guardian2, threshold);
         assertEq(wallet.guardiansCount(), 2);
@@ -386,8 +533,9 @@ contract SocialRecoveryUnitTest is Test {
         guardians[0] = guardian1;
         guardians[1] = guardian2;
         guardians[2] = guardian3;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
+        vm.warp(wallet.executeAfter());
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
         vm.prank(ownerAddress);
@@ -401,7 +549,7 @@ contract SocialRecoveryUnitTest is Test {
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
 
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -409,6 +557,7 @@ contract SocialRecoveryUnitTest is Test {
         assertTrue(wallet.isGuardian(address(guardian1)));
 
         threshold = 0;
+        vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));
         vm.expectRevert(encodeError("InvalidOwner()"));
         wallet.revokeGuardianWithThreshold(guardian1, threshold);
@@ -420,7 +569,7 @@ contract SocialRecoveryUnitTest is Test {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
         guardians[0] = guardian1;
-        uint256 threshold = 1;
+        uint16 threshold = 1;
 
         vm.prank(ownerAddress);
         wallet.addGuardianWithThreshold(guardians, threshold);
@@ -428,6 +577,7 @@ contract SocialRecoveryUnitTest is Test {
         assertTrue(wallet.isGuardian(address(guardian1)));
 
         threshold = 1;
+        vm.warp(wallet.executeAfter());
         vm.prank(ownerAddress);
         vm.expectRevert(encodeError("InvalidThreshold()"));
         wallet.revokeGuardianWithThreshold(guardian1, threshold);
