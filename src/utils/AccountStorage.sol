@@ -18,10 +18,10 @@ library AccountStorage {
 
 
         /// ┌───────────────────┐
-        /// │     base data     │
-        IEntryPoint entryPoint;  // entryPoint
-        address owner;           // owner slot
-        uint96 nonce;            // explicit sizes of nonce, to fit a single storage cell with "owner"
+        /// │     base data     │                                   /// TrueWallet.sol
+        IEntryPoint entryPoint;                                     /// entryPoint
+        address owner;                                              /// owner slot
+        uint96 nonce;                                               /// explicit sizes of nonce, to fit a single storage cell with "owner"
         uint256[50] __gap_0;
         /// └───────────────────┘
 
@@ -29,7 +29,7 @@ library AccountStorage {
 
         /// ┌───────────────────┐
         /// │   upgrade data    │
-        ILogicUpgradeControl.UpgradeLayout logicUpgrade;         // LogicUpgradeControl.sol
+        ILogicUpgradeControl.UpgradeLayout logicUpgrade;            /// LogicUpgradeControl.sol
         Initializable.InitializableLayout initializableLayout;
         uint256[50] __gap_1;
         /// └───────────────────┘
@@ -38,9 +38,22 @@ library AccountStorage {
 
         /// ┌───────────────────┐
         /// │     role data     │
-        mapping(bytes32 => RoleData) roles;                       // AccessControl.sol
-        mapping(bytes32 => EnumerableSet.AddressSet) roleMembers; // AccessControlEnumerable.sol
+        mapping(bytes32 => RoleData) roles;                         /// AccessControl.sol
+        mapping(bytes32 => EnumerableSet.AddressSet) roleMembers;   /// AccessControlEnumerable.sol
         uint256[50] __gap_2;
+        /// └───────────────────┘
+
+
+
+        /// ┌───────────────────┐
+        /// │     guardian      │                                   /// SocialRecovery.sol
+        uint64 executeAfter;                                        /// @dev Execute recovery after
+        uint16 threshold;                                           /// @dev Required number of guardians to confirm recovery  
+        address[] guardians;                                        /// @dev The list of guardians addresses
+        mapping (address => bool) isGuardian;                       /// @dev isGuardian mapping maps guardian's address to guardian status
+        mapping (bytes32 => bool) isExecuted;                       /// @dev isExecuted mapping maps data hash to execution status
+        mapping (bytes32 => mapping (address => bool)) isConfirmed; /// @dev isConfirmed mapping maps data hash to guardian's address to confirmation status
+        uint256[50] __gap_3;
         /// └───────────────────┘
 
 

@@ -6,6 +6,7 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
+import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
@@ -14,10 +15,12 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
+import "forge-std/console.sol";
+
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
-contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallbackHandler {
+contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeControl, TokenCallbackHandler {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
@@ -54,7 +57,7 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     /////////////////  ERRORS ///////////////
 
     /// @dev Reverts in case not valid owner
-    error InvalidOwner();
+    // error InvalidOwner();
 
     /// @dev Reverts in case not valid entryPoint or owner
     error InvalidEntryPointOrOwner();
@@ -196,6 +199,20 @@ contract TrueWallet is IAccount, Initializable, LogicUpgradeControl, TokenCallba
     /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
+    }
+
+    /// @notice Lets the owner set guardians and threshold for the wallet
+    /// @param guardians List of guardians' addresses
+    /// @param threshold Required number of guardians to confirm replacement
+    function addGuardianWithThreshold(address[] calldata guardians, uint16 threshold) external onlyOwner {
+        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
+    }
+
+    /// @notice Lets the owner revoke a guardian from the wallet and change threshold respectively
+    /// @param guardian The guardian address to revoke
+    /// @param threshold The new required number of guardians to confirm replacement
+    function revokeGuardianWithThreshold(address guardian, uint16 threshold) external onlyOwner {
+        SocialRecovery._revokeGuardianWithThreshold(guardian, threshold);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
