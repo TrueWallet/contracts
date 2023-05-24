@@ -3,8 +3,6 @@ pragma solidity ^0.8.17;
 
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 
-import "forge-std/console.sol";
-
 /// @title Social Recovery - Allows to replace an owner if guardians approve the replacement
 /// In this early version, recovery is possible to make at least by only one guardian
 contract SocialRecovery {
@@ -14,6 +12,8 @@ contract SocialRecovery {
     /// @dev Recovery period after which recovery could be executed
     uint256 public constant RECOVERY_PERIOD = 2 days;
 
+    /// @dev Reverts in case not valid owner
+    error InvalidOwner();
     /// @dev Reverts in case not valid guardian
     error InvalidGuardian();
     /// @dev Reverts in case not valid threshold
@@ -28,6 +28,8 @@ contract SocialRecovery {
     error RecoveryNotEnoughConfirmations();
     /// @dev Reverts when recovery period is still pending before execution
     error RecoveryPeriodStillPending();
+    /// @dev Reverts when no ongoing recovery requiests 
+    error RecoveryNotInitiated();
 
     /// @dev Emitted when guardians and threshold are added
     event GuardianAdded(address[] indexed guardians, uint16 threshold);
@@ -37,6 +39,8 @@ contract SocialRecovery {
     event RecoveryConfirmed(address indexed guardian, bytes32 indexed recoveryHash);
     /// @dev Emitted when recovery is executed by guardian
     event RecoveryExecuted(address indexed guardian, bytes32 indexed recoveryHash);
+    /// @dev Emmited when recovey is canceled by owner   
+    event RecoveryCanceled(bytes32 recoveryHash);
     /// @dev Emitted when ownership is transfered after recovery execution
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
@@ -47,6 +51,7 @@ contract SocialRecovery {
     }
 
     /// @notice Allows a guardian to confirm a recovery transaction
+    /// First call of this method initiate the recovery process
     /// @param recoveryHash transaction hash
     function confirmRecovery(bytes32 recoveryHash) public onlyGuardian {
         AccountStorage.Layout storage layout = AccountStorage.layout();
@@ -139,6 +144,17 @@ contract SocialRecovery {
         return AccountStorage.layout().nonce;
     }
 
+    /// @notice Lets the owner cancel an ongoing recovery request
+    /// @param recoveryHash hash of recovery requiest that is already initiated
+    function cancelRecovery(bytes32 recoveryHash) public {
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        if (msg.sender != layout.owner) revert InvalidOwner();
+        if (layout.executeAfter == 0) revert RecoveryNotInitiated();
+        layout.isExecuted[recoveryHash] = true;
+        layout.executeAfter = 0;
+        emit RecoveryCanceled(recoveryHash);
+    } 
+
     /// @dev Returns true if confirmation count is enough
     /// @param recoveryHash Data hash
     /// @return confirmation status
@@ -175,6 +191,7 @@ contract SocialRecovery {
     }
 
     /// @dev Generates the recovery hash that could be signed by the guardian to authorize a recovery
+    /// @return recoveryHash of data encoding owner replacement
     function getRecoveryHash(
         address[] memory _guardians,
         address _newOwner,
@@ -187,7 +204,7 @@ contract SocialRecovery {
             );
     }
 
-    /// @dev Execute recovery after
+    /// @dev Execute recovery after this period
     function executeAfter() public view returns (uint64) {
         return AccountStorage.layout().executeAfter;
     }

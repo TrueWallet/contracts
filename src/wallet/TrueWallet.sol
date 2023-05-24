@@ -57,7 +57,7 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     /////////////////  ERRORS ///////////////
 
     /// @dev Reverts in case not valid owner
-    error InvalidOwner();
+    // error InvalidOwner();
 
     /// @dev Reverts in case not valid entryPoint or owner
     error InvalidEntryPointOrOwner();
