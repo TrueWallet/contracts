@@ -9,6 +9,7 @@ import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
+import {WalletErrors} from "src/common/Errors.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
@@ -20,7 +21,7 @@ import "forge-std/console.sol";
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
-contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeControl, TokenCallbackHandler {
+contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeControl, TokenCallbackHandler, WalletErrors {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
@@ -54,27 +55,7 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
         _;
     }
 
-    /////////////////  ERRORS ///////////////
-
-    /// @dev Reverts in case not valid owner
-    // error InvalidOwner();
-
-    /// @dev Reverts in case not valid entryPoint or owner
-    error InvalidEntryPointOrOwner();
-
-    /// @dev Reverts when zero address is assigned
-    error ZeroAddressProvided();
-
-    /// @dev Reverts when upgrade delay is invalid
-    error InvalidUpgradeDelay();
-
-    /// @dev Reverts when array argument size mismatch
-    error LengthMismatch();
-
-    /// @dev Reverts in case not valid signature
-    error InvalidSignature();
-
-    /////////////////  CONSTRUCTOR ///////////////
+    /////////////////  CONSTRUCTOR & INITIALIZE ///////////////
 
     /// @dev This prevents initialization of the implementation contract itself
     constructor() {

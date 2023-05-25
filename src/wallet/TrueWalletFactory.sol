@@ -6,12 +6,11 @@ import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
 import {TrueWallet} from "./TrueWallet.sol";
 import {TrueWalletProxy} from "./TrueWalletProxy.sol";
+import {WalletErrors} from "../common/Errors.sol";
 
 /// @title TrueWalletFactory contract to deploy user smart wallets
-contract TrueWalletFactory is Ownable, Pausable {
+contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     address public immutable walletImplementation;
-
-    error ZeroAddressProvided();
 
     constructor(address _walletImplementation, address _owner) Ownable() Pausable() {
         if (_walletImplementation == address(0) || _owner == address(0)) {

@@ -2,34 +2,16 @@
 pragma solidity ^0.8.17;
 
 import {AccountStorage} from "src/utils/AccountStorage.sol";
+import {SocialRecoveryErrors} from "../common/Errors.sol";
 
 /// @title Social Recovery - Allows to replace an owner if guardians approve the replacement
 /// In this early version, recovery is possible to make at least by only one guardian
-contract SocialRecovery {
+contract SocialRecovery is SocialRecoveryErrors {
     /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
     using AccountStorage for AccountStorage.Layout;
 
     /// @dev Recovery period after which recovery could be executed
     uint256 public constant RECOVERY_PERIOD = 2 days;
-
-    /// @dev Reverts in case not valid owner
-    error InvalidOwner();
-    /// @dev Reverts in case not valid guardian
-    error InvalidGuardian();
-    /// @dev Reverts in case not valid threshold
-    error InvalidThreshold();
-    /// @dev Reverts when zero address is assigned for guardian
-    error ZeroAddressForGuardianProvided();
-    /// @dev Reverts when guardian provided is already in the list
-    error DuplicateGuardianProvided();
-    /// @dev Reverts when the particular recovery requist is already executed
-    error RecoveryAlreadyExecuted();
-    /// @dev Reverts when not enough confirmation from guardians for recovery requist
-    error RecoveryNotEnoughConfirmations();
-    /// @dev Reverts when recovery period is still pending before execution
-    error RecoveryPeriodStillPending();
-    /// @dev Reverts when no ongoing recovery requiests 
-    error RecoveryNotInitiated();
 
     /// @dev Emitted when guardians and threshold are added
     event GuardianAdded(address[] indexed guardians, uint16 threshold);

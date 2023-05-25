@@ -5,11 +5,10 @@ import "openzeppelin-contracts/utils/Address.sol";
 import {ILogicUpgradeControl} from "../interfaces/ILogicUpgradeControl.sol";
 import {AccountStorage} from "./AccountStorage.sol";
 import {Upgradeable} from "./Upgradeable.sol";
+import {UpgradeWalletErrors} from "../common/Errors.sol";
 
-contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable {
+contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWalletErrors {
     using AccountStorage for AccountStorage.Layout;
-
-    error UpgradeDelayNotElapsed();
 
     /// @dev Returns Logic updgrade layout info
     function logicUpgradeInfo() public view returns (ILogicUpgradeControl.UpgradeLayout memory) {
