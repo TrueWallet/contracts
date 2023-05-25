@@ -6,9 +6,8 @@ import "forge-std/Script.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
-contract DeployFactoryScript is Script {
+contract DeployWalletFactoryScript is Script {
     TrueWalletFactory public factory;
-    address public entryPoint;
     address public wallet;
 
     address public owner;
@@ -21,8 +20,8 @@ contract DeployFactoryScript is Script {
     }
 
     function run() public {
-        vm.broadcast(deployerPrivateKey);
-        factory = new TrueWalletFactory(wallet, owner);
+        vm.startBroadcast(deployerPrivateKey);
+        factory = new TrueWalletFactory(address(wallet), owner);
         vm.stopBroadcast();
     }
 }

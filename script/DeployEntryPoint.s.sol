@@ -17,7 +17,7 @@ contract DeployEntryPointScript is Script {
     }
 
     function run() public {
-        vm.broadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);
         entryPoint = new EntryPoint();
         vm.stopBroadcast();
     }

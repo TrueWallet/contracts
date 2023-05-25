@@ -8,7 +8,6 @@ import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
 contract DeployWalletScript is Script {
     TrueWallet public wallet;
-    address public entryPoint;
 
     address public owner;
     uint256 public deployerPrivateKey;
@@ -16,11 +15,10 @@ contract DeployWalletScript is Script {
     function setUp() public {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        entryPoint = MumbaiConfig.ENTRY_POINT;
     }
 
     function run() public {
-        vm.broadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);
         wallet = new TrueWallet();
         vm.stopBroadcast();
     }

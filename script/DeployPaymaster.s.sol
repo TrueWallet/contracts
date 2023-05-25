@@ -22,7 +22,7 @@ contract DeployPaymasterScript is Script {
     }
 
     function run() public {
-        vm.broadcast(deployerPrivateKey);
+        vm.startBroadcast(deployerPrivateKey);
         paymaster = new Paymaster(entryPoint, owner);
         vm.stopBroadcast();
     }
