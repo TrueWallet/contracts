@@ -1,8 +1,8 @@
 # TrueWalletFactory
-[Git Source](https://github.com/TrueWallet/contracts/blob/843930f01013ad22976a2d653f9d67aaa82d54f4/src/wallet/TrueWalletFactory.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/wallet/TrueWalletFactory.sol)
 
 **Inherits:**
-Ownable, Pausable
+Ownable, Pausable, [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
 
 
 ## State Variables
@@ -63,12 +63,5 @@ Unpause the TrueWalletFactory to allow new wallet creation. OnlyOwner
 
 ```solidity
 function unpause() public onlyOwner;
-```
-
-## Errors
-### ZeroAddressProvided
-
-```solidity
-error ZeroAddressProvided();
 ```
 

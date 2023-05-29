@@ -1,5 +1,5 @@
 # IAggregatedAccount
-[Git Source](https://github.com/TrueWallet/contracts/blob/843930f01013ad22976a2d653f9d67aaa82d54f4/src/interfaces/IAggregatedAccount.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/interfaces/IAggregatedAccount.sol)
 
 **Inherits:**
 [IAccount](/src/interfaces/IAccount.sol/interface.IAccount.md)

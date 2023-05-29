@@ -1,8 +1,8 @@
 # LogicUpgradeControl
-[Git Source](https://github.com/TrueWallet/contracts/blob/843930f01013ad22976a2d653f9d67aaa82d54f4/src/utils/LogicUpgradeControl.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/utils/LogicUpgradeControl.sol)
 
 **Inherits:**
-[ILogicUpgradeControl](/src/interfaces/ILogicUpgradeControl.sol/interface.ILogicUpgradeControl.md), [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md)
+[ILogicUpgradeControl](/src/interfaces/ILogicUpgradeControl.sol/interface.ILogicUpgradeControl.md), [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md), [UpgradeWalletErrors](/src/common/Errors.sol/contract.UpgradeWalletErrors.md)
 
 
 ## Functions
@@ -40,12 +40,5 @@ function upgrade() external;
 
 ```solidity
 function getImplementation() public view;
-```
-
-## Errors
-### UpgradeDelayNotElapsed
-
-```solidity
-error UpgradeDelayNotElapsed();
 ```
 

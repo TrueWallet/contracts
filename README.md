@@ -7,6 +7,8 @@
 
 ## Features
 + Support [ERC-4337: Account Abstraction](https://eips.ethereum.org/EIPS/eip-4337)
++ Social Recovery with Guardians
++ Upgradability: The smart contract wallet can be upgraded in a secure way to add new features or fix vulnerabilities in the future
 
 
 ## Getting Started
@@ -38,15 +40,6 @@ cp .env.example .env
 ```bash
 yarn test::fork
 ```
-### Generate documentation:
-```bash
-forge doc
-```
-### Generate and serve documentation locally on port 4000:
-```bash
-forge doc --serve --port 4000
-```
-
 
 
 <!-- ACKNOWLEDGMENTS -->

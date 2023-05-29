@@ -1,5 +1,5 @@
 # AccountStorage
-[Git Source](https://github.com/TrueWallet/contracts/blob/843930f01013ad22976a2d653f9d67aaa82d54f4/src/utils/AccountStorage.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/utils/AccountStorage.sol)
 
 
 ## State Variables
@@ -42,6 +42,13 @@ struct Layout {
     mapping(bytes32 => RoleData) roles;
     mapping(bytes32 => EnumerableSet.AddressSet) roleMembers;
     uint256[50] __gap_2;
+    uint64 executeAfter;
+    uint16 threshold;
+    address[] guardians;
+    mapping(address => bool) isGuardian;
+    mapping(bytes32 => bool) isExecuted;
+    mapping(bytes32 => mapping(address => bool)) isConfirmed;
+    uint256[50] __gap_3;
 }
 ```
 

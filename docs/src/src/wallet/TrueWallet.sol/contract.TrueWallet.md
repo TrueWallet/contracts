@@ -1,8 +1,8 @@
 # TrueWallet
-[Git Source](https://github.com/TrueWallet/contracts/blob/843930f01013ad22976a2d653f9d67aaa82d54f4/src/wallet/TrueWallet.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/wallet/TrueWallet.sol)
 
 **Inherits:**
-[IAccount](/src/interfaces/IAccount.sol/interface.IAccount.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md)
+[IAccount](/src/interfaces/IAccount.sol/interface.IAccount.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [SocialRecovery](/src/guardian/SocialRecovery.sol/contract.SocialRecovery.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md), [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
 
 *This contract provides functionality to execute AA (ERC-4337) UserOperetion
 It allows to receive and manage assets using the owner account of the smart contract wallet*
@@ -166,6 +166,38 @@ preUpgradeTo is called before upgrading the wallet
 ```solidity
 function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner;
 ```
+
+### addGuardianWithThreshold
+
+Lets the owner set guardians and threshold for the wallet
+
+
+```solidity
+function addGuardianWithThreshold(address[] calldata guardians, uint16 threshold) external onlyOwner;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`guardians`|`address[]`|List of guardians' addresses|
+|`threshold`|`uint16`|Required number of guardians to confirm replacement|
+
+
+### revokeGuardianWithThreshold
+
+Lets the owner revoke a guardian from the wallet and change threshold respectively
+
+
+```solidity
+function revokeGuardianWithThreshold(address guardian, uint16 threshold) external onlyOwner;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`guardian`|`address`|The guardian address to revoke|
+|`threshold`|`uint16`|The new required number of guardians to confirm replacement|
+
 
 ### transferETH
 
@@ -347,54 +379,5 @@ event TransferedERC721(address indexed collection, uint256 indexed tokenId, addr
 
 ```solidity
 event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
-```
-
-## Errors
-### InvalidOwner
-*Reverts in case not valid owner*
-
-
-```solidity
-error InvalidOwner();
-```
-
-### InvalidEntryPointOrOwner
-*Reverts in case not valid entryPoint or owner*
-
-
-```solidity
-error InvalidEntryPointOrOwner();
-```
-
-### ZeroAddressProvided
-*Reverts when zero address is assigned*
-
-
-```solidity
-error ZeroAddressProvided();
-```
-
-### InvalidUpgradeDelay
-*Reverts when upgrade delay is invalid*
-
-
-```solidity
-error InvalidUpgradeDelay();
-```
-
-### LengthMismatch
-*Reverts when array argument size mismatch*
-
-
-```solidity
-error LengthMismatch();
-```
-
-### InvalidSignature
-*Reverts in case not valid signature*
-
-
-```solidity
-error InvalidSignature();
 ```
 
