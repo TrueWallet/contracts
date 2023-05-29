@@ -15,7 +15,7 @@ import {MockERC1155} from "../mock/MockERC1155.sol";
 
 contract ERC1155TransferNoPaymasterEntToEndTest is Test {
     IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
-    IWallet public constant wallet = IWallet(MumbaiConfig.WALLET);
+    IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);

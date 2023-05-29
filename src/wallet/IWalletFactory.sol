@@ -10,6 +10,7 @@ interface IWalletFactory {
     function createWallet(
         address entryPoint,
         address walletOwner,
+        uint32 upgradeDelay,
         bytes32 salt
     ) external returns (TrueWallet);
 
@@ -17,6 +18,7 @@ interface IWalletFactory {
     function getWalletAddress(
         address entryPoint,
         address walletOwner,
+        uint32 upgradeDelay,
         bytes32 salt
     ) external view returns (address);
 }
