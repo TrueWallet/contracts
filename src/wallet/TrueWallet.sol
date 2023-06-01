@@ -100,7 +100,7 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     }
 
     /// @notice Returns the contract nonce
-    function nonce() public view returns (uint256) {
+    function nonce() public view returns (uint96) {
         return AccountStorage.layout().nonce;
     }
 
