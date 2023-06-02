@@ -64,16 +64,16 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
             abi.encodeWithSelector(token.transfer.selector, recipient, tokenTransferAmount)
         );
 
-        // Sign userOperation and attach signature
+        // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
-        // Set remainder of test case
+        // 4. Set remainder of test case
         aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
-        // 3. Fund deployer with ETH
+        // 5. Fund deployer with ETH
         vm.deal(address(wallet), 5 ether);
     }
 
@@ -86,8 +86,8 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
     /// @notice Validate that the EntryPoint can execute a userOperation.
     ///         No Paymaster, smart wallet pays for gas
     function testHandleOpsNoPaymaster() public {
-        uint256 initialRecipientBalance = token.balanceOf(recipient);
-        uint256 initialWalletBalance = token.balanceOf(address(wallet));
+        uint256 initialRecipientERC20Balance = token.balanceOf(recipient);
+        uint256 initialWalletERC20Balance = token.balanceOf(address(wallet));
         uint256 initialWalletETHBalance = address(wallet).balance;
 
         UserOperation[] memory userOps = new UserOperation[](1);
@@ -98,10 +98,10 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
 
         // Verify token transfer from wallet to recipient
         uint256 finalRecipientBalance = token.balanceOf(recipient);
-        assertEq(finalRecipientBalance, initialRecipientBalance + tokenTransferAmount);
+        assertEq(finalRecipientBalance, initialRecipientERC20Balance + tokenTransferAmount);
 
-        uint256 finalWalletBalance = token.balanceOf(address(wallet));
-        assertEq(finalWalletBalance, initialWalletBalance - tokenTransferAmount);
+        uint256 finalWalletERC20Balance = token.balanceOf(address(wallet));
+        assertEq(finalWalletERC20Balance, initialWalletERC20Balance - tokenTransferAmount);
 
         // Verify wallet paid for gas
         uint256 walletEthLoss = initialWalletETHBalance - address(wallet).balance;

@@ -269,10 +269,6 @@ contract VerifyingPaymasterUnitTest is Test {
 
         ValidationData memory data;
         data = _parseValidationData(validationData);
-        
-        console.log(data.aggregator);
-        console.log(data.validAfter);
-        console.log(data.validUntil);
 
         assertEq(data.validUntil, MOCK_VALID_UNTIL);
         assertEq(data.validAfter, MOCK_VALID_AFTER);

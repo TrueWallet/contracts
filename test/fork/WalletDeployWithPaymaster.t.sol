@@ -66,13 +66,14 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
-        // Set remainder of test case
+        // 5. Set remainder of test case
         aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
-        // 5. Fund deployer with ETH
+        // 6. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
 
+        // 7. Deposite paymaster to pay for gas
         vm.startPrank(address(MumbaiConfig.DEPLOYER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
@@ -101,12 +102,12 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         assertEq(deployedWallet.owner(), walletOwner);
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
-        // Verify Paymaster deposit on EntryPoint was used to pay for gas
-        uint256 finalPaymasterDeposite = initialPaymasterDeposite - paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, finalPaymasterDeposite);
+        // Verify paymaster deposit on entryPoint was used to pay for gas
+        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
+        assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 finalWalletETHBalance = initialWalletETHBalance - address(wallet).balance;
-        assertEq(finalWalletETHBalance, 0);
+        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance;
+        assertEq(gasFeeWalletPayd, 0);
     }
 }

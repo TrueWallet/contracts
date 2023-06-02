@@ -13,7 +13,7 @@ import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC721} from "../mock/MockERC721.sol";
 
-contract ERC721TransferNoPaymasterEntToEndTest is Test {
+contract ERC721TransferWithPaymasterEntToEndTest is Test {
     IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
@@ -63,17 +63,29 @@ contract ERC721TransferNoPaymasterEntToEndTest is Test {
             abi.encodeWithSelector(token.transferFrom.selector, address(wallet), recipient, tokenId)
         );
 
-        // 3. Sign userOperation and attach signature
+        // 3. Set paymaster on UserOperation
+        userOp.paymasterAndData = abi.encodePacked(address(paymaster));
+
+        // 4. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
-        // 4. Set remainder of test case
+        // Set remainder of test case
         aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
-        vm.deal(address(wallet), 5 ether);
+        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+
+        // 6. Deposite paymaster to pay for gas
+        vm.startPrank(address(MumbaiConfig.DEPLOYER));
+        paymaster.deposit{value: 2 ether}();
+        paymaster.addStake{value: 1 ether}(1);
+        vm.stopPrank();
+
+        // 7. Fund wallet with etherTransferAmount
+        vm.deal(address(wallet), 1 ether);
     }
 
     /// @notice Validate that the smart wallet can validate a userOperation
@@ -83,26 +95,38 @@ contract ERC721TransferNoPaymasterEntToEndTest is Test {
     }
 
     /// @notice Validate that the EntryPoint can execute a userOperation.
-    ///         No Paymaster, smart wallet pays for gas
-    function testHandleOpsNoPaymaster() public {
+    ///         Paymaster pays for gas
+    function testHandleOpsWithPaymaster() public {
         assertEq(token.balanceOf(recipient), 0);
         assertEq(token.balanceOf(address(wallet)), 1);
         assertEq(token.ownerOf(tokenId), address(wallet));
+
         uint256 initialWalletETHBalance = address(wallet).balance;
+        uint256 initialBeneficiaryETHBalance = address(beneficiary).balance;
+        uint256 initialPaymasterDeposite = paymaster.getDeposit();
+        assertEq(initialPaymasterDeposite, 2 ether);
 
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
-        // Transfer tokens through the entryPoint
+        // Transfer ether through the entryPoint
         entryPoint.handleOps(userOps, beneficiary);
 
-        // Verify token transfer from wallet to recipient
+        // Verify that all ether funds are in place in the smart wallet
+        uint256 finalWalletETHBalance = address(wallet).balance;
+        assertEq(finalWalletETHBalance, initialWalletETHBalance);
+
+        // Verify token transfered from wallet to recipient
         assertEq(token.balanceOf(address(wallet)), 0);
         assertEq(token.balanceOf(recipient), 1);
         assertEq(token.ownerOf(tokenId), address(recipient));
 
-        // Verify wallet paid for gas
-        uint256 walletEthLoss = initialWalletETHBalance - address(wallet).balance;
-        assertGt(walletEthLoss, 0);
+        // Verify paymaster deposit on entryPoint was used to pay for gas
+        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
+        assertGt(initialPaymasterDeposite, paymaster.getDeposit());
+
+        // Verify beneficiary(bundler) balance received gas fee
+        uint256 gasFeeBeneficiaryCompensated = address(beneficiary).balance - initialBeneficiaryETHBalance;
+        assertEq(gasFeeBeneficiaryCompensated, gasFeePaymasterPayd);
     }
 }

@@ -55,16 +55,16 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
         );
         userOp.initCode = initCode;
 
-        // Sign userOperation and attach signature
+        // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
-        // Set remainder of test case
+        // 4. Set remainder of test case
         aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
-        // 3. Fund deployer with ETH
+        // 5. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
     }
 

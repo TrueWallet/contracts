@@ -89,7 +89,7 @@ contract ETHTransferWithPaymasterEntToEndTest is Test {
     }
 
     /// @notice Validate that the entryPoint can execute a userOperation.
-    ///         paymaster pays for gas
+    ///         Paymaster pays for gas
     function testHandleOpsWithPaymaster() public {
         uint256 initialRecipientETHBalance = address(recipient).balance;
         uint256 initialWalletETHBalance = address(wallet).balance;

@@ -94,7 +94,6 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
 
         // don't revert on signature failure: return SIG_VALIDATION_FAILED
         if (verifyingSigner != ECDSA.recover(hash, signature)) {
-            console.log("SIG_VALIDATION_FAILED");
             return ("", _packValidationData(true,validUntil,validAfter));
         }
 
