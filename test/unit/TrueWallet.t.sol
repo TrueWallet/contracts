@@ -100,14 +100,13 @@ contract TrueWalletUnitTest is Test {
             vm
         );
 
-        address aggregator = address(12);
         uint256 missingWalletFunds = 0;
 
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
             userOpHash,
-            aggregator,
+            // aggregator,
             missingWalletFunds
         );
         assertEq(deadline, 0);
@@ -296,14 +295,12 @@ contract TrueWalletUnitTest is Test {
             vm
         );
 
-        address aggregator = address(12);
         uint256 missingWalletFunds = 0.001 ether;
 
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
             digest,
-            aggregator,
             missingWalletFunds
         );
         assertEq(deadline, 0);

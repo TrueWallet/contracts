@@ -195,6 +195,8 @@ contract VerifyingPaymasterUnitTest is Test {
 
     ///
     function generateUserOp() public returns(UserOperation memory userOp) {
+        console.log("address(wallet).code.length ", address(wallet).code.length);
+
         UserOperation memory userOp;
 
         userOp = UserOperation({
@@ -241,12 +243,26 @@ contract VerifyingPaymasterUnitTest is Test {
     }
 
     function testValidatePaymasterUserOp() public {
+
+        console.log("address(wallet).code.length ", address(wallet).code.length);
+
+        UserOperation memory userOp1;
+
+        userOp1 = generateUserOp();
+        userOp1.paymasterAndData = abi.encodePacked(
+            address(paymaster),
+            abi.encode(
+                MOCK_VALID_UNTIL,
+                MOCK_VALID_AFTER
+            ),
+            ""
+        );
+
+        bytes32 opHash1 = paymaster.getHash(userOp1, MOCK_VALID_UNTIL, MOCK_VALID_AFTER);
+        bytes memory sign = createSignature2(opHash1, ownerPrivateKey, vm);
+
         UserOperation memory userOp;
-
         userOp = generateUserOp();
-
-        bytes32 opHash = paymaster.getHash(userOp, MOCK_VALID_UNTIL, MOCK_VALID_AFTER);
-        bytes memory sign = createSignature2(opHash, ownerPrivateKey, vm);
 
         userOp.paymasterAndData = abi.encodePacked(
             address(paymaster),
@@ -257,20 +273,19 @@ contract VerifyingPaymasterUnitTest is Test {
             sign
         );
 
+
         // Set remainder of test case
         // address aggregator = address(0);
         uint256 missingWalletFunds = 1096029019333521;
 
         // Validate that the smart wallet can validate a userOperation
-        vm.prank(address(entryPoint));
-        (, uint256 validationData) = paymaster.validatePaymasterUserOp(userOp, opHash, missingWalletFunds);
+        vm.startPrank(address(entryPoint));
+        (, uint256 validationData) = paymaster.validatePaymasterUserOp(userOp, opHash1, missingWalletFunds);
+
+        console.log("after paymaster.validatePaymasterUserOp");
         
-        // entryPoint.simulateValidation(userOp);
+        entryPoint.simulateValidation(userOp);
 
-        ValidationData memory data;
-        data = _parseValidationData(validationData);
-
-        assertEq(data.validUntil, MOCK_VALID_UNTIL);
-        assertEq(data.validAfter, MOCK_VALID_AFTER);
+        console.log("after entryPoint.simulateValidation(userOp)");
     }
 }

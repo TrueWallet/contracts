@@ -78,7 +78,6 @@ contract ERC1155TransferNoPaymasterEntToEndTest is Test {
         userOp.signature = signature;
 
         // 4. Set remainder of test case
-        aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
@@ -88,7 +87,7 @@ contract ERC1155TransferNoPaymasterEntToEndTest is Test {
     /// @notice Validate that the smart wallet can validate a userOperation
     function testWalletValidateUserOp() public {
         vm.prank(address(entryPoint));
-        wallet.validateUserOp(userOp, userOpHash, aggregator, missingWalletFunds);
+        wallet.validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /// @notice Validate that the EntryPoint can execute a userOperation.

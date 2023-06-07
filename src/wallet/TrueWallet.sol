@@ -122,12 +122,11 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     /// @notice Validate that the userOperation is valid
     /// @param userOp - ERC-4337 User Operation
     /// @param userOpHash - Hash of the user operation, entryPoint address and chainId
-    /// @param aggregator - Signature aggregator
+    // /// @param aggregator - Signature aggregator
     /// @param missingWalletFunds - Amount of ETH to pay the EntryPoint for processing the transaction
     function validateUserOp(
         UserOperation calldata userOp,
         bytes32 userOpHash,
-        address aggregator,
         uint256 missingWalletFunds
     ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
         // Validate signature

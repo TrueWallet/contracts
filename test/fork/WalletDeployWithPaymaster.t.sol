@@ -67,7 +67,6 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         userOp.signature = signature;
 
         // 5. Set remainder of test case
-        aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 6. Fund deployer with ETH

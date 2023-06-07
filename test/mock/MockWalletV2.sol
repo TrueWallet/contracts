@@ -165,12 +165,10 @@ contract MockWalletV2 is
     // 3. Nonce is correct
     /// @param userOp - ERC-4337 User Operation
     /// @param userOpHash - Hash of the user operation, entryPoint address and chainId
-    /// @param aggregator - Signature aggregator
     /// @param missingWalletFunds - Amount of ETH to pay the EntryPoint for processing the transaction
     function validateUserOp(
         UserOperation calldata userOp,
         bytes32 userOpHash,
-        address aggregator,
         uint256 missingWalletFunds
     ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
         // Validate signature

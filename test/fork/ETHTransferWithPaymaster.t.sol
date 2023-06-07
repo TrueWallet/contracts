@@ -66,7 +66,6 @@ contract ETHTransferWithPaymasterEntToEndTest is Test {
         userOp.signature = signature;
 
         // Set remainder of test case
-        aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
@@ -85,7 +84,7 @@ contract ETHTransferWithPaymasterEntToEndTest is Test {
     /// @notice Validate that the smart wallet can validate a userOperation
     function testWalletValidateUserOp() public {
         vm.prank(address(entryPoint));
-        wallet.validateUserOp(userOp, userOpHash, aggregator, missingWalletFunds);
+        wallet.validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /// @notice Validate that the entryPoint can execute a userOperation.
