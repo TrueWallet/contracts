@@ -8,6 +8,11 @@ import {TrueWallet} from "./TrueWallet.sol";
 import {TrueWalletProxy} from "./TrueWalletProxy.sol";
 import {WalletErrors} from "../common/Errors.sol";
 
+import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
+import {Vm} from "forge-std/Test.sol";
+
 /// @title TrueWalletFactory contract to deploy user smart wallets
 contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     address public immutable walletImplementation;
@@ -78,5 +83,38 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Unpause the TrueWalletFactory to allow new wallet creation. OnlyOwner
     function unpause() public onlyOwner {
         _unpause();
+    }
+
+    /// @dev Helper function - create a signature over a user operation
+    function createSignature(
+        UserOperation memory userOp,
+        bytes32 messageHash, // in form of ECDSA.toEthSignedMessageHash
+        uint256 ownerPrivateKey,
+        Vm vm
+    ) public pure returns (bytes memory) {
+        bytes32 digest = ECDSA.toEthSignedMessageHash(messageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
+        bytes memory signature = bytes.concat(r, s, bytes1(v));
+        return signature;
+    }
+
+    /// @dev Helper function - get init code
+    function getInitCode(
+        address walletFactory,
+        address entryPoint,
+        address walletOwner,
+        uint256 upgradeDelay,
+        bytes32 salt
+    ) public pure returns (bytes memory) {
+        return abi.encodePacked(
+            abi.encodePacked(address(walletFactory)),
+            abi.encodeWithSelector(
+                IWalletFactory(walletFactory).createWallet.selector,
+                address(entryPoint),
+                walletOwner,
+                upgradeDelay,
+                salt
+            )
+        );
     }
 }
