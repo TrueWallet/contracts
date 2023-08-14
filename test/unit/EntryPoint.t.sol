@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -32,7 +32,8 @@ contract EntryPointUnitTest is Test {
     uint256 chainId = block.chainid;
 
     TrueWalletFactory factory;
-    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+    bytes32 salt =
+        keccak256(abi.encodePacked(address(factory), address(entryPoint)));
     UserOperation public userOp;
 
     MockSignatureChecker signatureChecker;
@@ -43,7 +44,7 @@ contract EntryPointUnitTest is Test {
 
     function setUp() public {
         wallet = new TrueWallet();
-        
+
         entryPoint = new EntryPoint();
 
         bytes memory data = abi.encodeCall(
@@ -62,50 +63,13 @@ contract EntryPointUnitTest is Test {
 
     function testSimulateValidation() public {
         // 0. Determine what the sender account will be beforehand
-        address sender = factory.getWalletAddress(address(entryPoint), ownerAddress, upgradeDelay, salt);
-        vm.deal(address(sender), 1 ether);
-
-        // 1. Generate a userOperation
-        userOp = UserOperation({
-            sender: address(sender), 
-            nonce: 0, // 0 nonce, wallet is not deployed and won't be called
-            initCode: "",
-            callData: "",
-            callGasLimit: 2_000_000,
-            verificationGasLimit: 5_000_000,
-            preVerificationGas: 1_000_000,
-            maxFeePerGas: 1_000_105_660,
-            maxPriorityFeePerGas: 1_000_000_000,
-            paymasterAndData: "",
-            signature: ""
-        });
-
-        // 2. Set initCode, to trigger wallet deploy
-        bytes memory initCode = abi.encodePacked(
-            abi.encodePacked(address(factory)),
-            abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), ownerAddress, upgradeDelay, salt)
+        address sender = factory.getWalletAddress(
+            address(entryPoint),
+            ownerAddress,
+            upgradeDelay,
+            salt
         );
-        userOp.initCode = initCode;
-
-        // 3. Sign userOperation and attach signature
-        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
-        userOp.signature = signature;
-
-        UserOperation[] memory userOps = new UserOperation[](1);
-        userOps[0] = userOp;
-
-        // Successful result is ValidationResult error
-        vm.expectRevert(); 
-        entryPoint.simulateValidation(userOp);
-    }
-
-    function testHandleOps() public {
-        // 0. Determine what the sender account will be beforehand
-        address sender = factory.getWalletAddress(address(entryPoint), ownerAddress, upgradeDelay, salt);
         vm.deal(address(sender), 1 ether);
-
-        console.log(address(sender).balance);
 
         // 1. Generate a userOperation
         userOp = UserOperation({
@@ -125,13 +89,82 @@ contract EntryPointUnitTest is Test {
         // 2. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(factory)),
-            abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), ownerAddress, upgradeDelay, salt)
+            abi.encodeWithSelector(
+                factory.createWallet.selector,
+                address(entryPoint),
+                ownerAddress,
+                upgradeDelay,
+                salt
+            )
         );
         userOp.initCode = initCode;
 
         // 3. Sign userOperation and attach signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
+        userOp.signature = signature;
+
+        UserOperation[] memory userOps = new UserOperation[](1);
+        userOps[0] = userOp;
+
+        // Successful result is ValidationResult error
+        vm.expectRevert();
+        entryPoint.simulateValidation(userOp);
+    }
+
+    function testHandleOps() public {
+        // 0. Determine what the sender account will be beforehand
+        address sender = factory.getWalletAddress(
+            address(entryPoint),
+            ownerAddress,
+            upgradeDelay,
+            salt
+        );
+        vm.deal(address(sender), 1 ether);
+
+        // console.log(address(sender).balance);
+
+        // 1. Generate a userOperation
+        userOp = UserOperation({
+            sender: address(sender),
+            nonce: 0, // 0 nonce, wallet is not deployed and won't be called
+            initCode: "",
+            callData: "",
+            callGasLimit: 2_000_000,
+            verificationGasLimit: 5_000_000,
+            preVerificationGas: 1_000_000,
+            maxFeePerGas: 1_000_105_660,
+            maxPriorityFeePerGas: 1_000_000_000,
+            paymasterAndData: "",
+            signature: ""
+        });
+
+        // 2. Set initCode, to trigger wallet deploy
+        bytes memory initCode = abi.encodePacked(
+            abi.encodePacked(address(factory)),
+            abi.encodeWithSelector(
+                factory.createWallet.selector,
+                address(entryPoint),
+                ownerAddress,
+                upgradeDelay,
+                salt
+            )
+        );
+        userOp.initCode = initCode;
+
+        // 3. Sign userOperation and attach signature
+        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         UserOperation[] memory userOps = new UserOperation[](1);

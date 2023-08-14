@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -14,9 +14,11 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC1155} from "../mock/MockERC1155.sol";
 
 contract ERC1155TransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint =
+        IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster =
+        ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -74,7 +76,12 @@ contract ERC1155TransferNoPaymasterEntToEndTest is Test {
 
         // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         // 4. Set remainder of test case
@@ -108,7 +115,8 @@ contract ERC1155TransferNoPaymasterEntToEndTest is Test {
         assertEq(token.balanceOf(recipient, tokenId), amount);
 
         // Verify wallet paid for gas
-        uint256 walletEthLoss = initialWalletETHBalance - address(wallet).balance;
+        uint256 walletEthLoss = initialWalletETHBalance -
+            address(wallet).balance;
         assertGt(walletEthLoss, 0);
     }
 }

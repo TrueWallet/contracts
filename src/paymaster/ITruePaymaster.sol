@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {IPaymaster, UserOperation} from "../interfaces/IPaymaster.sol";
 
@@ -18,9 +18,11 @@ interface ITruePaymaster is IPaymaster {
      * @return deadline the last block timestamp this operation is valid, or zero if it is valid indefinitely.
      *      Note that the validation code cannot use block.timestamp (or block.number) directly.
      */
-    function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
-        external
-        returns (bytes memory context, uint256 deadline);
+    function validatePaymasterUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 maxCost
+    ) external returns (bytes memory context, uint256 deadline);
 
     /// @notice Get the Paymaster stake on the entryPoint, which is used for DDOS protection.
     function getStake() external view returns (uint112);

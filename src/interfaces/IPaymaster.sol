@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {UserOperation} from "./UserOperation.sol";
 
@@ -26,9 +26,11 @@ interface IPaymaster {
      *      <6-byte> validAfter - first timestamp this operation is valid
      *      Note that the validation code cannot use block.timestamp (or block.number) directly.
      */
-    function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
-        external
-        returns (bytes memory context, uint256 validationData);
+    function validatePaymasterUserOp(
+        UserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 maxCost
+    ) external returns (bytes memory context, uint256 validationData);
 
     /**
      * Post-operation handler.
@@ -41,7 +43,11 @@ interface IPaymaster {
      * @param context - the context value returned by validatePaymasterUserOp
      * @param actualGasCost - actual gas used so far (without this postOp call).
      */
-    function postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) external;
+    function postOp(
+        PostOpMode mode,
+        bytes calldata context,
+        uint256 actualGasCost
+    ) external;
 
     enum PostOpMode {
         opSucceeded, // user op succeeded

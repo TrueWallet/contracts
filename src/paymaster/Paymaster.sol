@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {Owned} from "solmate/auth/Owned.sol";
 import {ITruePaymaster} from "./ITruePaymaster.sol";
@@ -10,7 +10,10 @@ import {UserOperation} from "../interfaces/UserOperation.sol";
 contract Paymaster is ITruePaymaster, Owned {
     IEntryPoint public entryPoint;
 
-    event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
+    event UpdateEntryPoint(
+        address indexed _newEntryPoint,
+        address indexed _oldEntryPoint
+    );
 
     /// @notice Validate that only the entryPoint is able to call a method
     modifier onlyEntryPoint() {
@@ -55,6 +58,7 @@ contract Paymaster is ITruePaymaster, Owned {
         bytes32 userOpHash,
         uint256 maxCost
     ) external returns (bytes memory context, uint256 deadline) {
+        (userOp, userOpHash, maxCost);
         // Pay for all transactions from everyone, with no check
         return ("", 0);
     }

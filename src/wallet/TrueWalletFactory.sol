@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
@@ -12,7 +12,10 @@ import {WalletErrors} from "../common/Errors.sol";
 contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     address public immutable walletImplementation;
 
-    constructor(address _walletImplementation, address _owner) Ownable() Pausable() {
+    constructor(
+        address _walletImplementation,
+        address _owner
+    ) Ownable() Pausable() {
         if (_walletImplementation == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
@@ -29,7 +32,12 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         uint32 upgradeDelay,
         bytes32 salt
     ) external whenNotPaused returns (TrueWallet) {
-        address walletAddress = getWalletAddress(entryPoint, walletOwner, upgradeDelay, salt);
+        address walletAddress = getWalletAddress(
+            entryPoint,
+            walletOwner,
+            upgradeDelay,
+            salt
+        );
 
         // Determine if a wallet is already deployed at this address, if so return that
         uint256 codeSize = walletAddress.code.length;
@@ -37,12 +45,16 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
             return TrueWallet(payable(walletAddress));
         } else {
             // Deploy the wallet
-            TrueWallet wallet = TrueWallet(payable(new TrueWalletProxy{salt: bytes32(salt)}(
-                walletImplementation,
-                abi.encodeCall(
-                    TrueWallet.initialize,
-                    (entryPoint, walletOwner, upgradeDelay)
-                )))
+            TrueWallet wallet = TrueWallet(
+                payable(
+                    new TrueWalletProxy{salt: bytes32(salt)}(
+                        walletImplementation,
+                        abi.encodeCall(
+                            TrueWallet.initialize,
+                            (entryPoint, walletOwner, upgradeDelay)
+                        )
+                    )
+                )
             );
 
             return wallet;

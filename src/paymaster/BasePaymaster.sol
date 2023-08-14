@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {Owned} from "solmate/auth/Owned.sol";
 import {IPaymaster} from "./ITruePaymaster.sol";
@@ -15,7 +15,10 @@ import {UserOperation} from "../interfaces/UserOperation.sol";
 abstract contract BasePaymaster is IPaymaster, Owned {
     IEntryPoint public entryPoint;
 
-    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
 
     /// @notice Validate that only the entryPoint is able to call a method
     modifier onlyEntryPoint() {
@@ -55,7 +58,12 @@ abstract contract BasePaymaster is IPaymaster, Owned {
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 maxCost
-    ) external override onlyEntryPoint returns (bytes memory context, uint256 validationData) {
+    )
+        external
+        override
+        onlyEntryPoint
+        returns (bytes memory context, uint256 validationData)
+    {
         // Pay for all transactions from everyone, with no check
         return _validatePaymasterUserOp(userOp, userOpHash, maxCost);
     }
@@ -85,7 +93,6 @@ abstract contract BasePaymaster is IPaymaster, Owned {
         revert("must override");
     }
 
-    
     /////////////////  STAKE MANAGEMENT ///////////////
 
     /// @notice Add stake for this paymaster to the entryPoint. Used to allow the paymaster to operate and prevent DDOS
@@ -104,17 +111,17 @@ abstract contract BasePaymaster is IPaymaster, Owned {
         entryPoint.withdrawStake(to);
     }
 
-    
     /////////////////  DEPOSIT MANAGEMENT ///////////////
 
     /// @notice Add a deposit for this paymaster to the EntryPoint. Deposit is used to pay user gas fees
-    function deposit() external payable virtual;// {
-        // entryPoint.depositTo{value: msg.value}(address(this));
+    function deposit() external payable virtual; // {
+
+    // entryPoint.depositTo{value: msg.value}(address(this));
     // }
 
     /// @notice Withdraw paymaster deposit to an address
-    function withdrawTo(address payable to, uint256 amount) external virtual;// {
-        // entryPoint.withdrawTo(to, amount);
+    function withdrawTo(address payable to, uint256 amount) external virtual; // {
+    // entryPoint.withdrawTo(to, amount);
     // }
 
     // /// @notice Withdraw all paymaster deposit to an address

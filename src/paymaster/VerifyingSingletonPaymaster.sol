@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 /* solhint-disable reason-string */
 /* solhint-disable no-inline-assembly */
@@ -34,11 +34,25 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
 
     address public verifyingSigner;
 
-    event EPGasOverheadChanged(uint256 indexed oldValue, uint256 indexed newValue);
-    event VerifyingSingerChanged(address indexed oldSinger, address indexed newSigner, address indexed actor);
+    event EPGasOverheadChanged(
+        uint256 indexed oldValue,
+        uint256 indexed newValue
+    );
+    event VerifyingSingerChanged(
+        address indexed oldSinger,
+        address indexed newSigner,
+        address indexed actor
+    );
     event GasDeposited(address indexed paymasterId, uint256 indexed value);
-    event GasWithdraw(address indexed paymasterId, address indexed to, uint256 indexed value);
-    event GasBalanceDeducted(address indexed paymasterId, uint256 indexed change);
+    event GasWithdraw(
+        address indexed paymasterId,
+        address indexed to,
+        uint256 indexed value
+    );
+    event GasBalanceDeducted(
+        address indexed paymasterId,
+        uint256 indexed change
+    );
 
     error EntryPointCannotBeZero();
     error OwnerAddressCannotBeZero();
@@ -56,7 +70,8 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
     ) payable BasePaymaster(_entryPoint, _owner) {
         if (address(_entryPoint) == address(0)) revert EntryPointCannotBeZero();
         if (_owner == address(0)) revert OwnerAddressCannotBeZero();
-        if (_verifyingSigner == address(0)) revert VerifyingSignerCannotBeZero();
+        if (_verifyingSigner == address(0))
+            revert VerifyingSignerCannotBeZero();
 
         assembly {
             sstore(verifyingSigner.slot, _verifyingSigner)
@@ -67,17 +82,21 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
 
     /// @dev Get the current deposit for paymasterId (Dapp Depositor address)
     /// @param paymasterId dapp identifier
-    function getBalance(address paymasterId) external view returns (uint256 balance) {
+    function getBalance(
+        address paymasterId
+    ) external view returns (uint256 balance) {
         balance = paymasterIdBalances[paymasterId];
-    }    
+    }
 
     /// @dev Add a deposit for this paymaster and given paymasterId (Dapp Depositor address), used for paying for transaction fees
     /// @param paymasterId dapp identifier for which deposit is being made
     function depositeFor(address paymasterId) external payable nonReentrant {
         if (paymasterId == address(0)) revert PaymasterIdCannotBeZero();
         if (msg.value == 0) revert DepositeCannotBeZero();
-        
-        paymasterIdBalances[paymasterId] = paymasterIdBalances[paymasterId] + msg.value;
+
+        paymasterIdBalances[paymasterId] =
+            paymasterIdBalances[paymasterId] +
+            msg.value;
 
         emit GasDeposited(paymasterId, msg.value);
     }
@@ -90,12 +109,18 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
     /// @dev Withdraws the specified amount of gas tokens from the paymaster's balance and transfers them to the specified address
     /// @param withdrawAddress The address to which the gas tokens should be transferred
     /// @param amount The amount of gas tokens to withdraw
-    function withdrawTo(address payable withdrawAddress, uint256 amount) public override nonReentrant {
+    function withdrawTo(
+        address payable withdrawAddress,
+        uint256 amount
+    ) public override nonReentrant {
         if (withdrawAddress == address(0)) revert CanNotWithdrawToZeroAddress();
         uint256 currectBalance = paymasterIdBalances[msg.sender];
-        if (amount > currectBalance) revert InsufficientBalance(amount, currectBalance);
-        
-        paymasterIdBalances[msg.sender] = paymasterIdBalances[msg.sender] - amount;
+        if (amount > currectBalance)
+            revert InsufficientBalance(amount, currectBalance);
+
+        paymasterIdBalances[msg.sender] =
+            paymasterIdBalances[msg.sender] -
+            amount;
         entryPoint.withdrawTo(withdrawAddress, amount);
 
         emit GasWithdraw(msg.sender, withdrawAddress, amount);
@@ -104,7 +129,8 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
     /// @dev Set a new verifying signer address
     /// @param newVerifyingSigner The new address to be set as the verifying signer
     function setSigner(address newVerifyingSigner) external onlyOwner {
-        if (newVerifyingSigner == address(0)) revert VerifyingSignerCannotBeZero();
+        if (newVerifyingSigner == address(0))
+            revert VerifyingSignerCannotBeZero();
         address oldSigner = verifyingSigner;
 
         assembly {
@@ -162,9 +188,9 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 requiredPreFund
-    ) internal override returns (bytes memory context, uint256 validationData){
+    ) internal override returns (bytes memory context, uint256 validationData) {
         PaymasterData memory paymasterData = userOp._decodePaymasterData();
-        console.log("_decodePaymasterData"); //
+        // console.log("_decodePaymasterData"); //
         bytes32 hash = getHash(userOp, paymasterData.paymasterId);
         uint256 sigLength = paymasterData.singnatureLength;
         // we only "require" it here so that the revert reason on invalid signature will be of "VerifyingPaymaster", and not "ECDSA"
@@ -183,7 +209,7 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
                 requiredPreFund,
                 paymasterIdBalances[paymasterData.paymasterId]
             );
-        
+
         return (userOp.paymasterContext(paymasterData, userOp.gasPrice()), 0);
     }
 
@@ -199,8 +225,11 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
         PaymasterContext memory data = context._decodePaymasterContext();
         address extractedPaymasterId = data.paymasterId;
         uint256 balToDeduct = actualGasCost +
-            unaccountedEPGasOverhead * data.gasPrice;
-        paymasterIdBalances[extractedPaymasterId] = paymasterIdBalances[extractedPaymasterId] - balToDeduct;
+            unaccountedEPGasOverhead *
+            data.gasPrice;
+        paymasterIdBalances[extractedPaymasterId] =
+            paymasterIdBalances[extractedPaymasterId] -
+            balToDeduct;
 
         emit GasBalanceDeducted(extractedPaymasterId, balToDeduct);
     }

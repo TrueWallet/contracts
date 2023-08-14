@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -22,7 +22,10 @@ contract SocialRecoveryUnitTest is Test {
 
     event GuardianAdded(address[] indexed guardians, uint16 threshold);
     event GuardianRevoked(address indexed guardian);
-    event RecoveryExecuted(address indexed guardian, bytes32 indexed recoveryHash);
+    event RecoveryExecuted(
+        address indexed guardian,
+        bytes32 indexed recoveryHash
+    );
     event RecoveryCanceled(bytes32 recoveryHash);
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
@@ -373,7 +376,7 @@ contract SocialRecoveryUnitTest is Test {
 
         assertEq(wallet.owner(), address(newOwner));
     }
-  
+
     function testExecuteRecoveryWhenIsExecuted() public {
         address guardian1 = address(21);
         address[] memory guardians = new address[](1);
@@ -605,7 +608,9 @@ contract SocialRecoveryUnitTest is Test {
         hoax(address(guardian1), 0.5 ether);
         wallet.confirmRecovery(recoveryHash);
         assertFalse(wallet.isExecuted(recoveryHash));
-        assertTrue(wallet.isConfirmedByGuardian(address(guardian1), recoveryHash));
+        assertTrue(
+            wallet.isConfirmedByGuardian(address(guardian1), recoveryHash)
+        );
 
         vm.prank(address(ownerAddress));
         vm.expectEmit(true, false, false, true);

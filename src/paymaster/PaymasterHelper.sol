@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {UserOperationLib, UserOperation} from "../interfaces/UserOperation.sol";
@@ -20,7 +20,7 @@ struct PaymasterContext {
  */
 
 library PaymasterHelpers {
-     using ECDSA for bytes32;
+    using ECDSA for bytes32;
 
     /**
      * @dev Encodes the paymaster context: paymasterId and gasPrice

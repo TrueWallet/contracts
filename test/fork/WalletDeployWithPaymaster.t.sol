@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -13,10 +13,13 @@ import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract WalletDeployWithPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint =
+        IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.FACTORY);
-    IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
-    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
+    IWalletFactory public constant walletFactory =
+        IWalletFactory(MumbaiConfig.FACTORY);
+    ITruePaymaster public constant paymaster =
+        ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -26,14 +29,26 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
     bytes32 public userOpHash;
     address aggregator;
     uint256 missingWalletFunds;
-    bytes32 salt = keccak256(abi.encodePacked(address(walletFactory), address(entryPoint), block.timestamp));
+    bytes32 salt =
+        keccak256(
+            abi.encodePacked(
+                address(walletFactory),
+                address(entryPoint),
+                block.timestamp
+            )
+        );
     uint32 upgradeDelay = 172800; // 2 days in seconds
 
     UserOperation public userOp;
 
     function setUp() public {
         // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, salt);
+        address sender = walletFactory.getWalletAddress(
+            address(entryPoint),
+            walletOwner,
+            upgradeDelay,
+            salt
+        );
         vm.deal(sender, 1 ether);
 
         // 1. Generate a userOperation
@@ -54,7 +69,13 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         // 2. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, salt)
+            abi.encodeWithSelector(
+                walletFactory.createWallet.selector,
+                address(entryPoint),
+                walletOwner,
+                upgradeDelay,
+                salt
+            )
         );
         userOp.initCode = initCode;
 
@@ -63,7 +84,12 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
 
         // 4. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         // 5. Set remainder of test case
@@ -92,7 +118,12 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(
+            address(entryPoint),
+            walletOwner,
+            upgradeDelay,
+            salt
+        );
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -102,11 +133,13 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
+        uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
+            paymaster.getDeposit();
         assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance;
+        uint256 gasFeeWalletPayd = initialWalletETHBalance -
+            address(wallet).balance;
         assertEq(gasFeeWalletPayd, 0);
     }
 }

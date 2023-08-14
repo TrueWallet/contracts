@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -26,7 +26,9 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
-        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+        uint256(
+            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+        );
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
@@ -38,12 +40,16 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
-        paymaster = new VerifyingSingletonPaymaster(address(entryPoint), ownerAddress, ownerAddress);
+        paymaster = new VerifyingSingletonPaymaster(
+            address(entryPoint),
+            ownerAddress,
+            ownerAddress
+        );
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
             (address(entryPoint), ownerAddress, upgradeDelay)
-        ); 
+        );
 
         TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
@@ -161,7 +167,11 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         uint256 maxCost = 1096029019333521;
 
         bytes32 salt = keccak256(
-            abi.encodePacked(address(factory), address(entryPoint), upgradeDelay)
+            abi.encodePacked(
+                address(factory),
+                address(entryPoint),
+                upgradeDelay
+            )
         );
 
         UserOperation memory userOp;
@@ -170,21 +180,31 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         // // userOp.signature = createSignature2()
 
         // vm.prank(address(wallet));
-        // bytes32 userOpHash = paymaster.getHash(userOp, paymasterId1); 
+        // bytes32 userOpHash = paymaster.getHash(userOp, paymasterId1);
         // bytes memory sign = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         // userOp.signature = sign;
 
         userOp = generateUserOp();
-        
+
         // 2. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(factory)),
-            abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), ownerAddress, upgradeDelay, salt)
+            abi.encodeWithSelector(
+                factory.createWallet.selector,
+                address(entryPoint),
+                ownerAddress,
+                upgradeDelay,
+                salt
+            )
         );
         userOp.initCode = initCode;
 
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature2(userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature2(
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         bytes memory paymasterAndData = abi.encode(
@@ -199,11 +219,10 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         paymaster.validatePaymasterUserOp(userOp, userOpHash, maxCost);
 
         // entryPoint.simulateValidation(userOp);
-
     }
 
     // helper for testValidatePaymasterUserOp()
-    function generateUserOp() public returns(UserOperation memory userOp) {
+    function generateUserOp() public returns (UserOperation memory userOp) {
         UserOperation memory userOp;
 
         // console.log("wallet.code.length ", address(wallet).code.length);

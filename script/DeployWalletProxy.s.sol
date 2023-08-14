@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Script.sol";
 
@@ -14,7 +14,15 @@ contract DeployWalletProxyScript is Script {
     address public entryPoint;
     address public owner;
     uint256 public deployerPrivateKey;
-    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), upgradeDelay, block.timestamp));
+    bytes32 salt =
+        keccak256(
+            abi.encodePacked(
+                address(factory),
+                address(entryPoint),
+                upgradeDelay,
+                block.timestamp
+            )
+        );
     uint32 upgradeDelay = 172800;
 
     function setUp() public {
@@ -26,7 +34,12 @@ contract DeployWalletProxyScript is Script {
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
-        wallet = factory.createWallet(address(entryPoint), owner, upgradeDelay, salt);
+        wallet = factory.createWallet(
+            address(entryPoint),
+            owner,
+            upgradeDelay,
+            salt
+        );
         vm.stopBroadcast();
     }
 }

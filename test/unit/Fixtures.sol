@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {Vm} from "forge-std/Test.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";

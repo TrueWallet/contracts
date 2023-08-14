@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 
@@ -44,8 +44,15 @@ interface IWallet {
     function nonce() external view returns (uint96);
 
     /// @notice Method called by the entryPoint to execute a userOperation
-    function execute(address target, uint256 value, bytes calldata payload) external;
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata payload
+    ) external;
 
     /// @notice Verifies that the signer is the owner of the signing contract
-    function isValidSignature(bytes32 messageHash, bytes memory signature) external view returns (bytes4);
+    function isValidSignature(
+        bytes32 messageHash,
+        bytes memory signature
+    ) external view returns (bytes4);
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -14,9 +14,11 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
 
 contract ERC20TransferWithPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint =
+        IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster =
+        ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -61,7 +63,11 @@ contract ERC20TransferWithPaymasterEntToEndTest is Test {
             wallet.execute.selector,
             address(token),
             0,
-            abi.encodeWithSelector(token.transfer.selector, recipient, tokenTransferAmount)
+            abi.encodeWithSelector(
+                token.transfer.selector,
+                recipient,
+                tokenTransferAmount
+            )
         );
 
         // 3. Set paymaster on UserOperation
@@ -69,7 +75,12 @@ contract ERC20TransferWithPaymasterEntToEndTest is Test {
 
         // 4. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         // Set remainder of test case
@@ -116,15 +127,23 @@ contract ERC20TransferWithPaymasterEntToEndTest is Test {
 
         // Verify respective token amount transfered from wallet to recipient
         uint256 finalWalletERC20Balance = token.balanceOf(address(wallet));
-        assertEq(finalWalletERC20Balance, initialWalletERC20Balance - tokenTransferAmount);
-        assertEq(token.balanceOf(recipient), initialRecipientERC20Balance + tokenTransferAmount);
+        assertEq(
+            finalWalletERC20Balance,
+            initialWalletERC20Balance - tokenTransferAmount
+        );
+        assertEq(
+            token.balanceOf(recipient),
+            initialRecipientERC20Balance + tokenTransferAmount
+        );
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
+        uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
+            paymaster.getDeposit();
         assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify beneficiary(bundler) balance received gas fee
-        uint256 gasFeeBeneficiaryCompensated = address(beneficiary).balance - initialBeneficiaryETHBalance;
+        uint256 gasFeeBeneficiaryCompensated = address(beneficiary).balance -
+            initialBeneficiaryETHBalance;
         assertEq(gasFeeBeneficiaryCompensated, gasFeePaymasterPayd);
     }
 }

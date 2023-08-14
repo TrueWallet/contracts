@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -19,7 +19,9 @@ contract PaymasterUnitTest is Test {
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
-        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+        uint256(
+            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+        );
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
@@ -33,7 +35,7 @@ contract PaymasterUnitTest is Test {
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
             (address(entryPoint), ownerAddress, upgradeDelay)
-        ); 
+        );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
