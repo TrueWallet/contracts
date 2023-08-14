@@ -243,8 +243,7 @@ contract VerifyingPaymasterUnitTest is Test {
     }
 
     function testValidatePaymasterUserOp() public {
-
-        console.log("address(wallet).code.length ", address(wallet).code.length);
+        vm.deal(address(wallet), 1 ether);
 
         UserOperation memory userOp1;
 
@@ -273,7 +272,6 @@ contract VerifyingPaymasterUnitTest is Test {
             sign
         );
 
-
         // Set remainder of test case
         // address aggregator = address(0);
         uint256 missingWalletFunds = 1096029019333521;
@@ -281,11 +279,5 @@ contract VerifyingPaymasterUnitTest is Test {
         // Validate that the smart wallet can validate a userOperation
         vm.startPrank(address(entryPoint));
         (, uint256 validationData) = paymaster.validatePaymasterUserOp(userOp, opHash1, missingWalletFunds);
-
-        console.log("after paymaster.validatePaymasterUserOp");
-        
-        entryPoint.simulateValidation(userOp);
-
-        console.log("after entryPoint.simulateValidation(userOp)");
     }
 }
