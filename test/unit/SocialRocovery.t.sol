@@ -433,12 +433,12 @@ contract SocialRecoveryUnitTest is Test {
 
         address newOwner = address(22);
 
-        bytes32 recoveryHash = wallet.getRecoveryHash(
-            guardians,
-            newOwner,
-            threshold,
-            wallet.nonce()
-        );
+        // bytes32 recoveryHash = wallet.getRecoveryHash(
+        //     guardians,
+        //     newOwner,
+        //     threshold,
+        //     wallet.nonce()
+        // );
 
         vm.warp(wallet.executeAfter());
         vm.prank(address(guardian1));

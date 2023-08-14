@@ -200,8 +200,8 @@ contract VerifyingPaymasterUnitTest is Test {
     }
 
     ///
-    function generateUserOp() public returns (UserOperation memory userOp) {
-        UserOperation memory userOp;
+    function generateUserOp() public view returns (UserOperation memory userOp) {
+        // UserOperation memory userOp;
 
         userOp = UserOperation({
             sender: address(wallet),
@@ -282,7 +282,8 @@ contract VerifyingPaymasterUnitTest is Test {
 
         // Validate that the smart wallet can validate a userOperation
         vm.startPrank(address(entryPoint));
-        (, uint256 validationData) = paymaster.validatePaymasterUserOp(
+        // (, uint256 validationData) = 
+        paymaster.validatePaymasterUserOp(
             userOp,
             opHash1,
             missingWalletFunds

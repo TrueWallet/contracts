@@ -57,7 +57,7 @@ contract Paymaster is ITruePaymaster, Owned {
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 maxCost
-    ) external returns (bytes memory context, uint256 deadline) {
+    ) external pure returns (bytes memory context, uint256 deadline) {
         (userOp, userOpHash, maxCost);
         // Pay for all transactions from everyone, with no check
         return ("", 0);

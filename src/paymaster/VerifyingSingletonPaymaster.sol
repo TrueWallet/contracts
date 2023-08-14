@@ -188,7 +188,8 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 requiredPreFund
-    ) internal override returns (bytes memory context, uint256 validationData) {
+    ) internal view override returns (bytes memory context, uint256 validationData) {
+        (userOpHash);
         PaymasterData memory paymasterData = userOp._decodePaymasterData();
         // console.log("_decodePaymasterData"); //
         bytes32 hash = getHash(userOp, paymasterData.paymasterId);
@@ -222,6 +223,7 @@ contract VerifyingSingletonPaymaster is BasePaymaster, ReentrancyGuard {
         bytes calldata context,
         uint256 actualGasCost
     ) internal virtual override {
+        (mode);
         PaymasterContext memory data = context._decodePaymasterContext();
         address extractedPaymasterId = data.paymasterId;
         uint256 balToDeduct = actualGasCost +

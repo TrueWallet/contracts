@@ -163,7 +163,7 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
 
     // TODO
     function testValidatePaymasterUserOp() public {
-        address paymasterId1 = address(14);
+        // address paymasterId1 = address(14);
         uint256 maxCost = 1096029019333521;
 
         bytes32 salt = keccak256(
@@ -222,9 +222,8 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
     }
 
     // helper for testValidatePaymasterUserOp()
-    function generateUserOp() public returns (UserOperation memory userOp) {
-        UserOperation memory userOp;
-
+    function generateUserOp() public view returns (UserOperation memory userOp) {
+        // UserOperation memory userOp;
         // console.log("wallet.code.length ", address(wallet).code.length);
 
         userOp = UserOperation({

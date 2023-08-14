@@ -100,20 +100,20 @@ contract SocialRecovery is SocialRecoveryErrors {
     }
 
     /// @notice Lets the owner revoke a guardian from the wallet
-    /// @param guardian The guardian address to revoke
-    /// @param threshold The new required number of guardians to confirm replacement
+    /// @param _guardian The guardian address to revoke
+    /// @param _threshold The new required number of guardians to confirm replacement
     function _revokeGuardianWithThreshold(
-        address guardian,
-        uint16 threshold
+        address _guardian,
+        uint16 _threshold
     ) internal {
-        if (!isGuardian(guardian)) revert InvalidGuardian();
+        if (!isGuardian(_guardian)) revert InvalidGuardian();
         address[] storage guardians = AccountStorage.layout().guardians;
         uint256 guardiansSize = guardiansCount();
-        if (threshold > guardiansSize - 1) revert InvalidThreshold();
+        if (_threshold > guardiansSize - 1) revert InvalidThreshold();
         uint256 index;
         unchecked {
             for (uint256 i; i < guardiansSize; i++) {
-                if (guardians[i] == guardian) {
+                if (guardians[i] == _guardian) {
                     index = i;
                     break;
                 }
@@ -127,9 +127,9 @@ contract SocialRecovery is SocialRecoveryErrors {
                 guardians.pop();
             }
         }
-        AccountStorage.layout().isGuardian[guardian] = false;
+        AccountStorage.layout().isGuardian[_guardian] = false;
 
-        emit GuardianRevoked(guardian);
+        emit GuardianRevoked(_guardian);
     }
 
     /// @dev Transfer ownership once recovery requiest is completed successfully
@@ -140,7 +140,7 @@ contract SocialRecovery is SocialRecoveryErrors {
     }
 
     /// @dev Get wallet's nonce
-    function _getWalletNonce() internal returns (uint96) {
+    function _getWalletNonce() internal view returns (uint96) {
         return AccountStorage.layout().nonce;
     }
 
@@ -180,7 +180,7 @@ contract SocialRecovery is SocialRecoveryErrors {
         address _newOwner,
         uint16 _threshold,
         uint256 _nonce
-    ) public view returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         bytes32 recoveryHash = keccak256(
             abi.encode(
                 keccak256(abi.encodePacked(_guardians)),

@@ -133,8 +133,8 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
-            paymaster.getDeposit();
+        // uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
+        //     paymaster.getDeposit();
         assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify smart contract wallet did not use it's gas deposit

@@ -342,8 +342,9 @@ contract TrueWalletUnitTest is Test {
         hoax(address(this), 1 ether);
         vm.expectEmit(true, true, false, false);
         emit ReceivedETH(address(this), 1 ether);
-        payable(address(wallet)).call{value: 1 ether}("");
-
+        (bool success, ) = payable(address(wallet)).call{value: 1 ether}("");
+        require(success);
+        
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));

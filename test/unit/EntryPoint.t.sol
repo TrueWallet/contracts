@@ -47,10 +47,10 @@ contract EntryPointUnitTest is Test {
 
         entryPoint = new EntryPoint();
 
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay)
-        );
+        // bytes memory data = abi.encodeCall(
+        //     TrueWallet.initialize,
+        //     (address(entryPoint), ownerAddress, upgradeDelay)
+        // );
 
         factory = new TrueWalletFactory(address(wallet), address(this));
     }
