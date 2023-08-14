@@ -85,58 +85,6 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         assertEq(paymaster.getDeposit(), 0 ether);
     }
 
-    // function testWithdraw() public {
-    //     testDeposit();
-
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    //     assertEq(address(user).balance, 0);
-
-    //     vm.prank(address(ownerAddress));
-    //     paymaster.withdraw(payable(address(user)), 0.3 ether);
-
-    //     assertEq(address(user).balance, 0.3 ether);
-    // }
-
-    // function testWithdrawNotOwner() public {
-    //     testDeposit();
-
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    //     assertEq(address(user).balance, 0);
-
-    //     vm.prank(address(notOwner));
-    //     vm.expectRevert();
-    //     paymaster.withdraw(payable(address(user)), 0.3 ether);
-
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    // }
-
-    // function testWithdrawAll() public {
-    //     testDeposit();
-
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    //     assertEq(address(user).balance, 0);
-
-    //     vm.prank(address(ownerAddress));
-    //     paymaster.withdrawAll(payable(address(user)));
-
-    //     assertEq(address(user).balance, 0.5 ether);
-    //     assertEq(address(entryPoint).balance, 0);
-    // }
-
-    // function testWithdrawAllNotOwner() public {
-    //     testDeposit();
-
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    //     assertEq(address(user).balance, 0);
-
-    //     vm.prank(address(notOwner));
-    //     vm.expectRevert();
-    //     paymaster.withdrawAll(payable(address(user)));
-
-    //     assertEq(address(user).balance, 0);
-    //     assertEq(address(entryPoint).balance, 0.5 ether);
-    // }
-
     function testAddStake() public {
         assertEq(paymaster.getStake(), 0);
 
@@ -207,7 +155,6 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         assertEq(paymaster.getBalance(paymasterId1), 0);
     }
 
-
     // TODO
     function testValidatePaymasterUserOp() public {
         address paymasterId1 = address(14);
@@ -246,12 +193,12 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
         );
         userOp.paymasterAndData = paymasterAndData;
 
-        console.log("paymaster.code.length ", address(paymaster).code.length);
+        // console.log("paymaster.code.length ", address(paymaster).code.length);
 
         vm.prank(address(entryPoint));
         paymaster.validatePaymasterUserOp(userOp, userOpHash, maxCost);
 
-        entryPoint.simulateValidation(userOp);
+        // entryPoint.simulateValidation(userOp);
 
     }
 
@@ -259,7 +206,7 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
     function generateUserOp() public returns(UserOperation memory userOp) {
         UserOperation memory userOp;
 
-        console.log("wallet.code.length ", address(wallet).code.length);
+        // console.log("wallet.code.length ", address(wallet).code.length);
 
         userOp = UserOperation({
             sender: address(wallet),
@@ -275,5 +222,4 @@ contract VerifyingSingletonPaymasterUnitTest is Test {
             signature: ""
         });
     }
-
 }
