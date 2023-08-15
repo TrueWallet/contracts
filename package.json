@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "forge build",
+    "build": "forge build --sizes",
     "compile": "forge compile",
     "test": "forge test --match-contract UnitTest -vvv",
     "test:fork": "source .env && forge test --match-contract EntToEndTest --rpc-url $MUMBAI_RPC_URL -vvv",
@@ -19,7 +19,7 @@
     "deployPaymaster:goerli": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $GOERLI_RPC_URL --broadcast --etherscan-api-key $ETHERSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
     "deployEntryPoint:mumbai": "source .env && forge script script/DeployEntryPoint.s.sol:DeployEntryPointScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
     "deployWalletImpl:mumbai": "source .env && forge script script/DeployWallet.s.sol:DeployWalletScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
-    "deployWallet:mumbai": "source .env && forge script script/DeployWalletProxy.s.sol:DeployWalletProxyScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
+    "deployWallet:mumbai": "source .env && forge script script/DeployWalletProxy.s.sol:DeployWalletProxyScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv --gas-price 40000000000",
     "deployFactory:mumbai": "source .env && forge script script/DeployWalletFactory.s.sol:DeployWalletFactoryScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv",
     "deployPaymaster:mumbai": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify --gas-limit $GAS_LIMIT -vvvv"
   },
