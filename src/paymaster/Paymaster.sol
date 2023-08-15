@@ -58,7 +58,7 @@ contract Paymaster is ITruePaymaster, Owned {
         bytes32 userOpHash,
         uint256 maxCost
     ) external pure returns (bytes memory context, uint256 deadline) {
-        (userOp, userOpHash, maxCost);
+        (userOp, userOpHash, maxCost); // unused params
         // Pay for all transactions from everyone, with no check
         return ("", 0);
     }

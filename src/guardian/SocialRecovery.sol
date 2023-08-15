@@ -199,7 +199,7 @@ contract SocialRecovery is SocialRecoveryErrors {
         address _newOwner,
         uint16 _threshold,
         uint256 _nonce
-    ) public view returns (bytes32) {
+    ) public pure returns (bytes32) {
         return
             keccak256(
                 encodeRecoveryData(_guardians, _newOwner, _threshold, _nonce)

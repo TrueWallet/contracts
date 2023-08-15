@@ -16,8 +16,6 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
-import "forge-std/console.sol";
-
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
@@ -29,7 +27,7 @@ contract TrueWallet is
     TokenCallbackHandler,
     WalletErrors
 {
-    /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
+    /// @notice All state variables are stored in AccountStorage. Layout with specific storage slot to avoid storage collision.
     using AccountStorage for AccountStorage.Layout;
 
     /////////////////  EVENTS ///////////////
@@ -157,7 +155,6 @@ contract TrueWallet is
     /// @notice Validate that the userOperation is valid
     /// @param userOp - ERC-4337 User Operation
     /// @param userOpHash - Hash of the user operation, entryPoint address and chainId
-    // /// @param aggregator - Signature aggregator
     /// @param missingWalletFunds - Amount of ETH to pay the EntryPoint for processing the transaction
     function validateUserOp(
         UserOperation calldata userOp,
