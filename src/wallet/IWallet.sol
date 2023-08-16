@@ -50,6 +50,13 @@ interface IWallet {
         bytes calldata payload
     ) external;
 
+    /// @notice Method called by the entryPoint to execute a userOperation with a sequence of transactions
+    function executeBatch(
+        address[] calldata target,
+        uint256[] calldata value,
+        bytes[] calldata payload
+    ) external;
+
     /// @notice Verifies that the signer is the owner of the signing contract
     function isValidSignature(
         bytes32 messageHash,
