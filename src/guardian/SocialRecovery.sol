@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {SocialRecoveryErrors} from "../common/Errors.sol";
@@ -18,10 +18,16 @@ contract SocialRecovery is SocialRecoveryErrors {
     /// @dev Emitted when guardian is revoked
     event GuardianRevoked(address indexed guardian);
     /// @dev Emitted when recovery is confirmed by guardian
-    event RecoveryConfirmed(address indexed guardian, bytes32 indexed recoveryHash);
+    event RecoveryConfirmed(
+        address indexed guardian,
+        bytes32 indexed recoveryHash
+    );
     /// @dev Emitted when recovery is executed by guardian
-    event RecoveryExecuted(address indexed guardian, bytes32 indexed recoveryHash);
-    /// @dev Emmited when recovey is canceled by owner   
+    event RecoveryExecuted(
+        address indexed guardian,
+        bytes32 indexed recoveryHash
+    );
+    /// @dev Emmited when recovey is canceled by owner
     event RecoveryCanceled(bytes32 recoveryHash);
     /// @dev Emitted when ownership is transfered after recovery execution
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
@@ -48,8 +54,14 @@ contract SocialRecovery is SocialRecoveryErrors {
     /// @param newOwner The new owner address
     function executeRecovery(address newOwner) public onlyGuardian {
         AccountStorage.Layout storage layout = AccountStorage.layout();
-        if (uint64(block.timestamp) < layout.executeAfter) revert RecoveryPeriodStillPending();
-        bytes32 recoveryHash = getRecoveryHash(layout.guardians, newOwner, layout.threshold, _getWalletNonce());
+        if (uint64(block.timestamp) < layout.executeAfter)
+            revert RecoveryPeriodStillPending();
+        bytes32 recoveryHash = getRecoveryHash(
+            layout.guardians,
+            newOwner,
+            layout.threshold,
+            _getWalletNonce()
+        );
         if (layout.isExecuted[recoveryHash] == true)
             revert RecoveryAlreadyExecuted();
         if (!isConfirmedByRequiredGuardians(recoveryHash))
@@ -64,7 +76,10 @@ contract SocialRecovery is SocialRecoveryErrors {
     /// @dev Lets the owner add a guardian for its wallet
     /// @param _guardians List of guardians' addresses
     /// @param _threshold Required number of guardians to confirm replacement
-    function _addGuardianWithThreshold(address[] calldata _guardians, uint16 _threshold) internal {
+    function _addGuardianWithThreshold(
+        address[] calldata _guardians,
+        uint16 _threshold
+    ) internal {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         if (_threshold > _guardians.length) revert InvalidThreshold();
         if (_threshold == 0) revert InvalidThreshold();
@@ -85,17 +100,20 @@ contract SocialRecovery is SocialRecoveryErrors {
     }
 
     /// @notice Lets the owner revoke a guardian from the wallet
-    /// @param guardian The guardian address to revoke
-    /// @param threshold The new required number of guardians to confirm replacement
-    function _revokeGuardianWithThreshold(address guardian, uint16 threshold) internal {
-        if (!isGuardian(guardian)) revert InvalidGuardian();
+    /// @param _guardian The guardian address to revoke
+    /// @param _threshold The new required number of guardians to confirm replacement
+    function _revokeGuardianWithThreshold(
+        address _guardian,
+        uint16 _threshold
+    ) internal {
+        if (!isGuardian(_guardian)) revert InvalidGuardian();
         address[] storage guardians = AccountStorage.layout().guardians;
         uint256 guardiansSize = guardiansCount();
-        if (threshold > guardiansSize - 1) revert InvalidThreshold();
+        if (_threshold > guardiansSize - 1) revert InvalidThreshold();
         uint256 index;
         unchecked {
             for (uint256 i; i < guardiansSize; i++) {
-                if (guardians[i] == guardian) {
+                if (guardians[i] == _guardian) {
                     index = i;
                     break;
                 }
@@ -109,9 +127,9 @@ contract SocialRecovery is SocialRecoveryErrors {
                 guardians.pop();
             }
         }
-        AccountStorage.layout().isGuardian[guardian] = false;
+        AccountStorage.layout().isGuardian[_guardian] = false;
 
-        emit GuardianRevoked(guardian);
+        emit GuardianRevoked(_guardian);
     }
 
     /// @dev Transfer ownership once recovery requiest is completed successfully
@@ -122,7 +140,7 @@ contract SocialRecovery is SocialRecoveryErrors {
     }
 
     /// @dev Get wallet's nonce
-    function _getWalletNonce() internal returns (uint96) {
+    function _getWalletNonce() internal view returns (uint96) {
         return AccountStorage.layout().nonce;
     }
 
@@ -135,12 +153,14 @@ contract SocialRecovery is SocialRecoveryErrors {
         layout.isExecuted[recoveryHash] = true;
         layout.executeAfter = 0;
         emit RecoveryCanceled(recoveryHash);
-    } 
+    }
 
     /// @dev Returns true if confirmation count is enough
     /// @param recoveryHash Data hash
     /// @return confirmation status
-    function isConfirmedByRequiredGuardians(bytes32 recoveryHash) public view returns (bool) {
+    function isConfirmedByRequiredGuardians(
+        bytes32 recoveryHash
+    ) public view returns (bool) {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         uint256 confirmationCount;
         uint256 guardiansSize = guardiansCount();
@@ -160,7 +180,7 @@ contract SocialRecovery is SocialRecoveryErrors {
         address _newOwner,
         uint16 _threshold,
         uint256 _nonce
-    ) public view returns (bytes memory) {
+    ) public pure returns (bytes memory) {
         bytes32 recoveryHash = keccak256(
             abi.encode(
                 keccak256(abi.encodePacked(_guardians)),
@@ -179,7 +199,7 @@ contract SocialRecovery is SocialRecoveryErrors {
         address _newOwner,
         uint16 _threshold,
         uint256 _nonce
-    ) public view returns (bytes32) {
+    ) public pure returns (bytes32) {
         return
             keccak256(
                 encodeRecoveryData(_guardians, _newOwner, _threshold, _nonce)
@@ -211,7 +231,10 @@ contract SocialRecovery is SocialRecoveryErrors {
         return AccountStorage.layout().isGuardian[guardian];
     }
 
-    function isConfirmedByGuardian(address guardian, bytes32 recoveryHash) public view returns (bool) {
+    function isConfirmedByGuardian(
+        address guardian,
+        bytes32 recoveryHash
+    ) public view returns (bool) {
         return AccountStorage.layout().isConfirmed[recoveryHash][guardian];
     }
 

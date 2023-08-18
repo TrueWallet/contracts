@@ -38,7 +38,11 @@ cp .env.example .env
 ```
 ### Run fork tests:
 ```bash
-yarn test::fork
+yarn test:fork
+```
+### Get gas report:
+```bash
+yarn gas-report
 ```
 
 

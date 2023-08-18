@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 // OpenZeppelin Contracts (last updated v4.8.0) (proxy/utils/Initializable.sol)
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/utils/Address.sol";
 import "./AccountStorage.sol";
@@ -56,7 +56,6 @@ import "./AccountStorage.sol";
  * ====
  */
 abstract contract Initializable {
-    
     using AccountStorage for AccountStorage.Layout;
 
     struct InitializableLayout {
@@ -71,10 +70,13 @@ abstract contract Initializable {
         bool _initializing;
     }
 
-    function _layout() internal view returns (InitializableLayout storage layout) {
-       return  AccountStorage.layout().initializableLayout;
+    function _layout()
+        internal
+        view
+        returns (InitializableLayout storage layout)
+    {
+        return AccountStorage.layout().initializableLayout;
     }
-
 
     /**
      * @dev Triggered when the contract has been initialized or reinitialized.
@@ -91,12 +93,13 @@ abstract contract Initializable {
      * Emits an {Initialized} event.
      */
     modifier initializer() {
-        InitializableLayout storage layout= _layout();
+        InitializableLayout storage layout = _layout();
 
         bool isTopLevelCall = !layout._initializing;
         require(
             (isTopLevelCall && layout._initialized < 1) ||
-                (!Address.isContract(address(this)) && layout._initialized == 1),
+                (!Address.isContract(address(this)) &&
+                    layout._initialized == 1),
             "Initializable: contract is already initialized"
         );
         layout._initialized = 1;
@@ -129,8 +132,7 @@ abstract contract Initializable {
      * Emits an {Initialized} event.
      */
     modifier reinitializer(uint8 version) {
-
-        InitializableLayout storage layout= _layout();
+        InitializableLayout storage layout = _layout();
 
         require(
             !layout._initializing && layout._initialized < version,
@@ -148,7 +150,10 @@ abstract contract Initializable {
      * {initializer} and {reinitializer} modifiers, directly or indirectly.
      */
     modifier onlyInitializing() {
-        require(_layout()._initializing, "Initializable: contract is not initializing");
+        require(
+            _layout()._initializing,
+            "Initializable: contract is not initializing"
+        );
         _;
     }
 
@@ -161,9 +166,12 @@ abstract contract Initializable {
      * Emits an {Initialized} event the first time it is successfully executed.
      */
     function _disableInitializers() internal virtual {
-        InitializableLayout storage layout= _layout();
+        InitializableLayout storage layout = _layout();
 
-        require(!layout._initializing, "Initializable: contract is initializing");
+        require(
+            !layout._initializing,
+            "Initializable: contract is initializing"
+        );
         if (layout._initialized < type(uint8).max) {
             layout._initialized = type(uint8).max;
             emit Initialized(type(uint8).max);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 contract WalletErrors {
     /// @dev Reverts in case not valid entryPoint or owner
@@ -43,7 +43,7 @@ contract SocialRecoveryErrors {
     /// @dev Reverts when recovery period is still pending before execution
     error RecoveryPeriodStillPending();
 
-    /// @dev Reverts when no ongoing recovery requiests 
+    /// @dev Reverts when no ongoing recovery requiests
     error RecoveryNotInitiated();
 }
 

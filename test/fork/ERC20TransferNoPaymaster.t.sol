@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -14,9 +14,11 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
 
 contract ERC20TransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint =
+        IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster =
+        ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -61,16 +63,24 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
             wallet.execute.selector,
             address(token),
             0,
-            abi.encodeWithSelector(token.transfer.selector, recipient, tokenTransferAmount)
+            abi.encodeWithSelector(
+                token.transfer.selector,
+                recipient,
+                tokenTransferAmount
+            )
         );
 
         // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         // 4. Set remainder of test case
-        aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
@@ -80,7 +90,7 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
     /// @notice Validate that the smart wallet can validate a userOperation
     function testWalletValidateUserOp() public {
         vm.prank(address(entryPoint));
-        wallet.validateUserOp(userOp, userOpHash, aggregator, missingWalletFunds);
+        wallet.validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /// @notice Validate that the EntryPoint can execute a userOperation.
@@ -98,13 +108,20 @@ contract ERC20TransferNoPaymasterEntToEndTest is Test {
 
         // Verify token transfer from wallet to recipient
         uint256 finalRecipientBalance = token.balanceOf(recipient);
-        assertEq(finalRecipientBalance, initialRecipientERC20Balance + tokenTransferAmount);
+        assertEq(
+            finalRecipientBalance,
+            initialRecipientERC20Balance + tokenTransferAmount
+        );
 
         uint256 finalWalletERC20Balance = token.balanceOf(address(wallet));
-        assertEq(finalWalletERC20Balance, initialWalletERC20Balance - tokenTransferAmount);
+        assertEq(
+            finalWalletERC20Balance,
+            initialWalletERC20Balance - tokenTransferAmount
+        );
 
         // Verify wallet paid for gas
-        uint256 walletEthLoss = initialWalletETHBalance - address(wallet).balance;
+        uint256 walletEthLoss = initialWalletETHBalance -
+            address(wallet).balance;
         assertGt(walletEthLoss, 0);
     }
 }

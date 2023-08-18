@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {Vm} from "forge-std/Test.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
@@ -13,6 +13,7 @@ function createSignature(
     uint256 ownerPrivateKey,
     Vm vm
 ) pure returns (bytes memory) {
+    (userOp);
     bytes32 digest = ECDSA.toEthSignedMessageHash(messageHash);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
     bytes memory signature = bytes.concat(r, s, bytes1(v));

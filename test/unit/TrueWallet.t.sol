@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -100,14 +100,13 @@ contract TrueWalletUnitTest is Test {
             vm
         );
 
-        address aggregator = address(12);
         uint256 missingWalletFunds = 0;
 
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
             userOpHash,
-            aggregator,
+            // aggregator,
             missingWalletFunds
         );
         assertEq(deadline, 0);
@@ -296,14 +295,12 @@ contract TrueWalletUnitTest is Test {
             vm
         );
 
-        address aggregator = address(12);
         uint256 missingWalletFunds = 0.001 ether;
 
         vm.prank(address(entryPoint));
         uint256 deadline = wallet.validateUserOp(
             userOp,
             digest,
-            aggregator,
             missingWalletFunds
         );
         assertEq(deadline, 0);
@@ -345,8 +342,9 @@ contract TrueWalletUnitTest is Test {
         hoax(address(this), 1 ether);
         vm.expectEmit(true, true, false, false);
         emit ReceivedETH(address(this), 1 ether);
-        payable(address(wallet)).call{value: 1 ether}("");
-
+        (bool success, ) = payable(address(wallet)).call{value: 1 ether}("");
+        require(success);
+        
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));

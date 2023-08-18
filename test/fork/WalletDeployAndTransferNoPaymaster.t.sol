@@ -10,20 +10,24 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
+import {MockERC721} from "../mock/MockERC721.sol";
 
-contract WalletDeployNoPaymasterEntToEndTest is Test {
+contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
     IEntryPoint public constant entryPoint =
         IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWalletFactory public constant walletFactory =
         IWalletFactory(MumbaiConfig.FACTORY);
 
-    address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
+    address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
     address walletOwner = MumbaiConfig.WALLET_OWNER;
 
     // Test case
+    MockERC721 public token;
+    uint256 tokenId;
+    address recipient = 0x9fD12be3448d73c4eF4B0ae189E090c4FD83C9A1;
+    address wallet;
     bytes32 public userOpHash;
-    address aggregator;
     uint256 missingWalletFunds;
     bytes32 salt =
         keccak256(
@@ -38,18 +42,23 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
     UserOperation public userOp;
 
     function setUp() public {
-        // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(
+        // 0. Determine what the wallet account will be beforehand and fund ether to this address
+        wallet = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             upgradeDelay,
             salt
         );
-        vm.deal(sender, 1 ether);
+        vm.deal(wallet, 1 ether);
 
-        // 1. Generate a userOperation
+        // 1. Deploy a MockERC721 and fund smart wallet with token
+        tokenId = 1;
+        token = new MockERC721("Token", "TKN");
+        token.safeMint(address(wallet), tokenId);
+
+        // 2. Generate a userOperation
         userOp = UserOperation({
-            sender: sender,
+            sender: wallet,
             nonce: 0, // 0 nonce, wallet is not deployed and won't be called
             initCode: "",
             callData: "",
@@ -62,7 +71,7 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
             signature: ""
         });
 
-        // 2. Set initCode, to trigger wallet deploy
+        // 3. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
@@ -75,7 +84,20 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
         );
         userOp.initCode = initCode;
 
-        // 3. Sign userOperation and attach signature
+        // 4. Encode userOperation transfer
+        userOp.callData = abi.encodeWithSelector(
+            IWallet(wallet).execute.selector,
+            address(token),
+            0,
+            abi.encodeWithSelector(
+                token.transferFrom.selector,
+                address(wallet),
+                recipient,
+                tokenId
+            )
+        );
+
+        // 5. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(
             userOp,
@@ -85,26 +107,17 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
         );
         userOp.signature = signature;
 
-        // 4. Set remainder of test case
+        // 6. Set remainder of test case
         missingWalletFunds = 1096029019333521;
 
-        // 5. Fund deployer with ETH
+        // 7. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
     }
 
-    /// @notice Validate that the WalletFactory deploys a smart wallet
-    function testWalletDeploy() public {
-        uint256 initialAccountDepositBalance = entryPoint.balanceOf(
-            userOp.sender
-        );
-
-        UserOperation[] memory userOps = new UserOperation[](1);
-        userOps[0] = userOp;
-
-        // Deploy wallet through the entryPoint
-        entryPoint.handleOps(userOps, beneficiary);
-
-        // Verify wallet was deployed as expected
+    /// @notice Validate that the AA wallet can receive assets before deployment.
+    /// The AA wallet is only actually deployed when you send the first transaction with the wallet.
+    function testWalletDeployAndTokenTransfer() public {
+        // Verify wallet was not deployed yet
         address expectedWalletAddress = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
@@ -112,9 +125,39 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
             salt
         );
         IWallet deployedWallet = IWallet(expectedWalletAddress);
-
+        
         // Extract the code at the expected address
         uint256 codeSize = expectedWalletAddress.code.length;
+        assertEq(codeSize, 0);
+
+        // Verify the balances before deployment
+        assertEq(address(wallet).balance, 1 ether);
+        assertEq(token.balanceOf(address(wallet)), 1);
+        assertEq(token.ownerOf(tokenId), address(wallet));
+        assertEq(token.balanceOf(address(recipient)), 0);
+
+        uint256 initialAccountDepositBalance = entryPoint.balanceOf(
+            userOp.sender
+        );
+        assertEq(initialAccountDepositBalance, 0);
+
+        UserOperation[] memory userOps = new UserOperation[](1);
+        userOps[0] = userOp;
+
+        // Deploy wallet and transfer token through the entryPoint
+        entryPoint.handleOps(userOps, bundler);
+
+        // Verify wallet was deployed as expected
+        expectedWalletAddress = walletFactory.getWalletAddress(
+            address(entryPoint),
+            walletOwner,
+            upgradeDelay,
+            salt
+        );
+        deployedWallet = IWallet(expectedWalletAddress);
+
+        // Extract the code at the expected address after deployment
+        codeSize = expectedWalletAddress.code.length;
         assertGt(codeSize, 0);
         assertEq(deployedWallet.owner(), walletOwner);
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
@@ -123,5 +166,11 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
             userOp.sender
         );
         assertGt(finalAccountDepositBalance, initialAccountDepositBalance);
+
+        // Verify the balances after deployment
+        assertLt(address(wallet).balance, 1 ether);
+        assertEq(token.balanceOf(address(wallet)), 0);
+        assertEq(token.balanceOf(address(recipient)), 1);
+        assertEq(token.ownerOf(tokenId), address(recipient));
     }
 }

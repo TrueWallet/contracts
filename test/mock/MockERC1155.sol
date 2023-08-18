@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {ERC1155} from "solmate/tokens/ERC1155.sol";
 
 contract MockERC1155 is ERC1155 {
-    function uri(uint256) public pure virtual override returns (string memory) {}
+    function uri(
+        uint256
+    ) public pure virtual override returns (string memory) {}
 
     function mint(
         address to,
@@ -24,11 +26,7 @@ contract MockERC1155 is ERC1155 {
         _batchMint(to, ids, amounts, data);
     }
 
-    function burn(
-        address from,
-        uint256 id,
-        uint256 amount
-    ) public virtual {
+    function burn(address from, uint256 id, uint256 amount) public virtual {
         _burn(from, id, amount);
     }
 

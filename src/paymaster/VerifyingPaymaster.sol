@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 /* solhint-disable reason-string */
 /* solhint-disable no-inline-assembly */
@@ -36,7 +36,10 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
 
     mapping(address => uint256) public senderNonce;
 
-    event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
+    event UpdateEntryPoint(
+        address indexed _newEntryPoint,
+        address indexed _oldEntryPoint
+    );
 
     /// @notice Validate that only the entryPoint is able to call a method
     modifier onlyEntryPoint() {
@@ -49,7 +52,11 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
     /// @dev Reverts in case not valid entryPoint or owner
     error InvalidEntryPoint();
 
-    constructor(IEntryPoint _entryPoint, address _verifyingSigner, address _owner) Owned(_owner) {
+    constructor(
+        IEntryPoint _entryPoint,
+        address _verifyingSigner,
+        address _owner
+    ) Owned(_owner) {
         entryPoint = IEntryPoint(_entryPoint);
         verifyingSigner = _verifyingSigner;
     }
@@ -84,22 +91,32 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
         bytes32 /*userOpHash*/,
         uint256 requiredPreFund
     ) external returns (bytes memory context, uint256 validationData) {
-        // (requiredPreFund);
-        (uint48 validUntil, uint48 validAfter, bytes calldata signature) = parsePaymasterAndData(userOp.paymasterAndData);
+        (requiredPreFund);
+        (
+            uint48 validUntil,
+            uint48 validAfter,
+            bytes calldata signature
+        ) = parsePaymasterAndData(userOp.paymasterAndData);
         // ECDSA library supports both 64 and 65-byte long signatures.
         // we only "require" it here so that the revert reason on invalid signature will be of "VerifyingPaymaster", and not "ECDSA"
-        require(signature.length == 64 || signature.length == 65, "VerifyingPaymaster: invalid signature length in paymasterAndData");
-        bytes32 hash = ECDSA.toEthSignedMessageHash(getHash(userOp, validUntil, validAfter));
+        require(
+            signature.length == 64 || signature.length == 65,
+            "VerifyingPaymaster: invalid signature length in paymasterAndData"
+        );
+        bytes32 hash = ECDSA.toEthSignedMessageHash(
+            getHash(userOp, validUntil, validAfter)
+        );
         senderNonce[userOp.getSender()]++;
 
         // don't revert on signature failure: return SIG_VALIDATION_FAILED
         if (verifyingSigner != ECDSA.recover(hash, signature)) {
-            return ("", _packValidationData(true,validUntil,validAfter));
+            // console.log("SIG_VALIDATION_FAILED");
+            return ("", _packValidationData(true, validUntil, validAfter));
         }
 
         // no need for other on-chain validation: entire UserOp should have been checked
         // by the external service prior to signing it.
-        return ("", _packValidationData(false,validUntil,validAfter));
+        return ("", _packValidationData(false, validUntil, validAfter));
     }
 
     /**
@@ -109,28 +126,43 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
      * note that this signature covers all fields of the UserOperation, except the "paymasterAndData",
      * which will carry the signature itself.
      */
-    function getHash(UserOperation calldata userOp, uint48 validUntil, uint48 validAfter)
-    public view returns (bytes32) {
+    function getHash(
+        UserOperation calldata userOp,
+        uint48 validUntil,
+        uint48 validAfter
+    ) public view returns (bytes32) {
         //can't use userOp.hash(), since it contains also the paymasterAndData itself.
 
-        return keccak256(abi.encode(
-                pack(userOp),
-                block.chainid,
-                address(this),
-                senderNonce[userOp.getSender()],
-                validUntil,
-                validAfter
-            ));
+        return
+            keccak256(
+                abi.encode(
+                    pack(userOp),
+                    block.chainid,
+                    address(this),
+                    senderNonce[userOp.getSender()],
+                    validUntil,
+                    validAfter
+                )
+            );
     }
 
     function parsePaymasterAndData(
         bytes calldata paymasterAndData
-    ) public pure returns(uint48 validUntil, uint48 validAfter, bytes calldata signature) {
-        (validUntil, validAfter) = abi.decode(paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET],(uint48, uint48));
+    )
+        public
+        pure
+        returns (uint48 validUntil, uint48 validAfter, bytes calldata signature)
+    {
+        (validUntil, validAfter) = abi.decode(
+            paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET],
+            (uint48, uint48)
+        );
         signature = paymasterAndData[SIGNATURE_OFFSET:];
     }
 
-    function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
+    function pack(
+        UserOperation calldata userOp
+    ) internal pure returns (bytes memory ret) {
         // lighter signature scheme
         bytes calldata pnd = userOp.paymasterAndData;
         // copy directly the userOp from calldata up to (but not including) the paymasterAndData.

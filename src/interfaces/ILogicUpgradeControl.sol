@@ -1,14 +1,14 @@
-// SPDX-License-Identifier: GPL-3.0         
-pragma solidity ^0.8.17;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.19;
 
 /**
  * @dev Interface of the LogicUpgradeControl
  */
 interface ILogicUpgradeControl {
     struct UpgradeLayout {
-        uint32 upgradeDelay;            // upgradeDelay
-        uint64 activateTime;            // activateTime
-        address pendingImplementation;  // pendingImplementation
+        uint32 upgradeDelay; // upgradeDelay
+        uint64 activateTime; // activateTime
+        address pendingImplementation; // pendingImplementation
         uint256[50] __gap;
     }
 

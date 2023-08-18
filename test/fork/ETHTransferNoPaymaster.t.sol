@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -14,9 +14,11 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC20} from "../mock/MockERC20.sol";
 
 contract ETHTransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint =
+        IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster =
+        ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -62,11 +64,15 @@ contract ETHTransferNoPaymasterEntToEndTest is Test {
 
         // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         // 4. Set remainder of test case
-        aggregator = address(0);
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
@@ -76,7 +82,7 @@ contract ETHTransferNoPaymasterEntToEndTest is Test {
     /// @notice Validate that the smart wallet can validate a userOperation
     function testWalletValidateUserOp() public {
         vm.prank(address(entryPoint));
-        wallet.validateUserOp(userOp, userOpHash, aggregator, missingWalletFunds);
+        wallet.validateUserOp(userOp, userOpHash, missingWalletFunds);
     }
 
     /// @notice Validate that the EntryPoint can execute a userOperation.
@@ -93,13 +99,18 @@ contract ETHTransferNoPaymasterEntToEndTest is Test {
 
         // Verify ether transfer from wallet to recipient
         uint256 finalRecipientETHBalance = address(recipient).balance;
-        assertEq(finalRecipientETHBalance, initialRecipientETHBalance + etherTransferAmount);
+        assertEq(
+            finalRecipientETHBalance,
+            initialRecipientETHBalance + etherTransferAmount
+        );
 
         uint256 finalWalletETHBalance = address(wallet).balance;
         assertLt(finalWalletETHBalance, initialWalletETHBalance);
 
         // Verify wallet paid for gas
-        uint256 walletEthGasPaid = initialWalletETHBalance - finalWalletETHBalance - etherTransferAmount;
+        uint256 walletEthGasPaid = initialWalletETHBalance -
+            finalWalletETHBalance -
+            etherTransferAmount;
         assertGt(walletEthGasPaid, 0);
     }
 }

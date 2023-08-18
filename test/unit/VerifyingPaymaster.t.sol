@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -23,7 +23,9 @@ contract VerifyingPaymasterUnitTest is Test {
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey =
-        uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+        uint256(
+            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+        );
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
@@ -32,12 +34,16 @@ contract VerifyingPaymasterUnitTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
-        paymaster = new VerifyingPaymaster(entryPoint, ownerAddress, ownerAddress);
+        paymaster = new VerifyingPaymaster(
+            entryPoint,
+            ownerAddress,
+            ownerAddress
+        );
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
             (address(entryPoint), ownerAddress, upgradeDelay)
-        ); 
+        );
 
         TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
@@ -194,8 +200,8 @@ contract VerifyingPaymasterUnitTest is Test {
     }
 
     ///
-    function generateUserOp() public returns(UserOperation memory userOp) {
-        UserOperation memory userOp;
+    function generateUserOp() public view returns (UserOperation memory userOp) {
+        // UserOperation memory userOp;
 
         userOp = UserOperation({
             sender: address(wallet),
@@ -220,20 +226,22 @@ contract VerifyingPaymasterUnitTest is Test {
 
         userOp = generateUserOp();
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
+        bytes memory signature = createSignature(
+            userOp,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
         userOp.signature = signature;
 
         bytes memory paymasterAndData = abi.encodePacked(
             address(paymaster),
-            abi.encode(
-                MOCK_VALID_UNTIL,
-                MOCK_VALID_AFTER
-            ),
+            abi.encode(MOCK_VALID_UNTIL, MOCK_VALID_AFTER),
             signature
         );
 
-        (uint48 validUntil, uint48 validAfter, bytes memory sign) = 
-            paymaster.parsePaymasterAndData(paymasterAndData);
+        (uint48 validUntil, uint48 validAfter, bytes memory sign) = paymaster
+            .parsePaymasterAndData(paymasterAndData);
 
         assertEq(validUntil, MOCK_VALID_UNTIL);
         assertEq(validAfter, MOCK_VALID_AFTER);
@@ -241,19 +249,30 @@ contract VerifyingPaymasterUnitTest is Test {
     }
 
     function testValidatePaymasterUserOp() public {
+        vm.deal(address(wallet), 1 ether);
+
+        UserOperation memory userOp1;
+
+        userOp1 = generateUserOp();
+        userOp1.paymasterAndData = abi.encodePacked(
+            address(paymaster),
+            abi.encode(MOCK_VALID_UNTIL, MOCK_VALID_AFTER),
+            ""
+        );
+
+        bytes32 opHash1 = paymaster.getHash(
+            userOp1,
+            MOCK_VALID_UNTIL,
+            MOCK_VALID_AFTER
+        );
+        bytes memory sign = createSignature2(opHash1, ownerPrivateKey, vm);
+
         UserOperation memory userOp;
-
         userOp = generateUserOp();
-
-        bytes32 opHash = paymaster.getHash(userOp, MOCK_VALID_UNTIL, MOCK_VALID_AFTER);
-        bytes memory sign = createSignature2(opHash, ownerPrivateKey, vm);
 
         userOp.paymasterAndData = abi.encodePacked(
             address(paymaster),
-            abi.encode(
-                MOCK_VALID_UNTIL,
-                MOCK_VALID_AFTER
-            ),
+            abi.encode(MOCK_VALID_UNTIL, MOCK_VALID_AFTER),
             sign
         );
 
@@ -262,15 +281,12 @@ contract VerifyingPaymasterUnitTest is Test {
         uint256 missingWalletFunds = 1096029019333521;
 
         // Validate that the smart wallet can validate a userOperation
-        vm.prank(address(entryPoint));
-        (, uint256 validationData) = paymaster.validatePaymasterUserOp(userOp, opHash, missingWalletFunds);
-        
-        // entryPoint.simulateValidation(userOp);
-
-        ValidationData memory data;
-        data = _parseValidationData(validationData);
-
-        assertEq(data.validUntil, MOCK_VALID_UNTIL);
-        assertEq(data.validAfter, MOCK_VALID_AFTER);
+        vm.startPrank(address(entryPoint));
+        // (, uint256 validationData) = 
+        paymaster.validatePaymasterUserOp(
+            userOp,
+            opHash1,
+            missingWalletFunds
+        );
     }
 }

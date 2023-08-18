@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import {IAccount} from "src/interfaces/IAccount.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
@@ -16,26 +16,51 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
-import "forge-std/console.sol";
-
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
-contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeControl, TokenCallbackHandler, WalletErrors {
-    /// @notice All state variables are stored in AccountStorage.Layout with specific storage slot to avoid storage collision
+contract TrueWallet is
+    IAccount,
+    Initializable,
+    SocialRecovery,
+    LogicUpgradeControl,
+    TokenCallbackHandler,
+    WalletErrors
+{
+    /// @notice All state variables are stored in AccountStorage. Layout with specific storage slot to avoid storage collision.
     using AccountStorage for AccountStorage.Layout;
 
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
-    event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
+    event AccountInitialized(
+        address indexed account,
+        address indexed entryPoint,
+        address owner,
+        uint32 upgradeDelay
+    );
+    event UpdateEntryPoint(
+        address indexed newEntryPoint,
+        address indexed oldEntryPoint
+    );
     event PayPrefund(address indexed payee, uint256 amount);
-    event OwnershipTransferred(address indexed sender, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed sender,
+        address indexed newOwner
+    );
     event ReceivedETH(address indexed sender, uint256 indexed amount);
     event TransferedETH(address indexed to, uint256 amount);
     event TransferedERC20(address token, address indexed to, uint256 amount);
-    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event TransferedERC721(
+        address indexed collection,
+        uint256 indexed tokenId,
+        address indexed to
+    );
+    event TransferedERC1155(
+        address indexed collection,
+        uint256 indexed tokenId,
+        uint256 amount,
+        address indexed to
+    );
 
     /////////////////  MODIFIERS ///////////////
 
@@ -49,7 +74,11 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint()) && msg.sender != owner() && msg.sender != address(this)) {
+        if (
+            msg.sender != address(entryPoint()) &&
+            msg.sender != owner() &&
+            msg.sender != address(this)
+        ) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -67,7 +96,11 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
     /// @param  _upgradeDelay upgrade delay which update take effect
-    function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay) public initializer {
+    function initialize(
+        address _entryPoint,
+        address _owner,
+        uint32 _upgradeDelay
+    ) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }
@@ -122,12 +155,10 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     /// @notice Validate that the userOperation is valid
     /// @param userOp - ERC-4337 User Operation
     /// @param userOpHash - Hash of the user operation, entryPoint address and chainId
-    /// @param aggregator - Signature aggregator
     /// @param missingWalletFunds - Amount of ETH to pay the EntryPoint for processing the transaction
     function validateUserOp(
         UserOperation calldata userOp,
         bytes32 userOpHash,
-        address aggregator,
         uint256 missingWalletFunds
     ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
         // Validate signature
@@ -150,7 +181,11 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     /// @param target - Address to send calldata payload for execution
     /// @param value - Amount of ETH to forward to target
     /// @param payload - Calldata to send to target for execution
-    function execute(address target, uint256 value, bytes calldata payload) external onlyEntryPointOrOwner {
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata payload
+    ) external onlyEntryPointOrOwner {
         _call(target, value, payload);
     }
 
@@ -178,40 +213,59 @@ contract TrueWallet is IAccount, Initializable, SocialRecovery, LogicUpgradeCont
     }
 
     /// @notice preUpgradeTo is called before upgrading the wallet
-    function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
+    function preUpgradeTo(
+        address newImplementation
+    ) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
     }
 
     /// @notice Lets the owner set guardians and threshold for the wallet
     /// @param guardians List of guardians' addresses
     /// @param threshold Required number of guardians to confirm replacement
-    function addGuardianWithThreshold(address[] calldata guardians, uint16 threshold) external onlyOwner {
+    function addGuardianWithThreshold(
+        address[] calldata guardians,
+        uint16 threshold
+    ) external onlyOwner {
         SocialRecovery._addGuardianWithThreshold(guardians, threshold);
     }
 
     /// @notice Lets the owner revoke a guardian from the wallet and change threshold respectively
     /// @param guardian The guardian address to revoke
     /// @param threshold The new required number of guardians to confirm replacement
-    function revokeGuardianWithThreshold(address guardian, uint16 threshold) external onlyOwner {
+    function revokeGuardianWithThreshold(
+        address guardian,
+        uint16 threshold
+    ) external onlyOwner {
         SocialRecovery._revokeGuardianWithThreshold(guardian, threshold);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
 
     /// @notice Transfer ETH out of the wallet. Permissioned to only the owner
-    function transferETH(address payable to,uint256 amount) external onlyOwner {
+    function transferETH(
+        address payable to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransferETH(to, amount);
         emit TransferedETH(to, amount);
     }
 
     /// @notice Transfer ERC20 tokens out of the wallet. Permissioned to only the owner
-    function transferERC20(address token,address to,uint256 amount) external onlyOwner {
+    function transferERC20(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOwner {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
         emit TransferedERC20(token, to, amount);
     }
 
     /// @notice Transfer ERC721 tokens out of the wallet. Permissioned to only the owner
-    function transferERC721(address collection, uint256 tokenId, address to) external onlyOwner {
+    function transferERC721(
+        address collection,
+        uint256 tokenId,
+        address to
+    ) external onlyOwner {
         IERC721(collection).safeTransferFrom(address(this), to, tokenId);
         emit TransferedERC721(collection, tokenId, to);
     }

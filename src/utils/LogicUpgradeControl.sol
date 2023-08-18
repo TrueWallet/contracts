@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/utils/Address.sol";
 import {ILogicUpgradeControl} from "../interfaces/ILogicUpgradeControl.sol";
@@ -7,18 +7,30 @@ import {AccountStorage} from "./AccountStorage.sol";
 import {Upgradeable} from "./Upgradeable.sol";
 import {UpgradeWalletErrors} from "../common/Errors.sol";
 
-contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWalletErrors {
+contract LogicUpgradeControl is
+    ILogicUpgradeControl,
+    Upgradeable,
+    UpgradeWalletErrors
+{
     using AccountStorage for AccountStorage.Layout;
 
     /// @dev Returns Logic updgrade layout info
-    function logicUpgradeInfo() public view returns (ILogicUpgradeControl.UpgradeLayout memory) {
-        ILogicUpgradeControl.UpgradeLayout memory layout = AccountStorage.layout().logicUpgrade;
+    function logicUpgradeInfo()
+        public
+        view
+        returns (ILogicUpgradeControl.UpgradeLayout memory)
+    {
+        ILogicUpgradeControl.UpgradeLayout memory layout = AccountStorage
+            .layout()
+            .logicUpgrade;
         return layout;
     }
 
     /// @dev preUpgradeTo is called before upgrading the wallet
     function _preUpgradeTo(address newImplementation) internal {
-        ILogicUpgradeControl.UpgradeLayout storage layout = AccountStorage.layout().logicUpgrade;
+        ILogicUpgradeControl.UpgradeLayout storage layout = AccountStorage
+            .layout()
+            .logicUpgrade;
 
         if (newImplementation != address(0)) {
             require(Address.isContract(newImplementation));
@@ -35,9 +47,13 @@ contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWallet
 
     /// @dev Perform implementation upgrade
     function upgrade() external {
-        ILogicUpgradeControl.UpgradeLayout storage layout = AccountStorage.layout().logicUpgrade;
+        ILogicUpgradeControl.UpgradeLayout storage layout = AccountStorage
+            .layout()
+            .logicUpgrade;
 
-        if (layout.activateTime != 0 && block.timestamp >= layout.activateTime) {
+        if (
+            layout.activateTime != 0 && block.timestamp >= layout.activateTime
+        ) {
             _upgradeTo(layout.pendingImplementation);
         } else {
             revert UpgradeDelayNotElapsed();

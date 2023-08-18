@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
@@ -30,11 +30,15 @@ contract TrueWalletFactoryUnitTest is Test {
         entryPoint = new EntryPoint();
 
         salt = keccak256(
-            abi.encodePacked(address(factory), address(entryPoint), upgradeDelay)
+            abi.encodePacked(
+                address(factory),
+                address(entryPoint),
+                upgradeDelay
+            )
         );
     }
 
-    // Estimating gas for deployment 
+    // Estimating gas for deployment
     function testDeployWallet() public {
         factory.createWallet(
             address(entryPoint),
