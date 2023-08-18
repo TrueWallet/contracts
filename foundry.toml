@@ -2,8 +2,17 @@
 src = 'src'
 out = 'out'
 libs = ['lib', 'node_modules']
-
+gas_reports = [
+    "EntryPoint",
+    "TrueWalletFactory",
+    "TrueWalletProxy",
+    "TrueWallet",
+    "SocialRecovery",
+    "Paymaster"
+]
+gas_reports_ignore = ["test"]
+solc = "0.8.20"
 optimizer = true
-optimizer_runs = 1000
+optimizer_runs = 10000
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
