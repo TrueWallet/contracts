@@ -2,8 +2,9 @@
 pragma solidity ^0.8.19;
 
 import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {IModuleManager} from "../interfaces/IModuleManager.sol";
 
-interface IWallet {
+interface IWallet is IModuleManager {
     /**
      * Validate user's signature and nonce
      * the entryPoint will make the call to the recipient only if this validation call returns successfully.
