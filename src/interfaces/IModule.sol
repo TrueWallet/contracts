@@ -13,4 +13,9 @@ interface IModule is IERC165 {
     /// @notice De-initializes the module for the sender's wallet.
     /// @dev Implementing contracts should define how a module gets de-initialized for a wallet.
     function walletDeInit() external;
+
+    /// @notice Lists the required functions for the module.
+    /// @dev Implementing contracts should return an array of function selectors representing the functions required by the module.
+    /// @return An array of function selectors.
+    function requiredFunctions() external pure returns (bytes4[] memory);
 }

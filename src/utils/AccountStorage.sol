@@ -53,6 +53,7 @@ library AccountStorage {
         // ┌───────────────────┐
         // │       Module      │                                    /// ModuleManager.sol
         mapping(address => address) modules;
+        mapping(address => mapping(bytes4 => bytes4)) moduleSelectors;
         uint256[50] __gap_4;
         // └───────────────────┘
     }

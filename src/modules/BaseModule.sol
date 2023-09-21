@@ -4,10 +4,10 @@ pragma solidity ^0.8.19;
 import {IModule} from "../interfaces/IModule.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
 import {IWallet} from "../wallet/IWallet.sol";
-import "../common/Errors.sol";
+import {ModuleManagerErrors} from "../common/Errors.sol";
 
 /// @title Base Module - provides basic functionalities for initializing and deinitializing a wallet modules.
-abstract contract BaseModule is IModule {
+abstract contract BaseModule is IModule, ModuleManagerErrors {
     /// @dev Emitted when a module is initialized for a wallet.
     event ModuleInit(address indexed wallet);
     /// @dev Emitted when a module is de-initialized for a wallet.
@@ -20,7 +20,7 @@ abstract contract BaseModule is IModule {
         address _sender = sender();
         if (!inited(_sender)) {
             if (!IWallet(_sender).isAuthorizedModule(address(this))) {
-                revert MODULE_NOT_AUTHORIZED();
+                revert ModuleNotAuthorized();
             }
             _init(data);
             emit ModuleInit(_sender);
@@ -33,18 +33,11 @@ abstract contract BaseModule is IModule {
         address _sender = sender();
         if (inited(_sender)) {
             if (IWallet(_sender).isAuthorizedModule(address(this))) {
-                revert MODULE_AUTHORIZED();
+                revert ModuleAuthorized();
             }
             _deInit();
             emit ModuleDeInit(_sender);
         }
-    }
-
-    /// @notice Checks if the contract implements a given interface.
-    /// @param interfaceId The interface identifier, as specified by ERC-165.
-    /// @return true if the contract implements `interfaceId` and `interfaceId` is not 0xffffffff, false otherwise.
-    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
-        return interfaceId == type(IModule).interfaceId;
     }
 
     /// @notice Checks if the module is initialized for a given wallet.
@@ -65,5 +58,12 @@ abstract contract BaseModule is IModule {
     /// @return address of the sender.
     function sender() internal view returns (address) {
         return msg.sender;
+    }
+
+    /// @notice Checks if the contract implements a given interface.
+    /// @param interfaceId The interface identifier, as specified by ERC-165.
+    /// @return true if the contract implements `interfaceId` and `interfaceId` is not 0xffffffff, false otherwise.
+    function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+        return interfaceId == type(IModule).interfaceId;
     }
 }

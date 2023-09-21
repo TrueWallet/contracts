@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import "../common/Errors.sol";
-
 library AddressLinkedList {
+    error InvalidAddress();
+    error AddressAlreadyExists();
+    error AddressNotExists();
+
     address internal constant SENTINEL_ADDRESS = address(1);
     uint160 internal constant SENTINEL_UINT = 1;
 
     modifier onlyAddress(address addr) {
         if (uint160(addr) <= SENTINEL_UINT) {
-            revert INVALID_ADDRESS();
+            revert InvalidAddress();
         }
         _;
     }
 
     function add(mapping(address => address) storage self, address addr) internal onlyAddress(addr) {
         if (self[addr] != address(0)) {
-            revert ADDRESS_ALREADY_EXISTS();
+            revert AddressAlreadyExists();
         }
         address _prev = self[SENTINEL_ADDRESS];
         if (_prev == address(0)) {
@@ -30,10 +32,10 @@ library AddressLinkedList {
 
     function replace(mapping(address => address) storage self, address oldAddr, address newAddr) internal {
         if (!isExist(self, oldAddr)) {
-            revert ADDRESS_NOT_EXISTS();
+            revert AddressNotExists();
         }
         if (isExist(self, newAddr)) {
-            revert ADDRESS_ALREADY_EXISTS();
+            revert AddressAlreadyExists();
         }
 
         address cursor = SENTINEL_ADDRESS;
@@ -52,7 +54,7 @@ library AddressLinkedList {
 
     function remove(mapping(address => address) storage self, address addr) internal {
         if (!tryRemove(self, addr)) {
-            revert ADDRESS_NOT_EXISTS();
+            revert AddressNotExists();
         }
     }
 
