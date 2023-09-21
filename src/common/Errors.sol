@@ -2,52 +2,75 @@
 pragma solidity ^0.8.19;
 
 contract WalletErrors {
-    /// @dev Reverts in case not valid entryPoint or owner
+    /// @notice Throws when an invalid entry point or owner is provided or detected.
     error InvalidEntryPointOrOwner();
 
-    /// @dev Reverts when zero address is assigned
+    /// @notice Throws when an address provided is the zero address.
     error ZeroAddressProvided();
 
-    /// @dev Reverts when upgrade delay is invalid
+    /// @notice Throws when an invalid delay is provided for an upgrade.
     error InvalidUpgradeDelay();
 
-    /// @dev Reverts when array argument size mismatch
+    /// @notice Throws when the lengths of two comparable arrays or sets of data do not match.
     error LengthMismatch();
 
-    /// @dev Reverts in case not valid signature
+    /// @notice Throws when a provided signature is not valid.
     error InvalidSignature();
 }
 
 contract SocialRecoveryErrors {
-    /// @dev Reverts in case not valid owner
+    /// @notice Throws when an invalid owner address is provided or detected.
     error InvalidOwner();
 
-    /// @dev Reverts in case not valid guardian
+    /// @notice Throws when an invalid guardian address is provided or detected.
     error InvalidGuardian();
 
-    /// @dev Reverts in case not valid threshold
+    /// @notice Throws when an invalid threshold value is provided or detected.
     error InvalidThreshold();
 
-    /// @dev Reverts when zero address is assigned for guardian
+    /// @notice Throws when a zero address is provided where a guardian address is required.
     error ZeroAddressForGuardianProvided();
 
-    /// @dev Reverts when guardian provided is already in the list
+    /// @notice Throws when a duplicate guardian address is provided.
     error DuplicateGuardianProvided();
 
-    /// @dev Reverts when the particular recovery requist is already executed
+    /// @notice Throws when a recovery operation has already been executed.
     error RecoveryAlreadyExecuted();
 
-    /// @dev Reverts when not enough confirmation from guardians for recovery requist
+    /// @notice Throws when there are not enough confirmations for a recovery operation.
     error RecoveryNotEnoughConfirmations();
 
-    /// @dev Reverts when recovery period is still pending before execution
+    /// @notice Throws when the recovery period is still pending.
     error RecoveryPeriodStillPending();
 
-    /// @dev Reverts when no ongoing recovery requiests
+    /// @notice Throws when attempting to execute a recovery operation that has not been initiated.
     error RecoveryNotInitiated();
 }
 
 contract UpgradeWalletErrors {
-    /// @dev Reverts when perform implementation upgrade in an inappropriate activateTime
+    /// @notice Throws when attempting to perform an upgrade before the delay period has elapsed.
     error UpgradeDelayNotElapsed();
+}
+
+contract ModuleManagerErrors {
+    /// @notice Throws when the caller of a function must be a module but is not.
+    error CallerMustBeModule();
+
+    /// @notice Throws when the address of the module is required but not provided.
+    error ModuleAddressEmpty();
+
+    /// @notice Throws when a module tries to recursively call `executeFromModule`.
+    error ModuleExecuteFromModuleRecursive();
+
+    /// @notice Throws when a module is not authorized to perform a specific operation.
+    error ModuleNotAuthorized();
+
+    /// @notice Throws when a module is already authorized for a specific operation.
+    error ModuleAuthorized();
+
+    /// @notice Throws when a module does not support the expected interface.
+    error ModuleNotSupportInterface();
+
+    /// @notice Throws when the selectors of a module are required but not provided.
+    error ModuleSelectorsEmpty();
 }
