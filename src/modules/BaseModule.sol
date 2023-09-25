@@ -16,12 +16,14 @@ abstract contract BaseModule is IModule, ModuleManagerErrors {
     /// @notice Initializes the module for the sender's wallet with provided data.
     /// @dev Only authorized and not previously initialized modules can perform this action.
     /// @param data Initialization data.
-    function walletInit(bytes calldata data) external {
+    function walletInit(bytes calldata data) public {
         address _sender = sender();
         if (!inited(_sender)) {
-            if (!IWallet(_sender).isAuthorizedModule(address(this))) {
-                revert ModuleNotAuthorized();
-            }
+            if (_sender.code.length > 0) {
+                if (!IWallet(_sender).isAuthorizedModule(address(this))) {
+                    revert ModuleNotAuthorized();
+                }
+            } 
             _init(data);
             emit ModuleInit(_sender);
         }

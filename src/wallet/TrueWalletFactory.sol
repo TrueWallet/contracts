@@ -30,12 +30,14 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         address entryPoint,
         address walletOwner,
         uint32 upgradeDelay,
+        bytes[] calldata modules,
         bytes32 salt
     ) external whenNotPaused returns (TrueWallet) {
         address walletAddress = getWalletAddress(
             entryPoint,
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
 
@@ -51,7 +53,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
                         walletImplementation,
                         abi.encodeCall(
                             TrueWallet.initialize,
-                            (entryPoint, walletOwner, upgradeDelay)
+                            (entryPoint, walletOwner, upgradeDelay, modules)
                         )
                     )
                 )
@@ -66,6 +68,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         address entryPoint,
         address walletOwner,
         uint32 upgradeDelay,
+        bytes[] calldata modules,
         bytes32 salt
     ) public view returns (address) {
         bytes memory deploymentData = abi.encodePacked(
@@ -74,7 +77,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
                 walletImplementation,
                 abi.encodeCall(
                     TrueWallet.initialize,
-                    (entryPoint, walletOwner, upgradeDelay)
+                    (entryPoint, walletOwner, upgradeDelay, modules)
                 )
             )
         );

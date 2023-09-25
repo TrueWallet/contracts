@@ -10,6 +10,7 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
+import {MockModule} from "../mock/MockModule.sol";
 
 contract PaymasterUnitTest is Test {
     TrueWallet wallet;
@@ -18,23 +19,27 @@ contract PaymasterUnitTest is Test {
     Paymaster paymaster;
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
-        );
+    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
     uint32 upgradeDelay = 172800; // 2 days in seconds
+
+    MockModule mockModule;
+    bytes[] modules = new bytes[](1);
 
     function setUp() public {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
         paymaster = new Paymaster(address(entryPoint), ownerAddress);
 
+        mockModule = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(mockModule, initData);
+
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay)
+            (address(entryPoint), ownerAddress, upgradeDelay, modules)
         );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);

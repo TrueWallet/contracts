@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import {IAccount} from "src/interfaces/IAccount.sol";
+import {IWallet} from "./IWallet.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
@@ -15,13 +15,15 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
+import {ModuleManager} from "../base/ModuleManager.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
 contract TrueWallet is
-    IAccount,
+    IWallet,
     Initializable,
+    ModuleManager,
     SocialRecovery,
     LogicUpgradeControl,
     TokenCallbackHandler,
@@ -96,10 +98,12 @@ contract TrueWallet is
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
     /// @param  _upgradeDelay upgrade delay which update take effect
+    /// @param _modules The list of encoded modules to be added and its associated initialization data.
     function initialize(
         address _entryPoint,
         address _owner,
-        uint32 _upgradeDelay
+        uint32 _upgradeDelay,
+        bytes[] calldata _modules
     ) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
@@ -111,6 +115,13 @@ contract TrueWallet is
 
         if (_upgradeDelay < 2 days) revert InvalidUpgradeDelay();
         layout.logicUpgrade.upgradeDelay = _upgradeDelay;
+
+        for (uint256 i; i < _modules.length;) {
+            _addModule(_modules[i]);
+            unchecked {
+                i++;
+            }
+        }
 
         emit AccountInitialized(
             address(this),
@@ -128,8 +139,8 @@ contract TrueWallet is
     }
 
     /// @notice Returns the entryPoint address
-    function entryPoint() public view returns (IEntryPoint) {
-        return AccountStorage.layout().entryPoint;
+    function entryPoint() public view returns (address) {
+        return address(AccountStorage.layout().entryPoint);
     }
 
     /// @notice Returns the contract nonce
@@ -189,7 +200,7 @@ contract TrueWallet is
         _call(target, value, payload);
     }
 
-    /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint
+    /// @notice Execute a sequence of transactions, called directly by owner or by entryPoint. Maximum 8.
     function executeBatch(
         address[] calldata target,
         uint256[] calldata value,
@@ -291,12 +302,12 @@ contract TrueWallet is
 
     /// @notice Returns the wallet's deposit in EntryPoint
     function getDeposite() public view returns (uint256) {
-        return entryPoint().balanceOf(address(this));
+        return IEntryPoint(entryPoint()).balanceOf(address(this));
     }
 
     /// @notice Add to the deposite of the wallet in EntryPoint. Deposit is used to pay user gas fees
     function addDeposite() public payable {
-        entryPoint().depositTo{value: msg.value}(address(this));
+        IEntryPoint(entryPoint()).depositTo{value: msg.value}(address(this));
     }
 
     /// @notice Withdraw funds from the wallet's deposite in EntryPoint
@@ -304,7 +315,7 @@ contract TrueWallet is
         address payable to,
         uint256 amount
     ) public onlyOwner {
-        entryPoint().withdrawTo(to, amount);
+        IEntryPoint(entryPoint()).withdrawTo(to, amount);
     }
 
     /////////////////  INTERNAL METHODS ///////////////

@@ -8,6 +8,7 @@ import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {MockModule} from "../mock/MockModule.sol";
 
 contract TrueWalletFactoryUnitTest is Test {
     TrueWalletFactory factory;
@@ -16,6 +17,9 @@ contract TrueWalletFactoryUnitTest is Test {
     address walletOwner = address(12);
     bytes32 salt;
     uint32 upgradeDelay = 172800; // 2 days in seconds
+
+    MockModule mockModule;
+    bytes[] modules = new bytes[](1);
 
     event AccountInitialized(
         address indexed account,
@@ -28,6 +32,10 @@ contract TrueWalletFactoryUnitTest is Test {
         wallet = new TrueWallet();
         factory = new TrueWalletFactory(address(wallet), address(this));
         entryPoint = new EntryPoint();
+
+        mockModule = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(mockModule, initData);
 
         salt = keccak256(
             abi.encodePacked(
@@ -44,6 +52,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
     }
@@ -53,6 +62,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
 
@@ -67,6 +77,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
 
@@ -81,6 +92,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         // Determine if a wallet is already deployed at this address
@@ -91,6 +103,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
 
@@ -98,6 +111,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         // Determine if a wallet is already deployed at this address
@@ -108,6 +122,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
 
@@ -120,6 +135,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         assertEq(wallet.owner(), walletOwner);
@@ -131,6 +147,7 @@ contract TrueWalletFactoryUnitTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
     }
