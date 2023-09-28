@@ -93,14 +93,14 @@ abstract contract ModuleManager is IModuleManager, ModuleManagerErrors {
         }
     }
 
-    function _modulesMapping() internal view returns (mapping(address => address) storage modules) {
+    function _modulesMapping() private view returns (mapping(address => address) storage modules) {
         modules = AccountStorage.layout().modules;
     }
-
+    
     function _moduleSelectorsMapping()
-        internal
+        private
         view
-        returns (mapping(address => mapping(bytes4 => bytes4)) storage moduleSelectors)
+        returns (mapping(address => mapping(bytes4 => bytes4)) storage moduleSelectors) 
     {
         moduleSelectors = AccountStorage.layout().moduleSelectors;
     }

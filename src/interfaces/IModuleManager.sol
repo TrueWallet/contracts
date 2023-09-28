@@ -22,7 +22,7 @@ interface IModuleManager {
 
     /// @notice Checks if a module is authorized.
     /// @param module Address of the module to check.
-    /// @return true if the module is authorized, false otherwise.
+    /// @return true If the module is authorized, false otherwise.
     function isAuthorizedModule(address module) external view returns (bool);
 
     /// @notice Returns the list of added modules and their supported function selectors.
