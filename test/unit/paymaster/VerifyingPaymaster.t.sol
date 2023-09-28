@@ -13,7 +13,7 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {VerifyingPaymaster} from "src/paymaster/VerifyingPaymaster.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import "src/helper/Helpers.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 import "lib/forge-std/src/console.sol";
 

@@ -7,15 +7,15 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockSetter} from "../mock/MockSetter.sol";
-import {MockERC20} from "../mock/MockERC20.sol";
-import {MockERC721} from "../mock/MockERC721.sol";
-import {MockERC1155} from "../mock/MockERC1155.sol";
-import {MockSignatureChecker} from "../mock/MockSignatureChecker.sol";
-import {getUserOperation} from "./Fixtures.sol";
+import {MockSetter} from "../../mocks/MockSetter.sol";
+import {MockERC20} from "../../mocks/MockERC20.sol";
+import {MockERC721} from "../../mocks/MockERC721.sol";
+import {MockERC1155} from "../../mocks/MockERC1155.sol";
+import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
+import {getUserOperation} from "../../utils/Fixtures.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletUnitTest is Test {
     TrueWallet wallet;

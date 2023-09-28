@@ -10,7 +10,7 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract PaymasterUnitTest is Test {
     TrueWallet wallet;

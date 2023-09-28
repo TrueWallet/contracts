@@ -8,7 +8,7 @@ import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletFactoryUnitTest is Test {
     TrueWalletFactory factory;

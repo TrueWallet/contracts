@@ -6,10 +6,10 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 import {ModuleManagerErrors} from "src/common/Errors.sol";
-import {MockModuleFailedEmptySelector} from "test/mock/MockModuleFailedEmptySelector.sol";
-import {MockModuleFailedNotSupportInterface} from "test/mock/MockModuleFailedNotSupportInterface.sol";
+import {MockModuleFailedEmptySelector} from "test/mocks/MockModuleFailedEmptySelector.sol";
+import {MockModuleFailedNotSupportInterface} from "test/mocks/MockModuleFailedNotSupportInterface.sol";
 
 contract ModuleManagerUnitTest is Test {
     TrueWallet wallet;

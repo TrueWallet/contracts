@@ -7,10 +7,10 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockSetter} from "../mock/MockSetter.sol";
+import {MockSetter} from "../../mocks/MockSetter.sol";
 
-import {MockSignatureChecker} from "../mock/MockSignatureChecker.sol";
-import {getUserOperation} from "./Fixtures.sol";
+import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
+import {getUserOperation} from "../../utils/Fixtures.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
@@ -18,7 +18,7 @@ import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract EntryPointUnitTest is Test {
     TrueWallet wallet;

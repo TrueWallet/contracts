@@ -7,11 +7,11 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockWalletV2} from "../mock/MockWalletV2.sol";
-import {MockERC20} from "../mock/MockERC20.sol";
-import {MockERC721} from "../mock/MockERC721.sol";
+import {MockWalletV2} from "../../mocks/MockWalletV2.sol";
+import {MockERC20} from "../../mocks/MockERC20.sol";
+import {MockERC721} from "../../mocks/MockERC721.sol";
 import {ILogicUpgradeControl} from "src/interfaces/ILogicUpgradeControl.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletProxyUnitTest is Test {
     TrueWallet wallet;

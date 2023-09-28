@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {MockModule} from "../mock/MockModule.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract SocialRecoveryUnitTest is Test {
     TrueWallet wallet;

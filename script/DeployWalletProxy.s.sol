@@ -8,7 +8,7 @@ import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
-import {MockModule} from "test/mock/MockModule.sol";
+import {MockModule} from "test/mocks/MockModule.sol";
 
 contract DeployWalletProxyScript is Script {
     TrueWalletFactory public factory;
