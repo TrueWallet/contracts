@@ -26,7 +26,7 @@ contract SecurityControlModule is BaseModule {
     ITrueContractManager public immutable trueContractManager;
 
     /// @dev Mapping to track initialization state for wallets.
-    mapping(address wallet => uint256 seed) walletInitSeed;
+    mapping(address wallet => uint256 seed) public walletInitSeed;
 
     /// @dev Internal seed for generating unique values.
     uint256 private __seed = 0;
@@ -116,7 +116,7 @@ contract SecurityControlModule is BaseModule {
     /// @notice Provides the list of required functions that this module supports.
     /// @return bytes4[] Array of function selectors.
     function requiredFunctions() external pure override returns (bytes4[] memory) {
-        bytes4[] memory _requiredFunctions = new bytes4[](4);
+        bytes4[] memory _requiredFunctions = new bytes4[](3);
         _requiredFunctions[0] = IModuleManager.addModule.selector;
         _requiredFunctions[1] = IModuleManager.removeModule.selector;
         _requiredFunctions[2] = IModuleManager.executeFromModule.selector;
