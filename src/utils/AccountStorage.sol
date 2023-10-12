@@ -48,6 +48,14 @@ library AccountStorage {
         mapping(bytes32 => mapping(address => bool)) isConfirmed; /// @dev isConfirmed mapping maps data hash to guardian's address to confirmation status
         uint256[50] __gap_3;
         /// └───────────────────┘
+
+
+        // ┌───────────────────┐
+        // │       Module      │                                    /// ModuleManager.sol
+        mapping(address => address) modules;
+        mapping(address => mapping(bytes4 => bytes4)) moduleSelectors;
+        uint256[50] __gap_4;
+        // └───────────────────┘
     }
 
     function layout() internal pure returns (Layout storage l) {

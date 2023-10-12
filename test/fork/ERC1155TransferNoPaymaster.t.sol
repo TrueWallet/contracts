@@ -11,7 +11,7 @@ import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
-import {MockERC1155} from "../mock/MockERC1155.sol";
+import {MockERC1155} from "../mocks/MockERC1155.sol";
 
 contract ERC1155TransferNoPaymasterEntToEndTest is Test {
     IEntryPoint public constant entryPoint =

@@ -7,16 +7,18 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockSetter} from "../mock/MockSetter.sol";
+import {MockSetter} from "../../mocks/MockSetter.sol";
 
-import {MockSignatureChecker} from "../mock/MockSignatureChecker.sol";
-import {getUserOperation} from "./Fixtures.sol";
+import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
+import {getUserOperation} from "../../utils/Fixtures.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
+
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract EntryPointUnitTest is Test {
     TrueWallet wallet;
@@ -25,18 +27,17 @@ contract EntryPointUnitTest is Test {
     MockSetter setter;
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
-        );
+    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     uint256 chainId = block.chainid;
 
     TrueWalletFactory factory;
-    bytes32 salt =
-        keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
     UserOperation public userOp;
 
     MockSignatureChecker signatureChecker;
+
+    MockModule mockModule;
+    bytes[] modules = new bytes[](1);
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
 
@@ -44,13 +45,12 @@ contract EntryPointUnitTest is Test {
 
     function setUp() public {
         wallet = new TrueWallet();
-
         entryPoint = new EntryPoint();
+        mockModule = new MockModule();
 
-        // bytes memory data = abi.encodeCall(
-        //     TrueWallet.initialize,
-        //     (address(entryPoint), ownerAddress, upgradeDelay)
-        // );
+        mockModule = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(mockModule, initData);
 
         factory = new TrueWalletFactory(address(wallet), address(this));
     }
@@ -67,6 +67,7 @@ contract EntryPointUnitTest is Test {
             address(entryPoint),
             ownerAddress,
             upgradeDelay,
+            modules,
             salt
         );
         vm.deal(address(sender), 1 ether);
@@ -123,6 +124,7 @@ contract EntryPointUnitTest is Test {
             address(entryPoint),
             ownerAddress,
             upgradeDelay,
+            modules,
             salt
         );
         vm.deal(address(sender), 1 ether);
@@ -152,6 +154,7 @@ contract EntryPointUnitTest is Test {
                 address(entryPoint),
                 ownerAddress,
                 upgradeDelay,
+                modules,
                 salt
             )
         );

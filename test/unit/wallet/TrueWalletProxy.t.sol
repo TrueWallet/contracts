@@ -7,10 +7,11 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockWalletV2} from "../mock/MockWalletV2.sol";
-import {MockERC20} from "../mock/MockERC20.sol";
-import {MockERC721} from "../mock/MockERC721.sol";
+import {MockWalletV2} from "../../mocks/MockWalletV2.sol";
+import {MockERC20} from "../../mocks/MockERC20.sol";
+import {MockERC721} from "../../mocks/MockERC721.sol";
 import {ILogicUpgradeControl} from "src/interfaces/ILogicUpgradeControl.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletProxyUnitTest is Test {
     TrueWallet wallet;
@@ -22,13 +23,13 @@ contract TrueWalletProxyUnitTest is Test {
     MockERC721 erc721token;
 
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
-        );
+    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes32 salt;
+
+    MockModule mockModule;
+    bytes[] modules = new bytes[](1);
 
     function setUp() public {
         entryPoint = new EntryPoint();
@@ -38,9 +39,13 @@ contract TrueWalletProxyUnitTest is Test {
         erc20token = new MockERC20();
         erc721token = new MockERC721("Token", "TKN");
 
+        mockModule = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(mockModule, initData);
+
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay)
+            (address(entryPoint), ownerAddress, upgradeDelay, modules)
         );
 
         proxy = new TrueWalletProxy(address(wallet), data);
@@ -59,6 +64,7 @@ contract TrueWalletProxyUnitTest is Test {
             address(entryPoint),
             ownerAddress,
             upgradeDelay,
+            modules,
             salt
         );
     }

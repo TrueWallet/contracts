@@ -7,14 +7,15 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
-import {MockSetter} from "../mock/MockSetter.sol";
-import {MockERC20} from "../mock/MockERC20.sol";
-import {MockERC721} from "../mock/MockERC721.sol";
-import {MockERC1155} from "../mock/MockERC1155.sol";
-import {MockSignatureChecker} from "../mock/MockSignatureChecker.sol";
-import {getUserOperation} from "./Fixtures.sol";
+import {MockSetter} from "../../mocks/MockSetter.sol";
+import {MockERC20} from "../../mocks/MockERC20.sol";
+import {MockERC721} from "../../mocks/MockERC721.sol";
+import {MockERC1155} from "../../mocks/MockERC1155.sol";
+import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
+import {getUserOperation} from "../../utils/Fixtures.sol";
 import {createSignature, createSignature2} from "test/utils/createSignature.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletUnitTest is Test {
     TrueWallet wallet;
@@ -23,21 +24,20 @@ contract TrueWalletUnitTest is Test {
     MockSetter setter;
     EntryPoint entryPoint;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
-        );
+    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     uint256 chainId = block.chainid;
 
     MockERC20 erc20token;
     MockERC721 erc721token;
     MockERC1155 erc1155token;
-
     MockSignatureChecker signatureChecker;
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
 
     event ReceivedETH(address indexed sender, uint256 indexed amount);
+
+    MockModule module;
+    bytes[] modules = new bytes[](1);
 
     function setUp() public {
         entryPoint = new EntryPoint();
@@ -48,9 +48,13 @@ contract TrueWalletUnitTest is Test {
         erc1155token = new MockERC1155();
         signatureChecker = new MockSignatureChecker();
 
+        module = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(address(module), initData);
+
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay)
+            (address(entryPoint), ownerAddress, upgradeDelay, modules)
         );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
@@ -68,6 +72,7 @@ contract TrueWalletUnitTest is Test {
     function testSetupState() public {
         assertEq(wallet.owner(), address(ownerAddress));
         assertEq(address(wallet.entryPoint()), address(entryPoint));
+        assertTrue(wallet.isAuthorizedModule(address(module)));
     }
 
     function testUpdateEntryPoint() public {
@@ -674,7 +679,7 @@ contract TrueWalletUnitTest is Test {
     function testInitializeWithZeroEntryPointAddress() public {
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(0), ownerAddress, upgradeDelay)
+            (address(0), ownerAddress, upgradeDelay, modules)
         );
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
@@ -684,7 +689,7 @@ contract TrueWalletUnitTest is Test {
     function testInitializeWithZeroOwnerAddress() public {
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), address(0), upgradeDelay)
+            (address(entryPoint), address(0), upgradeDelay, modules)
         );
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
@@ -695,7 +700,7 @@ contract TrueWalletUnitTest is Test {
         upgradeDelay = 172799; // < 2 days in seconds
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), address(ownerAddress), upgradeDelay)
+            (address(entryPoint), address(ownerAddress), upgradeDelay, modules)
         );
 
         vm.expectRevert(encodeError("InvalidUpgradeDelay()"));

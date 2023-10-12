@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
+import {MockModule} from "../../mocks/MockModule.sol";
 
 contract SocialRecoveryUnitTest is Test {
     TrueWallet wallet;
@@ -13,19 +14,16 @@ contract SocialRecoveryUnitTest is Test {
     EntryPoint entryPoint;
     TrueWalletProxy proxy;
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey =
-        uint256(
-            0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
-        );
+    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
 
     uint32 upgradeDelay = 172800; // 2 days in seconds
 
+    MockModule mockModule;
+    bytes[] modules = new bytes[](1);
+
     event GuardianAdded(address[] indexed guardians, uint16 threshold);
     event GuardianRevoked(address indexed guardian);
-    event RecoveryExecuted(
-        address indexed guardian,
-        bytes32 indexed recoveryHash
-    );
+    event RecoveryExecuted(address indexed guardian,bytes32 indexed recoveryHash);
     event RecoveryCanceled(bytes32 recoveryHash);
     event OwnershipRecovered(address indexed sender, address indexed newOwner);
 
@@ -33,9 +31,13 @@ contract SocialRecoveryUnitTest is Test {
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
 
+        mockModule = new MockModule();
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(mockModule, initData);
+
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay)
+            (address(entryPoint), ownerAddress, upgradeDelay, modules)
         );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
