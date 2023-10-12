@@ -74,3 +74,11 @@ contract ModuleManagerErrors {
     /// @notice Throws when the selectors of a module are required but not provided.
     error ModuleSelectorsEmpty();
 }
+
+contract OwnerManagerErrors {
+    /// @dev Throws when an operation requires an owner but none exist.
+    error OwnerManager__NoOwner();
+
+    /// @dev Throws when the caller must be the contract itself or one of its modules.
+    error OwnerManager__CallerMustBeSelfOfModule();
+}
