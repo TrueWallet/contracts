@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {AccountStorage} from "../utils/AccountStorage.sol";
+import {Authority} from "../authority/Authority.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
 import {IOwnerManager} from "../interfaces/IOwnerManager.sol";
 import {AddressLinkedList} from "../libraries/AddressLinkedList.sol";
@@ -9,15 +10,8 @@ import {OwnerManagerErrors} from "../common/Errors.sol";
 
 /// @title IOwnerManager
 /// @dev Provides functionality for adding, removing, checking, and listing owners
-abstract contract OwnerManager is IOwnerManager, OwnerManagerErrors {
+abstract contract OwnerManager is IOwnerManager, Authority {
     using AddressLinkedList for mapping(address => address);
-
-    modifier onlySelfOrModule() {
-        if (msg.sender != address(this) && !_isAuthorizedModule()) {
-            revert OwnerManager__CallerMustBeSelfOfModule();
-        }
-        _;
-    }
 
     function isOwner(address addr) external view returns (bool) {
         return _isOwner(addr);
@@ -44,12 +38,12 @@ abstract contract OwnerManager is IOwnerManager, OwnerManagerErrors {
     function removeOwner(address owner) external override onlySelfOrModule {
         _ownerMapping().remove(owner);
         if (_ownerMapping().isEmpty()) {
-            revert OwnerManager__NoOwner();
+            revert OwnerManagerErrors.NoOwner();
         }
         emit OwnerRemoved(owner);
     }
 
-    function _isOwner(address addr) internal view override returns (bool) {
+    function _isOwner(address addr) internal view returns (bool) {
         return _ownerMapping().isExist(addr);
     }
 

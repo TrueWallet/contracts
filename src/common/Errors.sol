@@ -16,6 +16,9 @@ contract WalletErrors {
 
     /// @notice Throws when a provided signature is not valid.
     error InvalidSignature();
+
+    /// @notice Throws when an invalid entry point is provided or detected.
+    error InvalidEntryPoint();
 }
 
 contract SocialRecoveryErrors {
@@ -77,8 +80,8 @@ contract ModuleManagerErrors {
 
 contract OwnerManagerErrors {
     /// @dev Throws when an operation requires an owner but none exist.
-    error OwnerManager__NoOwner();
+    error NoOwner();
 
     /// @dev Throws when the caller must be the contract itself or one of its modules.
-    error OwnerManager__CallerMustBeSelfOfModule();
+    error CallerMustBeSelfOfModule();
 }
