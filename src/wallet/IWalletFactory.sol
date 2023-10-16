@@ -11,6 +11,7 @@ interface IWalletFactory {
         address entryPoint,
         address walletOwner,
         uint32 upgradeDelay,
+        bytes[] calldata modules,
         bytes32 salt
     ) external returns (TrueWallet);
 
@@ -19,6 +20,7 @@ interface IWalletFactory {
         address entryPoint,
         address walletOwner,
         uint32 upgradeDelay,
+        bytes[] calldata modules,
         bytes32 salt
     ) external view returns (address);
 }
