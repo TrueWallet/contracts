@@ -28,6 +28,24 @@ struct RecoveryEntry {
 /// If a user starts the recovery process while guardians are being changed, the change of guardians will be canceled.
 
 interface ISocialRecoveryModule {
+    /// @dev Throws when an operation is attempted by an unauthorized entity.
+    error SocialRecovery__Unauthorized();
+
+    /// @dev Throws when an operation related to an ongoing recovery is attempted, but no recovery is in progress.
+    error SocialRecovery__NoOngoingRecovery();
+
+    /// @dev Throws when an operation that requires no ongoing recovery is attempted, but a recovery is currently in progress.
+    error SocialRecovery__OngoingRecovery();
+
+    /// @dev Throws when there's an attempt to set an anonymous guardian alongside an on-chain guardian.
+    error SocialRecovery__OnchainGuardianConfigError();
+
+    /// @dev Throws when there's a configuration error related to anonymous guardians.
+    error SocialRecovery__AnonymousGuardianConfigError();
+
+    /// @dev Throws when the threshold is not within the valid range.
+    error SocialRecovery__InvalidThreshold();
+
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 
