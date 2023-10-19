@@ -83,12 +83,41 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(_modules[0], address(socialRecoveryModule)); // [0] - revers order in returned list of modules
         assertEq(_selectors[0].length, 2);
 
-        assertEq(socialRecoveryModule.walletInitSeed(address(wallet)), 1);
+        // assertEq(socialRecoveryModule.walletInitSeed(address(wallet)), 1);
+        assertEq(socialRecoveryModule.nonce(address(wallet)), 0);
         assertTrue(contractManager.isTrueModule(address(socialRecoveryModule)));
 
         bytes4[] memory selectors = socialRecoveryModule.requiredFunctions();
         assertEq(selectors[0], bytes4(keccak256("resetOwner(address)"))); 
         assertEq(selectors[1], bytes4(keccak256("resetOwners(address[])"))); 
     }
+
+    function testGuardianCount() public {
+        assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
+    }
+
+    function testGetGuardians() public {
+        address[] memory walletGuardians = socialRecoveryModule.getGuardians(address(wallet));
+        assertEq(walletGuardians.length, 3);
+        assertEq(walletGuardians[0], guardian3);
+        assertEq(walletGuardians[1], guardian2);
+        assertEq(walletGuardians[2], guardian1);
+    }
+
+    function testIsGuardian() public {
+        assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian1));
+        assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian2));
+        assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian3));
+        assertFalse(socialRecoveryModule.isGuardian(address(wallet), adminAddress));
+    }
+
+    function testGetThreshold() public {
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+    }
+
+    
+
+    // test for _init, updateGuardians, 
+    // fn: isGuardian:walletGuardian, threshold:walletGuardian, nonce:walletRecoveryNonce
 
 }

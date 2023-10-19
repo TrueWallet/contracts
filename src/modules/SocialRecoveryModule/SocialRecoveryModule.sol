@@ -26,8 +26,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     bytes4 private constant _FUNC_RESET_OWNER = bytes4(keccak256("resetOwner(address)"));
     bytes4 private constant _FUNC_RESET_OWNERS = bytes4(keccak256("resetOwners(address[])"));
 
-    mapping(address => uint256) public walletRecoveryNonce;
-    mapping(address => uint256) public walletInitSeed;
+    mapping(address => uint256) walletRecoveryNonce;
+    mapping(address => uint256) walletInitSeed;
 
     mapping(address => GuardianInfo) internal walletGuardian;
     mapping(address => PendingGuardianEntry) internal walletPendingGuardian;
@@ -102,8 +102,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return __seed;
     }
 
-    function inited(address wallet) internal view override returns (bool) {
-        return walletInitSeed[wallet] != 0;
+    function inited(address _wallet) internal view override returns (bool) {
+        return walletInitSeed[_wallet] != 0;
     }
 
     function _init(bytes calldata data) internal override {
@@ -142,42 +142,55 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete recoveryEntries[_sender];
     }
 
-    function _checkLatestGuardian(address wallet) private {
+    function _checkLatestGuardian(address _wallet) private {
         if (
-            walletPendingGuardian[wallet].pendingUntil > 0
-            && walletPendingGuardian[wallet].pendingUntil > block.timestamp
+            walletPendingGuardian[_wallet].pendingUntil > 0
+            && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
         ) {
-            if (walletPendingGuardian[wallet].guardianHash != bytes32(0)) {
+            if (walletPendingGuardian[_wallet].guardianHash != bytes32(0)) {
                 // if set anonomous guardian, clear onchain guardian
-                walletGuardian[wallet].guardians.clear();
-                walletGuardian[wallet].guardianHash = walletPendingGuardian[wallet].guardianHash;
-            } else if (walletPendingGuardian[wallet].guardians.length > 0) {
+                walletGuardian[_wallet].guardians.clear();
+                walletGuardian[_wallet].guardianHash = walletPendingGuardian[_wallet].guardianHash;
+            } else if (walletPendingGuardian[_wallet].guardians.length > 0) {
                 // if set onchain guardian, clear anonomous guardian
-                walletGuardian[wallet].guardianHash = bytes32(0);
-                walletGuardian[wallet].guardians.clear();
-                for (uint i; i < walletPendingGuardian[wallet].guardians.length;) {
-                    walletGuardian[wallet].guardians.add(walletPendingGuardian[wallet].guardians[i]);
+                walletGuardian[_wallet].guardianHash = bytes32(0);
+                walletGuardian[_wallet].guardians.clear();
+                for (uint i; i < walletPendingGuardian[_wallet].guardians.length;) {
+                    walletGuardian[_wallet].guardians.add(walletPendingGuardian[_wallet].guardians[i]);
                     unchecked {
                         i++;
                     }
                 }
             }
 
-            delete walletPendingGuardian[wallet];
+            delete walletPendingGuardian[_wallet];
         }
     }
 
-    modifier checkLatestGuardian(address wallet) {
-        _checkLatestGuardian(wallet);
+    modifier checkLatestGuardian(address _wallet) {
+        _checkLatestGuardian(_wallet);
         _;
     }
 
-    function guardiansCount(address wallet) public view returns (uint256) {
-        return walletGuardian[wallet].guardians.size();
+    function guardiansCount(address _wallet) public view returns (uint256) {
+        return walletGuardian[_wallet].guardians.size();
     }
 
-    function getGuardians(address wallet) public view returns (address[] memory) {
-        return walletGuardian[wallet].guardians.list(AddressLinkedList.SENTINEL_ADDRESS, type(uint8).max);
+    function getGuardians(address _wallet) public view returns (address[] memory) {
+        uint256 guardianSize = walletGuardian[_wallet].guardians.size();
+        return walletGuardian[_wallet].guardians.list(AddressLinkedList.SENTINEL_ADDRESS, guardianSize);
+    }
+
+    function isGuardian(address _wallet, address _guardian) public view returns (bool) {
+        return walletGuardian[_wallet].guardians.isExist(_guardian);
+    }
+
+    function threshold(address _wallet) public view returns (uint256) {
+        return walletGuardian[_wallet].threshold;
+    }
+
+    function nonce(address _wallet) public view returns (uint256) {
+        return walletRecoveryNonce[_wallet];
     }
 
     function updateGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
