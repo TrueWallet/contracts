@@ -95,6 +95,7 @@ contract EntryPointUnitTest is Test {
                 address(entryPoint),
                 ownerAddress,
                 upgradeDelay,
+                modules,
                 salt
             )
         );

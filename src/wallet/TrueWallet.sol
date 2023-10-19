@@ -171,9 +171,9 @@ contract TrueWallet is
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 missingWalletFunds
-    ) external override onlyEntryPointOrOwner returns (uint256 deadline) {
+    ) external override onlyEntryPointOrOwner returns (uint256 validationData) {
         // Validate signature
-        _validateSignature(userOp, userOpHash);
+        validationData = _validateSignature(userOp, userOpHash);
 
         // UserOp may have initCode to deploy a wallet, in which case do not validate the nonce. Used in accountCreation
         if (userOp.initCode.length == 0) {
@@ -185,7 +185,6 @@ contract TrueWallet is
         }
 
         _prefundEntryPoint(missingWalletFunds);
-        return 0;
     }
 
     /// @notice Method called by entryPoint or owner to execute the calldata supplied by a wallet
@@ -324,10 +323,12 @@ contract TrueWallet is
     function _validateSignature(
         UserOperation calldata userOp,
         bytes32 userOpHash
-    ) internal view {
+    ) internal virtual returns (uint256 validationData) {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
-        if (signer != owner()) revert InvalidSignature();
+        if (signer != owner())
+            return 1;
+        return 0;
     }
 
     /// @notice Pay the EntryPoint in ETH ahead of time for the transaction that it will execute
