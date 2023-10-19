@@ -115,9 +115,142 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
     }
 
-    
+    event ModuleInit(address indexed wallet);
+    event ModuleAdded(address indexed module);
+    event ModuleRemoved(address indexed module);
 
-    // test for _init, updateGuardians, 
-    // fn: isGuardian:walletGuardian, threshold:walletGuardian, nonce:walletRecoveryNonce
+    function testInitModule() public {
+        // this test needs it's own setup
+        SocialRecoveryModule socialRecoveryModule2 = new SocialRecoveryModule();
+
+        address[] memory modules = new address[](1);
+        modules[0] = address(socialRecoveryModule2);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+
+        bytes[] memory initModules2 = new bytes[](1);
+        bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
+        initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
+
+        bytes memory data2 = abi.encodeCall(
+            TrueWallet.initialize, (
+                address(entryPoint),
+                address(walletOwner),
+                upgradeDelay,
+                initModules2)
+            );
+
+        TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
+        TrueWallet wallet2 = TrueWallet(payable(address(proxy2)));
+
+        // tests
+        // negative cases
+        assertFalse(wallet2.isAuthorizedModule(address(socialRecoveryModule2)));
+        // if (_threshold == 0 || _threshold > _guardians.length)
+        threshold = 0;
+        bytes memory socialRecoveryModuleInitData = abi.encode(guardians, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        // vm.expectRevert("SocialRecovery__InvalidThreshold()");
+        vm.expectRevert();
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        threshold = 4;
+        socialRecoveryModuleInitData = abi.encode(guardians, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        // vm.expectRevert("SocialRecovery__InvalidThreshold()");
+        vm.expectRevert();
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        // if (_guardians.length > 0) => if (_guardianHash != bytes32(0)) revert
+        guardianHash = bytes32(keccak256(abi.encodePacked(guardian1)));
+        threshold = 2;
+        socialRecoveryModuleInitData = abi.encode(guardians, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        // vm.expectRevert("SocialRecovery__OnchainGuardianConfigError()");
+        vm.expectRevert();
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        // if (_guardians.length == 0) => if (_guardianHash == bytes32(0)) revert
+        address[] memory guardiansEmpty;
+        guardianHash = bytes32(0);
+        threshold = 2;
+        socialRecoveryModuleInitData = abi.encode(guardiansEmpty, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        // vm.expectRevert("SocialRecovery__AnonymousGuardianConfigError()");
+        vm.expectRevert();
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        // positive case with onchain guardians
+        // if (_guardians.length > 0)
+        guardianHash = bytes32(0);
+        threshold = 2;
+        socialRecoveryModuleInitData = abi.encode(guardians, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        emit ModuleAdded(address(socialRecoveryModule2));
+        emit ModuleInit(address(wallet2));
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        assertTrue(wallet2.isAuthorizedModule(address(socialRecoveryModule2)));
+    }
+
+    function testCanInitWithAnonymousGuardians() public {
+        // setup
+        SocialRecoveryModule socialRecoveryModule2 = new SocialRecoveryModule();
+
+        address[] memory modules = new address[](1);
+        modules[0] = address(socialRecoveryModule2);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+
+        bytes[] memory initModules2 = new bytes[](1);
+        bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
+        initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
+
+        bytes memory data2 = abi.encodeCall(
+            TrueWallet.initialize, (
+                address(entryPoint),
+                address(walletOwner),
+                upgradeDelay,
+                initModules2)
+            );
+
+        TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
+        TrueWallet wallet2 = TrueWallet(payable(address(proxy2)));
+
+        // test
+        // (_guardians.length == 0) && (_guardianHash != bytes32(0))
+        threshold = 2;
+        address[] memory guardiansEmpty;
+        guardianHash = bytes32(keccak256(abi.encodePacked(guardian1, guardian2, guardian3)));
+        bytes memory socialRecoveryModuleInitData = abi.encode(guardiansEmpty, threshold, guardianHash);
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(socialRecoveryModule2), socialRecoveryModuleInitData)
+        );
+        vm.prank(address(walletOwner));
+        emit ModuleAdded(address(socialRecoveryModule2));
+        emit ModuleInit(address(wallet2));
+        securityControlModule.execute(address(wallet2), moduleAddressAndInitData);
+
+        assertTrue(wallet2.isAuthorizedModule(address(socialRecoveryModule2)));
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+    }
+
+    // updateGuardians
 
 }

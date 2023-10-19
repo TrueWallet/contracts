@@ -7,6 +7,8 @@ import {AddressLinkedList} from "src/libraries/AddressLinkedList.sol";
 import {IERC1271} from "openzeppelin-contracts/interfaces/IERC1271.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 
+import "lib/forge-std/src/console.sol";
+
 
 contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     using AddressLinkedList for mapping(address => address);
@@ -110,19 +112,23 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         (address[] memory _guardians, uint256 _threshold, bytes32 _guardianHash) =
             abi.decode(data, (address[], uint256, bytes32));
         address _sender = sender();
-        if (_threshold == 0 || _threshold > _guardians.length) {
-            revert SocialRecovery__InvalidThreshold();
-        }
         if (_guardians.length > 0) {
+            if (_threshold == 0 || _threshold > _guardians.length) {
+                revert SocialRecovery__InvalidThreshold();
+            }
             if (_guardianHash != bytes32(0)) {
                 revert SocialRecovery__OnchainGuardianConfigError();
             }
         }
         if (_guardians.length == 0) {
+            if (_threshold == 0) { // TBC _guardianHash count
+                revert SocialRecovery__InvalidThreshold();
+            }
             if (_guardianHash == bytes32(0)) {
                 revert SocialRecovery__AnonymousGuardianConfigError();
             }
         }
+        // console.log(_guardians.length);
         for (uint256 i; i < _guardians.length;) {
             walletGuardian[_sender].guardians.add(_guardians[i]);
             unchecked {
