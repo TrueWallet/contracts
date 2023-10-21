@@ -154,11 +154,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
         ) {
             if (walletPendingGuardian[_wallet].guardianHash != bytes32(0)) {
-                // if set anonomous guardian, clear onchain guardian
+                // if set anonymous guardian, clear onchain guardian
                 walletGuardian[_wallet].guardians.clear();
                 walletGuardian[_wallet].guardianHash = walletPendingGuardian[_wallet].guardianHash;
             } else if (walletPendingGuardian[_wallet].guardians.length > 0) {
-                // if set onchain guardian, clear anonomous guardian
+                // if set onchain guardian, clear anonymous guardian
                 walletGuardian[_wallet].guardianHash = bytes32(0);
                 walletGuardian[_wallet].guardians.clear();
                 for (uint i; i < walletPendingGuardian[_wallet].guardians.length;) {
@@ -199,6 +199,15 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return walletRecoveryNonce[_wallet];
     }
 
+    function pendingGuarian(address _wallet) public view returns (uint256, uint256, bytes32, address[] memory) {
+        return (
+            walletPendingGuardian[_wallet].pendingUntil,
+            walletPendingGuardian[_wallet].threshold,
+            walletPendingGuardian[_wallet].guardianHash,
+            walletPendingGuardian[_wallet].guardians
+        );
+    }
+
     function updateGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
         external
         onlyAuthorized(sender())
@@ -207,22 +216,25 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     {
         address wallet = sender();
         if (_guardians.length > 0) {
+            if (_threshold == 0 || _threshold > _guardians.length) {
+                revert SocialRecovery__InvalidThreshold();
+            }
             if (_guardianHash != bytes32(0)) {
                 revert SocialRecovery__OnchainGuardianConfigError();
             }
         }
         if (_guardians.length == 0) {
+            if (_threshold == 0) {
+                revert SocialRecovery__InvalidThreshold();
+            }
             if (_guardianHash == bytes32(0)) {
                 revert SocialRecovery__AnonymousGuardianConfigError();
             }
         }
-        if (_threshold == 0 || _threshold > _guardians.length) {
-            revert SocialRecovery__InvalidThreshold();
-        }
         PendingGuardianEntry memory pendingEntry;
         pendingEntry.pendingUntil = block.timestamp + 2 days;
+        pendingEntry.threshold = _threshold;
         pendingEntry.guardians = _guardians;
-
         pendingEntry.guardianHash = _guardianHash;
         walletPendingGuardian[wallet] = pendingEntry;
     }
