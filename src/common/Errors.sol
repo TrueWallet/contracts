@@ -19,6 +19,9 @@ contract WalletErrors {
 
     /// @notice Throws when an invalid entry point is provided or detected.
     error InvalidEntryPoint();
+    
+    /// @notice Throws when create2 call failed.
+    error WalletFactory__Create2CallFailed();
 }
 
 contract SocialRecoveryErrors {

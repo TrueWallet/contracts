@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint, IEntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../../mocks/MockSetter.sol";
 
 import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
@@ -52,7 +52,7 @@ contract EntryPointUnitTest is Test {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(mockModule, initData);
 
-        factory = new TrueWalletFactory(address(wallet), address(this));
+        factory = new TrueWalletFactory(address(wallet), address(this), address(entryPoint));
     }
 
     function encodeError(
