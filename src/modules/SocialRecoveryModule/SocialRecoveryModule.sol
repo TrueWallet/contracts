@@ -9,7 +9,6 @@ import {IWallet} from "src/wallet/IWallet.sol";
 
 import "lib/forge-std/src/console.sol";
 
-
 contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     using AddressLinkedList for mapping(address => address);
 
@@ -23,7 +22,6 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     // keccak256("SocialRecovery(address wallet,address[] newOwners,uint256 nonce)");
     bytes32 private constant _SOCIAL_RECOVERY_TYPEHASH =
         0x333ef7ecc7b8a82065578df0879cefc36c32344d49afdf1e0370a60babe64feb;
-
 
     bytes4 private constant _FUNC_RESET_OWNER = bytes4(keccak256("resetOwner(address)"));
     bytes4 private constant _FUNC_RESET_OWNERS = bytes4(keccak256("resetOwners(address[])"));
@@ -80,7 +78,6 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         );
     }
 
-
     function encodeSocialRecoveryData(address _wallet, address[] calldata _newOwners, uint256 _nonce)
         public
         view
@@ -121,7 +118,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             }
         }
         if (_guardians.length == 0) {
-            if (_threshold == 0) { // TBC _guardianHash count
+            if (_threshold == 0) {
+                // TBC _guardianHash count
                 revert SocialRecovery__InvalidThreshold();
             }
             if (_guardianHash == bytes32(0)) {
@@ -151,7 +149,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     function _checkLatestGuardian(address _wallet) private {
         if (
             walletPendingGuardian[_wallet].pendingUntil > 0
-            && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
+                && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
         ) {
             if (walletPendingGuardian[_wallet].guardianHash != bytes32(0)) {
                 // if set anonymous guardian, clear onchain guardian
@@ -161,8 +159,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 // if set onchain guardian, clear anonymous guardian
                 walletGuardian[_wallet].guardianHash = bytes32(0);
                 walletGuardian[_wallet].guardians.clear();
-                for (uint i; i < walletPendingGuardian[_wallet].guardians.length;) {
-                    walletGuardian[_wallet].guardians.add(walletPendingGuardian[_wallet].guardians[i]);
+                for (uint256 i; i < walletPendingGuardian[_wallet].guardians.length;) {
+                    if (walletPendingGuardian[_wallet].guardians[i] != address(0)) {
+                        walletGuardian[_wallet].guardians.add(walletPendingGuardian[_wallet].guardians[i]);
+                    }
                     unchecked {
                         i++;
                     }
@@ -239,7 +239,21 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         walletPendingGuardian[wallet] = pendingEntry;
     }
 
-    function cancelGuardians(address wallet) external {} // owner or guardian
+    // wallet or guardian
+    function cancelSetGuardians(address _wallet) external onlyAuthorized(_wallet) {
+        if (walletPendingGuardian[_wallet].pendingUntil == 0) {
+            revert SocialRecovery__NoPendingGuardian();
+        }
+        if (_wallet != sender()) {
+            if (!isGuardian(_wallet, sender())) {
+                revert SocialRecovery__Unauthorized();
+            }
+        }
+
+        _checkLatestGuardian(_wallet);
+
+        delete walletPendingGuardian[_wallet]; //
+    }
 
     function approveRecovery(address wallet, address[] calldata newOwners) external {}
 
@@ -260,5 +274,4 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         functions[1] = _FUNC_RESET_OWNERS;
         return functions;
     }
-
 }

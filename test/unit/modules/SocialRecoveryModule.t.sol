@@ -315,4 +315,87 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidThreshold.selector);
         socialRecoveryModule.updateGuardians(new address[](1), 0, guardianHash2);
     }
+
+    function testCanReUpdateGuardians() public {
+        testUpdateGuardians();
+        (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+        assertEq(pendingUntil, block.timestamp + 2 days);
+        assertEq(pendingThreshold, threshold2);
+        assertEq(bytes32(guardianHash2), bytes32(0));
+        assertEq(guardiansUpdated.length, guardians2.length);
+
+        guardians2[0] = address(0);
+        uint256 threshold3 = 3;
+        bytes32 guardianHash3 = bytes32(keccak256(abi.encodePacked(guardian2_1, guardian2_2, guardian2_3)));
+
+        vm.prank(address(wallet));
+        socialRecoveryModule.updateGuardians(new address[](0), threshold3, guardianHash3);
+
+        (pendingUntil, pendingThreshold, pendingGuardianHash, guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+
+        assertEq(pendingUntil, block.timestamp + 2 days);
+        assertEq(pendingThreshold, threshold3);
+        assertEq(bytes32(pendingGuardianHash), bytes32(guardianHash3));
+        assertEq(guardiansUpdated.length, 0);
+    }
+
+    // cancelSetGuardians tests
+    function testCancelSetGuardiansByOwnerViaWallet() public {
+        testUpdateGuardians();
+        vm.prank(address(wallet));
+        socialRecoveryModule.cancelSetGuardians(address(wallet));
+
+        (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+
+        assertEq(pendingUntil, 0);
+        assertEq(pendingThreshold, 0);
+        assertEq(bytes32(pendingGuardianHash), 0);
+        assertEq(guardiansUpdated.length, 0);
+    }
+
+    function testCancelSetGuardiansByGuardian() public {
+        testUpdateGuardians();
+        vm.prank(address(guardian1));
+        socialRecoveryModule.cancelSetGuardians(address(wallet));
+
+        (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+
+        assertEq(pendingUntil, 0);
+        assertEq(pendingThreshold, 0);
+        assertEq(bytes32(pendingGuardianHash), 0);
+        assertEq(guardiansUpdated.length, 0);
+    }
+
+    function testRevertsCancelSetGuardiansIfUnauthorized() public {
+        testUpdateGuardians();
+        vm.prank(address(guardian2_1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule.cancelSetGuardians(address(wallet));
+
+        (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+
+        assertEq(pendingUntil, block.timestamp + 2 days);
+        assertEq(pendingThreshold, threshold2);
+        assertEq(bytes32(pendingGuardianHash), bytes32(guardianHash2));
+        assertEq(guardiansUpdated.length, guardians2.length);
+    }
+
+    function testRevertsCancelSetGuardiansWhenNoPendingGuardian() public {
+        vm.prank(address(wallet));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__NoPendingGuardian.selector);
+        socialRecoveryModule.cancelSetGuardians(address(wallet));
+
+        (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
+        = socialRecoveryModule.pendingGuarian(address(wallet));
+
+        assertEq(pendingUntil, 0);
+        assertEq(pendingThreshold, 0);
+        assertEq(bytes32(pendingGuardianHash), 0);
+        assertEq(guardiansUpdated.length, 0);
+    }
 }

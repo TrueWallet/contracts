@@ -2,26 +2,26 @@
 pragma solidity ^0.8.19;
 
 /// @title Interface for Social Recovery Module.
-/// @notice This contract allows wallet owners to set guardians for their wallets 
+/// @notice This contract allows wallet owners to set guardians for their wallets
 /// and use these guardians for recovery purposes.
 
 struct GuardianInfo {
-    mapping(address => address) guardians;  // Address of guardians mapped to associated accounts or other guardians
-    uint256 threshold;                      // Minimum number of guardians required for recovery
-    bytes32 guardianHash;                   // Hash related to the guardians for verification purposes
+    mapping(address => address) guardians; // Address of guardians mapped to associated accounts or other guardians
+    uint256 threshold; // Minimum number of guardians required for recovery
+    bytes32 guardianHash; // Hash related to the guardians for verification purposes
 }
 
 struct PendingGuardianEntry {
-    uint256 pendingUntil;                   // Timestamp when the pending guardians will become active
-    uint256 threshold;                      // Minimum number of guardians required for recovery
-    bytes32 guardianHash;                   // Hash related to the guardians for verification purposes
-    address[] guardians;                    // List of guardian addresses that are pending approval
+    uint256 pendingUntil; // Timestamp when the pending guardians will become active
+    uint256 threshold; // Minimum number of guardians required for recovery
+    bytes32 guardianHash; // Hash related to the guardians for verification purposes
+    address[] guardians; // List of guardian addresses that are pending approval
 }
 
 struct RecoveryEntry {
-    address[] newOwners;                    // New owners of the wallet after recovery
-    uint256 executeAfter;                   // Timestamp when the recovery process can be executed
-    uint256 nonce;                          // Unique nonce to ensure each recovery process is unique
+    address[] newOwners; // New owners of the wallet after recovery
+    uint256 executeAfter; // Timestamp when the recovery process can be executed
+    uint256 nonce; // Unique nonce to ensure each recovery process is unique
 }
 
 /// @dev If a user is already in a recovery process, they cannot change guardians.
@@ -45,6 +45,9 @@ interface ISocialRecoveryModule {
 
     /// @dev Throws when the threshold is not within the valid range.
     error SocialRecovery__InvalidThreshold();
+
+    /// @dev Throws when no pending guardian is set.
+    error SocialRecovery__NoPendingGuardian();
 
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
@@ -75,17 +78,17 @@ interface ISocialRecoveryModule {
 
     /// @notice Cancel the process of updating guardians
     /// @param wallet The address of the wallet for which the process is being canceled
-    function cancelGuardians(address wallet) external; // owner or guardian
+    function cancelSetGuardians(address wallet) external; // owner or guardian
 
     /// @notice A single guardian approves the recovery process
     /// @param wallet The address of the wallet being recovered
     /// @param newOwners The new owner(s) of the wallet post recovery
     function approveRecovery(address wallet, address[] calldata newOwners) external;
 
-    /// @dev A function where multiple guardians can approve a recovery. 
-    /// If over half the guardians confirm, there's a 2-day waiting period. 
+    /// @dev A function where multiple guardians can approve a recovery.
+    /// If over half the guardians confirm, there's a 2-day waiting period.
     /// If all guardians confirm, the recovery is executed immediately.
-    /// @notice Multiple guardians approve a recovery process 
+    /// @notice Multiple guardians approve a recovery process
     /// @param wallet The address of the wallet being recovered
     /// @param newOwner The new owner(s) of the wallet post recovery
     /// @param signatureCount The count of signatures from guardians
@@ -104,5 +107,4 @@ interface ISocialRecoveryModule {
     /// @notice Cancel an ongoing recovery process for a wallet
     /// @param wallet The address of the wallet for which the recovery process is being canceled
     function cancelRecovery(address wallet) external;
-
 }
