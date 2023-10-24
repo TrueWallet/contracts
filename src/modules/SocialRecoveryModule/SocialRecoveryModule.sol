@@ -146,7 +146,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete recoveryEntries[_sender];
     }
 
-    function _checkLatestGuardian(address _wallet) private {
+    function _processGuardianUpdatesIfDue(address _wallet) private {
         if (
             walletPendingGuardian[_wallet].pendingUntil > 0
                 && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
@@ -173,8 +173,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         }
     }
 
-    modifier checkLatestGuardian(address _wallet) {
-        _checkLatestGuardian(_wallet);
+    modifier processGuardianUpdatesIfDue(address _wallet) {
+        _processGuardianUpdatesIfDue(_wallet);
         _;
     }
 
@@ -185,6 +185,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     function getGuardians(address _wallet) public view returns (address[] memory) {
         uint256 guardianSize = walletGuardian[_wallet].guardians.size();
         return walletGuardian[_wallet].guardians.list(AddressLinkedList.SENTINEL_ADDRESS, guardianSize);
+    }
+
+    function getGuardiansHash(address _wallet) public view returns (bytes32) {
+        return walletGuardian[_wallet].guardianHash;
     }
 
     function isGuardian(address _wallet, address _guardian) public view returns (bool) {
@@ -212,7 +216,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         external
         onlyAuthorized(sender())
         whenNotRecovery(sender())
-        checkLatestGuardian(sender())
+        processGuardianUpdatesIfDue(sender())
     {
         address wallet = sender();
         if (_guardians.length > 0) {
@@ -239,7 +243,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         walletPendingGuardian[wallet] = pendingEntry;
     }
 
-    // wallet or guardian
+    // the wallet itself or an existing guardian for that wallet
     function cancelSetGuardians(address _wallet) external onlyAuthorized(_wallet) {
         if (walletPendingGuardian[_wallet].pendingUntil == 0) {
             revert SocialRecovery__NoPendingGuardian();
@@ -250,9 +254,51 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             }
         }
 
-        _checkLatestGuardian(_wallet);
+        _processGuardianUpdatesIfDue(_wallet);
 
         delete walletPendingGuardian[_wallet]; //
+    }
+
+    function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, uint256 _salt)
+        public
+        onlyAuthorized(_wallet)
+        processGuardianUpdatesIfDue(_wallet)
+    {
+        if (_wallet != sender()) {
+            if (!isGuardian(_wallet, sender())) {
+                revert SocialRecovery__Unauthorized();
+            }
+        }
+        address lastGuardian = address(0);
+        address currentGuardian;
+        for (uint256 i; i < _guardians.length;) {
+            currentGuardian = _guardians[i];
+            if (currentGuardian <= lastGuardian) revert SocialRecovery__InvalidGuardianList();
+            lastGuardian = currentGuardian;
+            unchecked {
+                i++;
+            }
+        }
+        // 1. check hash
+        bytes32 guardianHash = getAnonymousGuardianHash(_guardians, _salt);
+        if (guardianHash != walletGuardian[_wallet].guardianHash) {
+            revert SocialRecovery__InvalidGuardianHash();
+        }
+        // 2. update guardian list in storage
+        for (uint256 i; i < _guardians.length;) {
+            walletGuardian[_wallet].guardians.add(_guardians[i]);
+            unchecked {
+                i++;
+            }
+        }
+        // 3. clear anonymous guardians hash
+        walletGuardian[_wallet].guardianHash = bytes32(0);
+
+        emit AnonymousGuardianRevealed(_wallet, _guardians, guardianHash);
+    }
+
+    function getAnonymousGuardianHash(address[] calldata _guardians, uint256 _salt) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_guardians, _salt));
     }
 
     function approveRecovery(address wallet, address[] calldata newOwners) external {}

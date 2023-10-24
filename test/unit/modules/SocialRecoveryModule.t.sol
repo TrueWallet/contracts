@@ -119,9 +119,12 @@ contract SocialRecoveryModuleUnitTest is Test {
     event ModuleAdded(address indexed module);
     event ModuleRemoved(address indexed module);
 
+    TrueWallet wallet2;
+    SocialRecoveryModule socialRecoveryModule2;
+
     function testInitModule() public {
         // this test needs it's own setup
-        SocialRecoveryModule socialRecoveryModule2 = new SocialRecoveryModule();
+        socialRecoveryModule2 = new SocialRecoveryModule();
 
         address[] memory modules = new address[](1);
         modules[0] = address(socialRecoveryModule2);
@@ -137,7 +140,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         );
 
         TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
-        TrueWallet wallet2 = TrueWallet(payable(address(proxy2)));
+        wallet2 = TrueWallet(payable(address(proxy2)));
 
         // tests
         // negative cases
@@ -211,7 +214,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
     function testCanInitWithAnonymousGuardians() public {
         // setup
-        SocialRecoveryModule socialRecoveryModule2 = new SocialRecoveryModule();
+        socialRecoveryModule2 = new SocialRecoveryModule();
 
         address[] memory modules = new address[](1);
         modules[0] = address(socialRecoveryModule2);
@@ -227,13 +230,15 @@ contract SocialRecoveryModuleUnitTest is Test {
         );
 
         TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
-        TrueWallet wallet2 = TrueWallet(payable(address(proxy2)));
+        wallet2 = TrueWallet(payable(address(proxy2)));
 
         // test
         // (_guardians.length == 0) && (_guardianHash != bytes32(0))
         threshold = 2;
+        uint256 salt = 42;
         address[] memory guardiansEmpty;
-        guardianHash = bytes32(keccak256(abi.encodePacked(guardian1, guardian2, guardian3)));
+        // guardianHash = bytes32(keccak256(abi.encodePacked(guardian1, guardian2, guardian3, salt)));
+        guardianHash = bytes32(keccak256(abi.encodePacked(guardians, salt)));
         bytes memory socialRecoveryModuleInitData = abi.encode(guardiansEmpty, threshold, guardianHash);
         moduleAddressAndInitData = abi.encodeWithSelector(
             bytes4(keccak256("addModule(bytes)")),
@@ -332,8 +337,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.prank(address(wallet));
         socialRecoveryModule.updateGuardians(new address[](0), threshold3, guardianHash3);
 
-        (pendingUntil, pendingThreshold, pendingGuardianHash, guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        (pendingUntil, pendingThreshold, pendingGuardianHash, guardiansUpdated) =
+            socialRecoveryModule.pendingGuarian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold3);
@@ -397,5 +402,68 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(pendingThreshold, 0);
         assertEq(bytes32(pendingGuardianHash), 0);
         assertEq(guardiansUpdated.length, 0);
+    }
+
+    // revealAnonymousGuardians tests
+
+    event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
+
+    function testRevealAnonymousGuardians() public {
+        testCanInitWithAnonymousGuardians();
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+
+        threshold = 2;
+        uint256 salt = 42;
+        bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
+        assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
+        assertEq(socialRecoveryModule2.getAnonymousGuardianHash(guardians, salt), anonymousGuardianHashed);
+
+        vm.prank(address(wallet2));
+        vm.expectEmit(true, true, true, true);
+        emit AnonymousGuardianRevealed(address(wallet2), guardians, anonymousGuardianHashed);
+        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, salt);
+
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 3);
+        assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), bytes32(0));
+    }
+
+    function testRevertsRevealAnonymousGuardiansIfNotAuthorized() public {
+        testCanInitWithAnonymousGuardians();
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+
+        uint256 salt = 42;
+        bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
+        assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), new address[](1), salt);
+    }
+
+    function testRevertsRevealAnonymousGuardiansIfGuardianListError() public {
+        testCanInitWithAnonymousGuardians();
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+
+        uint256 salt = 42;
+        bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
+        assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
+
+        vm.prank(address(wallet2));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidGuardianList.selector);
+        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), new address[](1), salt);
+    }
+
+    function testRevertsRevealAnonymousGuardiansIfGuardianHashError() public {
+        testCanInitWithAnonymousGuardians();
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+
+        uint256 notValitSalt = 24;
+        vm.prank(address(wallet2));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidGuardianHash.selector);
+        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValitSalt);
     }
 }

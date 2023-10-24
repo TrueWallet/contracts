@@ -49,6 +49,12 @@ interface ISocialRecoveryModule {
     /// @dev Throws when no pending guardian is set.
     error SocialRecovery__NoPendingGuardian();
 
+    /// @dev Throws when not valid guardian list is provided.
+    error SocialRecovery__InvalidGuardianList();
+
+    /// @dev Throws when not valid guardian hash is provided.
+    error SocialRecovery__InvalidGuardianHash();
+
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 
