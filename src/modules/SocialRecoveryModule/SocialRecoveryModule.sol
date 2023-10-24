@@ -301,7 +301,16 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return keccak256(abi.encodePacked(_guardians, _salt));
     }
 
-    function approveRecovery(address wallet, address[] calldata newOwners) external {}
+    function approveRecovery(address _wallet, address[] calldata _newOwners) external onlyAuthorized(_wallet) {
+        if (_newOwners.length == 0) revert SocialRecovery__OwnersEmpty();
+        if (!isGuardian(_wallet, sender())) {
+            revert SocialRecovery__Unauthorized();
+        }
+        uint256 _nonce = nonce(_wallet);
+        bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
+        approvedRecords[sender()][recoveryHash] = 1;
+        emit ApproveRecovery(_wallet, sender(), recoveryHash);
+    }
 
     function batchApproveRecovery(
         address wallet,

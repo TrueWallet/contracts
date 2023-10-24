@@ -466,4 +466,81 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidGuardianHash.selector);
         socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValitSalt);
     }
+
+    function testRevertsRevealAnonymousGuardiansIfUnauthorizedWallet() public {
+        testCanInitWithAnonymousGuardians();
+        assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
+        assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
+
+        uint256 salt = 42;
+        bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
+        assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
+
+        TrueWallet walletNoRecoveryModule = createWalletWithoutSocialRecovery();
+        vm.prank(address(walletNoRecoveryModule));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule2.revealAnonymousGuardians(address(walletNoRecoveryModule), new address[](1), salt);
+    }
+
+    // helper
+    function createWalletWithoutSocialRecovery() public returns (TrueWallet) {
+        TrueWallet walletNoRecoveryModule;
+        bytes[] memory initModule = new bytes[](1);
+        controlModuleInitData = 1;
+        bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
+        initModule[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
+        bytes memory data = abi.encodeCall(
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModule)
+        );
+        proxy = new TrueWalletProxy(address(walletImpl), data);
+        walletNoRecoveryModule = TrueWallet(payable(address(proxy)));
+        return walletNoRecoveryModule;
+    }
+
+    // approveRecovery tests
+    event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
+
+    address newOwner1 = makeAddr("newOwner1");
+
+    function testApproveRecovery() public {
+        address[] memory newOwners = new address[](1);
+        newOwners[0] = newOwner1;
+
+        uint256 nonce = socialRecoveryModule.nonce(address(wallet));
+        bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(
+            address(wallet), newOwners, nonce);
+
+        vm.prank(address(guardian1));
+        vm.expectEmit(true, true, true, true);
+        emit ApproveRecovery(address(wallet), address(guardian1), recoveryHash);
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+    }
+
+    function testRevertsApproveRecoveryIfUnauthorized() public {
+        address[] memory newOwners = new address[](1);
+        newOwners[0] = newOwner1;
+
+        vm.prank(address(adminAddress));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+    }
+
+    function testRevertsApproveRecoveryIfOwnersEmpty() public {
+        address[] memory newOwners = new address[](1);
+        newOwners[0] = newOwner1;
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OwnersEmpty.selector);
+        socialRecoveryModule.approveRecovery(address(wallet), new address[](0));
+    }
+
+    function testRevertsApproveRecoveryIfUnauthorizedWallet() public {
+        TrueWallet walletNoRecoveryModule = createWalletWithoutSocialRecovery();
+        address[] memory newOwners = new address[](1);
+        newOwners[0] = newOwner1;
+
+        vm.prank(address(walletNoRecoveryModule));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule.approveRecovery(address(walletNoRecoveryModule), newOwners);
+    }
 }
