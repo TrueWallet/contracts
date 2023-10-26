@@ -63,4 +63,7 @@ interface IWallet is IModuleManager {
         bytes32 messageHash,
         bytes memory signature
     ) external view returns (bytes4);
+
+    /// @notice Transfer ownership by owner
+    function transferOwnership(address newOwner) external;
 }

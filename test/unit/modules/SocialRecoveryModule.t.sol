@@ -3,10 +3,10 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import {SocialRecoveryModule, ISocialRecoveryModule} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
+import {SocialRecoveryModule, ISocialRecoveryModule, RecoveryEntry} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
-import {TrueWallet} from "src/wallet/TrueWallet.sol";
+import {TrueWallet, IWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 
@@ -81,7 +81,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         (address[] memory _modules, bytes4[][] memory _selectors) = wallet.listModules();
         assertEq(_modules.length, 2);
         assertEq(_modules[0], address(socialRecoveryModule)); // [0] - revers order in returned list of modules
-        assertEq(_selectors[0].length, 2);
+        assertEq(_selectors[0].length, 3);
 
         // assertEq(socialRecoveryModule.walletInitSeed(address(wallet)), 1);
         assertEq(socialRecoveryModule.nonce(address(wallet)), 0);
@@ -90,6 +90,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes4[] memory selectors = socialRecoveryModule.requiredFunctions();
         assertEq(selectors[0], bytes4(keccak256("resetOwner(address)")));
         assertEq(selectors[1], bytes4(keccak256("resetOwners(address[])")));
+        assertEq(selectors[2], bytes4(keccak256("transferOwnership(address)")));
     }
 
     function testGuardianCount() public {
@@ -506,6 +507,15 @@ contract SocialRecoveryModuleUnitTest is Test {
         address[] memory newOwners = new address[](1);
         newOwners[0] = newOwner1;
 
+        RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, 0);
+        assertEq(request.executeAfter, 0);
+        assertEq(request.nonce, 0);
+
+        assertEq(socialRecoveryModule.nonce(address(wallet)), 0);
+        assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 0);
+        assertEq(socialRecoveryModule.hasGuardianApproved(guardian1, address(wallet), newOwners), 0);
+
         uint256 nonce = socialRecoveryModule.nonce(address(wallet));
         bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(
             address(wallet), newOwners, nonce);
@@ -514,6 +524,15 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.expectEmit(true, true, true, true);
         emit ApproveRecovery(address(wallet), address(guardian1), recoveryHash);
         socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        // assertEq(socialRecoveryModule.nonce(address(wallet)), 1); should be updated after _performRecovery
+        assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 1);
+        assertEq(socialRecoveryModule.hasGuardianApproved(address(guardian1), address(wallet), newOwners), 1);
     }
 
     function testRevertsApproveRecoveryIfUnauthorized() public {

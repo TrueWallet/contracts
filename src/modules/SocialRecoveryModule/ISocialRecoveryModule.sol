@@ -58,6 +58,13 @@ interface ISocialRecoveryModule {
     /// @dev Throws when the list of owners is empty.
     error SocialRecovery__OwnersEmpty();
 
+    /// @dev Throws when recovery period still pending.
+    error SocialRecovery__RecoveryPeriodStillPending();
+
+    error SocialRecovery__NotEnoughApprovals();
+
+    error SocialRecovery__AnonymousGuardianNotRevealed();
+
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 
