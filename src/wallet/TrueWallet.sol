@@ -16,6 +16,7 @@ import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 import {ModuleManager} from "../base/ModuleManager.sol";
+import {Authority} from "src/authority/Authority.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
 /// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
@@ -23,6 +24,7 @@ import {ModuleManager} from "../base/ModuleManager.sol";
 contract TrueWallet is
     IWallet,
     Initializable,
+    Authority,
     ModuleManager,
     SocialRecovery,
     LogicUpgradeControl,
@@ -359,6 +361,13 @@ contract TrueWallet is
 
     /// @dev Required by the OZ UUPS module
     function _authorizeUpgrade(address) internal onlyOwner {}
+
+    /// @dev Returns true if the caller is the wallet owner. Compatibility with OwnerAuth
+    function _isOwner() internal view override returns (bool) {
+        if (msg.sender == owner()) 
+            return true;
+        return false;
+    }
 
     /////////////////  SUPPORT INTERFACES ///////////////
 

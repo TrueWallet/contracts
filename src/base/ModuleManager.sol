@@ -4,22 +4,16 @@ pragma solidity ^0.8.19;
 import {AccountStorage} from "../utils/AccountStorage.sol";
 import {IModule} from "../interfaces/IModule.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
+import {ModuleAuth} from "src/authority/ModuleAuth.sol";
 import {AddressLinkedList} from "../libraries/AddressLinkedList.sol";
 import {SelectorLinkedList} from "../libraries/SelectorLinkedList.sol";
 import {ModuleManagerErrors} from "../common/Errors.sol";
 
 /// @title Module Manager - A contract that manages modules that can execute transactions
 ///        on behalf of the Smart Account via this contract.
-abstract contract ModuleManager is IModuleManager, ModuleManagerErrors {
+abstract contract ModuleManager is IModuleManager, ModuleAuth, ModuleManagerErrors {
     using AddressLinkedList for mapping(address => address);
     using SelectorLinkedList for mapping(bytes4 => bytes4);
-
-    modifier onlyModule() {
-        if (!_isAuthorizedModule()) {
-            revert CallerMustBeModule();
-        }
-        _;
-    }
 
     function isAuthorizedModule(address module) external view override returns (bool) {
         return _modulesMapping().isExist(module);
@@ -128,7 +122,7 @@ abstract contract ModuleManager is IModuleManager, ModuleManagerErrors {
         emit ModuleAdded(moduleAddress);
     }
 
-    function _isAuthorizedModule() internal view returns (bool) {
+    function _isAuthorizedModule() internal view override returns (bool) {
         address module = msg.sender;
         if (!_modulesMapping().isExist(module)) {
             return false;
