@@ -65,6 +65,8 @@ interface ISocialRecoveryModule {
 
     error SocialRecovery__AnonymousGuardianNotRevealed();
 
+    error SocialRecovery__OnlyWalletItselfCanCancelRecovery();
+
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 

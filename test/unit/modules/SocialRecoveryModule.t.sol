@@ -663,4 +663,54 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.executeRecovery(address(wallet));
     }
 
+    // cancelRecovery tests
+    event SocialRecoveryCanceled(address indexed wallet, uint256 nonce);
+
+    function testCancelRecovery() public {
+        testApproveRecovery();
+        RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        vm.prank(address(wallet));
+        vm.expectEmit(true, true, true, true);
+        emit SocialRecoveryCanceled(address(wallet), request.nonce);
+        socialRecoveryModule.cancelRecovery(address(wallet));
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, 0);
+        assertEq(request.executeAfter, 0);
+        assertEq(request.nonce, 0);
+    }
+
+    function testRevertsCancelRecovery() public {
+        TrueWallet walletNoRecoveryModule = createWalletWithoutSocialRecovery();
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule.cancelRecovery(address(walletNoRecoveryModule));
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__NoOngoingRecovery.selector);
+        socialRecoveryModule.cancelRecovery(address(wallet));
+
+        testApproveRecovery();
+        RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OnlyWalletItselfCanCancelRecovery.selector);
+        socialRecoveryModule.cancelRecovery(address(wallet));
+
+        vm.prank(address(walletOwner));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OnlyWalletItselfCanCancelRecovery.selector);
+        socialRecoveryModule.cancelRecovery(address(wallet));
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+    }
 }

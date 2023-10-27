@@ -404,7 +404,13 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return approvedRecords[_guardian][recoveryHash];
     }
 
-    function cancelRecovery(address wallet) external {}
+    function cancelRecovery(address _wallet) external onlyAuthorized(_wallet) whenRecovery(_wallet) {
+        if (msg.sender != _wallet) {
+            revert SocialRecovery__OnlyWalletItselfCanCancelRecovery();
+        }
+        emit SocialRecoveryCanceled(_wallet, recoveryEntries[_wallet].nonce);
+        delete recoveryEntries[_wallet];
+    }
 
     // guardians should be revealed
     function batchApproveRecovery(
