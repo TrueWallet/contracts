@@ -218,7 +218,7 @@ contract TrueWallet is
     }
 
     /// @notice Transfer ownership by owner
-    function transferOwnership(address newOwner) public virtual onlyOwner {
+    function transferOwnership(address newOwner) public virtual onlySelfOrModule {
         AccountStorage.Layout storage layout = AccountStorage.layout();
         layout.owner = newOwner;
         emit OwnershipTransferred(msg.sender, newOwner);
