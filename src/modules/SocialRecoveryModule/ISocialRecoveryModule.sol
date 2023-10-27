@@ -75,7 +75,7 @@ interface ISocialRecoveryModule {
     event PendingRecovery(address indexed wallet, address[] indexed newOwners, uint256 nonce, uint256 executeAfter);
 
     /// @notice Indicates a recovery process has been executed successfully
-    event SocialRecovery(address indexed wallet, address[] indexed newOwners);
+    event SocialRecoveryExecuted(address indexed wallet, address[] indexed newOwners);
 
     /// @notice Indicates a recovery process has been canceled
     event SocialRecoveryCanceled(address indexed wallet, uint256 nonce);

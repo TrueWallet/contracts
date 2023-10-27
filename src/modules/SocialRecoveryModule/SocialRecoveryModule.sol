@@ -7,8 +7,6 @@ import {AddressLinkedList} from "src/libraries/AddressLinkedList.sol";
 import {IERC1271} from "openzeppelin-contracts/interfaces/IERC1271.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 
-import "lib/forge-std/src/console.sol";
-
 contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     using AddressLinkedList for mapping(address => address);
     // using TypeConversion for address;
@@ -79,7 +77,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             )
         );
     }
-    
+
     // TODO memory vs calldata
     function encodeSocialRecoveryData(address _wallet, address[] memory _newOwners, uint256 _nonce)
         public
@@ -129,7 +127,6 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 revert SocialRecovery__AnonymousGuardianConfigError();
             }
         }
-        // console.log(_guardians.length);
         for (uint256 i; i < _guardians.length;) {
             walletGuardian[_sender].guardians.add(_guardians[i]);
             unchecked {
@@ -259,7 +256,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
         _processGuardianUpdatesIfDue(_wallet);
 
-        delete walletPendingGuardian[_wallet]; //
+        delete walletPendingGuardian[_wallet]; // 2 times delete
     }
 
     function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, uint256 _salt)
@@ -310,11 +307,14 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             revert SocialRecovery__Unauthorized();
         }
         uint256 _nonce = nonce(_wallet);
+        if (recoveryEntries[_wallet].executeAfter > 0) {
+            _nonce = recoveryEntries[_wallet].nonce;
+        }
         bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
         approvedRecords[sender()][recoveryHash] = 1;
         emit ApproveRecovery(_wallet, sender(), recoveryHash);
 
-        // initiate recovery request
+        // in case this is the first approval => initiate recovery request
         if (recoveryEntries[_wallet].executeAfter == 0) {
             _pendingRecovery(_wallet, _newOwners, _nonce);
         }
@@ -328,9 +328,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         emit PendingRecovery(_wallet, _newOwners, _nonce, executeAfter);
     }
 
-    
     function executeRecovery(address _wallet) external whenRecovery(_wallet) onlyAuthorized(_wallet) {
-        // guardians should be revealed before execution
+        // guardians should be revealed before execution - covered by whenRecovery(_wallet)
         if ((walletGuardian[_wallet].guardianHash != 0) && (walletGuardian[_wallet].guardians.size() > 0)) {
             revert SocialRecovery__AnonymousGuardianNotRevealed();
         }
@@ -347,10 +346,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             revert SocialRecovery__NotEnoughApprovals();
         }
 
-        _performRecovery(_wallet, request.newOwners);
+        _executeRecovery(_wallet, request.newOwners);
     }
 
-    function _performRecovery(address _wallet, address[] memory _newOwners) private {
+    function _executeRecovery(address _wallet, address[] memory _newOwners) private {
         if (_newOwners.length == 0) revert SocialRecovery__OwnersEmpty();
         // check and update nonce
         if (recoveryEntries[_wallet].nonce == nonce(_wallet)) {
@@ -361,10 +360,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
         IWallet wallet = IWallet(payable(_wallet));
         // update owners
-        // if (_newOwners.length > 1) {}
-        IWallet(_wallet).transferOwnership(_newOwners[0]);
-        
-        emit SocialRecovery(_wallet, _newOwners);
+        wallet.transferOwnership(_newOwners[0]);
+        // wallet.resetOwners(_newOwners);
+
+        emit SocialRecoveryExecuted(_wallet, _newOwners);
     }
 
     /// @notice Retrieves the wallet's current ongoing recovery request.
@@ -374,8 +373,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return recoveryEntries[_wallet];
     }
 
-
-    function getRecoveryApprovals(address _wallet, address[] memory _newOwners) public  returns (uint256 approvalCount) {
+    function getRecoveryApprovals(address _wallet, address[] memory _newOwners)
+        public
+        view
+        returns (uint256 approvalCount)
+    {
         // uint256 _nonce = nonce(_wallet);
         uint256 _nonce = recoveryEntries[_wallet].nonce;
         bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
@@ -392,12 +394,15 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         }
     }
 
-    function hasGuardianApproved(address _guardian, address _wallet, address[] calldata _newOwners) public  returns (uint256) {
+    function hasGuardianApproved(address _guardian, address _wallet, address[] calldata _newOwners)
+        public
+        view
+        returns (uint256)
+    {
         uint256 _nonce = recoveryEntries[_wallet].nonce;
         bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
         return approvedRecords[_guardian][recoveryHash];
     }
-
 
     function cancelRecovery(address wallet) external {}
 

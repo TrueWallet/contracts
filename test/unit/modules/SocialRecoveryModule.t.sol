@@ -3,7 +3,11 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import {SocialRecoveryModule, ISocialRecoveryModule, RecoveryEntry} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
+import {
+    SocialRecoveryModule,
+    ISocialRecoveryModule,
+    RecoveryEntry
+} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
 import {TrueWallet, IWallet} from "src/wallet/TrueWallet.sol";
@@ -490,9 +494,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         controlModuleInitData = 1;
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModule[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModule)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModule));
         proxy = new TrueWalletProxy(address(walletImpl), data);
         walletNoRecoveryModule = TrueWallet(payable(address(proxy)));
         return walletNoRecoveryModule;
@@ -502,9 +505,9 @@ contract SocialRecoveryModuleUnitTest is Test {
     event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
 
     address newOwner1 = makeAddr("newOwner1");
+    address[] newOwners = new address[](1);
 
     function testApproveRecovery() public {
-        address[] memory newOwners = new address[](1);
         newOwners[0] = newOwner1;
 
         RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
@@ -517,8 +520,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule.hasGuardianApproved(guardian1, address(wallet), newOwners), 0);
 
         uint256 nonce = socialRecoveryModule.nonce(address(wallet));
-        bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(
-            address(wallet), newOwners, nonce);
+        bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(address(wallet), newOwners, nonce);
 
         vm.prank(address(guardian1));
         vm.expectEmit(true, true, true, true);
@@ -530,7 +532,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.executeAfter, block.timestamp + 2 days);
         assertEq(request.nonce, IWallet(wallet).nonce());
 
-        // assertEq(socialRecoveryModule.nonce(address(wallet)), 1); should be updated after _performRecovery
+        // assertEq(socialRecoveryModule.nonce(address(wallet)), 1); should be updated after _executeRecovery
         assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 1);
         assertEq(socialRecoveryModule.hasGuardianApproved(address(guardian1), address(wallet), newOwners), 1);
     }
@@ -562,4 +564,103 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
         socialRecoveryModule.approveRecovery(address(walletNoRecoveryModule), newOwners);
     }
+
+    function testRevertsApproveRecoveryWhenUnrevealedAnonymosGuardians() public {
+        testCanInitWithAnonymousGuardians();
+
+        address[] memory newOwners = new address[](1);
+        newOwners[0] = newOwner1;
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
+        socialRecoveryModule2.approveRecovery(address(wallet), newOwners);
+    }
+
+    // executeRecovery tests
+    event SocialRecoveryExecuted(address indexed wallet, address[] indexed newOwners);
+
+    function testExecuteRecoveryWithOnchainGuardians() public {
+        assertEq(wallet.owner(), walletOwner);
+        assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+
+        RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, 0);
+        assertEq(request.executeAfter, 0);
+        assertEq(request.nonce, 0);
+
+        testApproveRecovery();
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        uint256 recoveryNonce = request.nonce;
+        bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(address(wallet), newOwners, recoveryNonce);
+
+        vm.prank(address(guardian2));
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+
+        assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 2);
+        assertEq(socialRecoveryModule.hasGuardianApproved(address(guardian2), address(wallet), newOwners), 1);
+
+        uint256 executeAfter = request.executeAfter;
+        vm.warp(executeAfter);
+
+        vm.prank(address(guardian3));
+        vm.expectEmit(true, true, true, true);
+        emit SocialRecoveryExecuted(address(wallet), newOwners);
+        socialRecoveryModule.executeRecovery(address(wallet));
+
+        assertEq(wallet.owner(), newOwner1);
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, 0);
+        assertEq(request.executeAfter, 0);
+        assertEq(request.nonce, 0);
+    }
+
+    function testRevertsExecuteRecoveryWithOnchainGuardians() public {
+        assertEq(wallet.owner(), walletOwner);
+        assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+
+        RecoveryEntry memory request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, 0);
+        assertEq(request.executeAfter, 0);
+        assertEq(request.nonce, 0);
+
+        testApproveRecovery();
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, block.timestamp + 2 days);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        vm.prank(address(guardian3));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__RecoveryPeriodStillPending.selector);
+        socialRecoveryModule.executeRecovery(address(wallet));
+
+        uint256 executeAfter = request.executeAfter;
+        vm.warp(executeAfter);
+
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__NotEnoughApprovals.selector);
+        socialRecoveryModule.executeRecovery(address(wallet));
+
+        request = socialRecoveryModule.getRecoveryEntry(address(wallet));
+        assertEq(request.newOwners.length, newOwners.length);
+        assertEq(request.executeAfter, executeAfter);
+        assertEq(request.nonce, IWallet(wallet).nonce());
+
+        assertEq(wallet.owner(), walletOwner);
+    }
+
+    function testRevertsExecuteRecoveryWhenNotRevealedAnonymousGuardians() public {
+        testCanInitWithAnonymousGuardians();
+        vm.prank(address(guardian1));
+        vm.expectRevert(ISocialRecoveryModule.SocialRecovery__NoOngoingRecovery.selector);
+        socialRecoveryModule.executeRecovery(address(wallet));
+    }
+
 }
