@@ -93,8 +93,6 @@ contract TrueWalletUnitTest is Test {
     }
 
     function testValidateUserOp() public {
-        assertEq(wallet.nonce(), 0);
-
         (UserOperation memory userOp, bytes32 userOpHash) = getUserOperation(
             address(wallet),
             wallet.nonce(),
@@ -115,7 +113,6 @@ contract TrueWalletUnitTest is Test {
             missingWalletFunds
         );
         assertEq(deadline, 0);
-        assertEq(wallet.nonce(), 1);
     }
 
     function testExecuteByEntryPoint() public {
@@ -286,7 +283,7 @@ contract TrueWalletUnitTest is Test {
     function testPrefundEntryPoint() public {
         vm.deal(address(wallet), 1 ether);
 
-        assertEq(wallet.nonce(), 0);
+        // assertEq(wallet.nonce(), 0);
 
         uint256 balanceBefore = address(entryPoint).balance;
 
@@ -309,7 +306,7 @@ contract TrueWalletUnitTest is Test {
             missingWalletFunds
         );
         assertEq(deadline, 0);
-        assertEq(wallet.nonce(), 1);
+        // assertEq(wallet.nonce(), 1);
 
         assertEq(
             address(entryPoint).balance,

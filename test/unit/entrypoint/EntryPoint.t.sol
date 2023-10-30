@@ -174,7 +174,11 @@ contract EntryPointUnitTest is Test {
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
+        assertEq(entryPoint.getNonce(address(sender), 0), 0);
+
         // // Deploy wallet through the entryPoint
         entryPoint.handleOps(userOps, payable(address(ownerAddress)));
+        // Verify wallet nonce incrementation 
+        assertEq(entryPoint.getNonce(address(sender), 0), 1);
     }
 }
