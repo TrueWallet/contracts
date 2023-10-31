@@ -412,13 +412,127 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete recoveryEntries[_wallet];
     }
 
-    // guardians should be revealed
+    
     function batchApproveRecovery(
-        address wallet,
-        address[] calldata newOwner,
-        uint256 signatureCount,
-        bytes memory signatures
-    ) external {}
+        address _wallet,
+        address[] calldata _newOwners,
+        uint256 _signatureCount,
+        bytes memory _signatures
+    ) external onlyAuthorized(_wallet) {
+        // Check that guardians revealed
+        if ((walletGuardian[_wallet].guardianHash != 0) || (walletGuardian[_wallet].guardians.size() == 0)) {
+            revert SocialRecovery__AnonymousGuardianNotRevealed();
+        }
+        if (_newOwners.length == 0) revert SocialRecovery__OwnersEmpty();
+        uint256 _nonce = nonce(_wallet);
+        bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
+        // Validate signatures & guardians
+        checkNSignatures(_wallet, recoveryHash, _signatureCount, _signatures);
+        // If (numConfirmed == numGuardian) => execute recovery
+        if (_signatureCount == walletGuardian[_wallet].guardians.size()) {
+            _executeRecovery(_wallet, _newOwners);
+        }
+        // If (numConfirmed < threshold || numConfirmed > threshold) => pending recovery
+        if (_signatureCount < threshold(_wallet) || _signatureCount > threshold(_wallet)) {
+            _pendingRecovery(_wallet, _newOwners, _nonce);
+        }
+    }
+
+    /// @dev Referece from gnosis safe validation
+    function checkNSignatures(address _wallet, bytes32 _dataHash, uint256 _signatureCount, bytes memory _signatures)
+        public
+        view
+    {
+        // Check that the provided signature data is not too short
+        require(_signatures.length >= _signatureCount * 65, "signatures too short");
+        // There cannot be an owner with address 0.
+        address lastOwner = address(0);
+        address currentOwner;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+        uint256 i;
+        for (i = 0; i < _signatureCount; i++) {
+            (v, r, s) = signatureSplit(_signatures, i);
+            if (v == 0) {
+                // If v is 0 then it is a contract signature
+                // When handling contract signatures the address of the contract is encoded into r
+                currentOwner = address(uint160(uint256(r)));
+
+                // Check that signature data pointer (s) is not pointing inside the static part of the signatures bytes
+                // This check is not completely accurate, since it is possible that more signatures than the threshold are send.
+                // Here we only check that the pointer is not pointing inside the part that is being processed
+                require(uint256(s) >= _signatureCount * 65, "contract signatures too short");
+
+                // Check that signature data pointer (s) is in bounds (points to the length of data -> 32 bytes)
+                require(uint256(s) + (32) <= _signatures.length, "contract signatures out of bounds");
+
+                // Check if the contract signature is in bounds: start of data is s + 32 and end is start + signature length
+                uint256 contractSignatureLen;
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    contractSignatureLen := mload(add(add(_signatures, s), 0x20))
+                }
+                require(uint256(s) + 32 + contractSignatureLen <= _signatures.length, "contract signature wrong offset");
+
+                // Check signature
+                bytes memory contractSignature;
+                // solhint-disable-next-line no-inline-assembly
+                assembly {
+                    // The signature data for contract signatures is appended to the concatenated signatures and the offset is stored in s
+                    contractSignature := add(add(_signatures, s), 0x20)
+                }
+                (bool success, bytes memory result) = currentOwner.staticcall(
+                    abi.encodeWithSelector(IERC1271.isValidSignature.selector, _dataHash, contractSignature)
+                );
+                require(
+                    success && result.length == 32
+                        && abi.decode(result, (bytes32)) == bytes32(IERC1271.isValidSignature.selector),
+                    "contract signature invalid"
+                );
+            } else if (v == 1) {
+                // If v is 1 then it is an approved hash
+                // When handling approved hashes the address of the approver is encoded into r
+                currentOwner = address(uint160(uint256(r)));
+                // Hashes are automatically approved by the sender of the message or when they have been pre-approved via a separate transaction
+                require(
+                    msg.sender == currentOwner || approvedRecords[currentOwner][_dataHash] != 0,
+                    "approve hash verify failed"
+                );
+            } else {
+                // eip712 verify
+                currentOwner = ecrecover(_dataHash, v, r, s);
+            }
+            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed");
+            lastOwner = currentOwner;
+        }
+    }
+
+    /// @dev Divides bytes signature into `uint8 v, bytes32 r, bytes32 s`.
+    /// @notice Make sure to perform a bounds check for @param _pos, to avoid out of bounds access on @param _signatures
+    /// @param _pos which signature to read. A prior bounds check of this parameter should be performed, to avoid out of bounds access
+    /// @param _signatures concatenated rsv signatures
+    function signatureSplit(bytes memory _signatures, uint256 _pos)
+        internal
+        pure
+        returns (uint8 v, bytes32 r, bytes32 s)
+    {
+        // The signature format is a compact form of:
+        //   {bytes32 r}{bytes32 s}{uint8 v}
+        // Compact means, uint8 is not padded to 32 bytes.
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            let signaturePos := mul(0x41, _pos)
+            r := mload(add(_signatures, add(signaturePos, 0x20)))
+            s := mload(add(_signatures, add(signaturePos, 0x40)))
+            // Here we are loading the last 32 bytes, including 31 bytes
+            // of 's'. There is no 'mload8' to do this.
+            //
+            // 'byte' is not working due to the Solidity parser, so lets
+            // use the second best option, 'and'
+            v := and(mload(add(_signatures, add(signaturePos, 0x41))), 0xff)
+        }
+    }
 
     function requiredFunctions() external pure returns (bytes4[] memory) {
         bytes4[] memory functions = new bytes4[](3);

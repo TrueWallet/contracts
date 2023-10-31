@@ -31,3 +31,16 @@ function createSignature2(
     bytes memory signature = bytes.concat(r, s, bytes1(v));
     return signature;
 }
+
+/// @notice Create a signature with ERC-712 support
+function createSignature3(
+    bytes32 messageHash,
+    uint256 ownerPrivateKey,
+    Vm vm
+) pure returns (bytes memory) {
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, messageHash);
+    bytes memory signature = bytes.concat(r, s, bytes1(v));
+    return signature;
+}
+
+
