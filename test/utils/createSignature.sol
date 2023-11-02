@@ -39,8 +39,5 @@ function createSignature3(
     Vm vm
 ) pure returns (bytes memory) {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, messageHash);
-    bytes memory signature = bytes.concat(r, s, bytes1(v));
-    return signature;
+    return abi.encodePacked(r, s, v);
 }
-
-

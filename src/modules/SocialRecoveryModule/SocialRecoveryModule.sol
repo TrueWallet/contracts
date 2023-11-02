@@ -7,6 +7,8 @@ import {AddressLinkedList} from "src/libraries/AddressLinkedList.sol";
 import {IERC1271} from "openzeppelin-contracts/interfaces/IERC1271.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 
+import "lib/forge-std/src/console.sol";
+
 contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     using AddressLinkedList for mapping(address => address);
     // using TypeConversion for address;
@@ -168,6 +170,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                     }
                 }
             }
+            walletGuardian[_wallet].threshold = walletPendingGuardian[_wallet].threshold; //
 
             delete walletPendingGuardian[_wallet];
         }
@@ -176,6 +179,13 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     modifier processGuardianUpdatesIfDue(address _wallet) {
         _processGuardianUpdatesIfDue(_wallet);
         _;
+    }
+
+    // TODO TBC: addGuardians to existing list
+    // _processGuardianUpdatesIfDue allows only new list of guardians addresses, not previous
+    function processGuardianUpdates(address _wallet) external {
+        _processGuardianUpdatesIfDue(_wallet);
+        // walletGuardian[_wallet].threshold = walletPendingGuardian[_wallet].threshold;
     }
 
     function guardiansCount(address _wallet) public view returns (uint256) {
@@ -339,13 +349,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         if (block.timestamp < request.executeAfter) {
             revert SocialRecovery__RecoveryPeriodStillPending();
         }
-
         uint256 guardiansThreshold = threshold(_wallet);
         uint256 _approvalCount = getRecoveryApprovals(_wallet, request.newOwners);
         if (_approvalCount < guardiansThreshold) {
             revert SocialRecovery__NotEnoughApprovals();
         }
-
         _executeRecovery(_wallet, request.newOwners);
     }
 
@@ -417,8 +425,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         address _wallet,
         address[] calldata _newOwners,
         uint256 _signatureCount,
-        bytes memory _signatures
+        bytes memory _signatures // guardians signatures arranged based on the sorted addresses.
     ) external onlyAuthorized(_wallet) {
+        // Apply & clear pending guardians settings
+        _processGuardianUpdatesIfDue(_wallet);
         // Check that guardians revealed
         if ((walletGuardian[_wallet].guardianHash != 0) || (walletGuardian[_wallet].guardians.size() == 0)) {
             revert SocialRecovery__AnonymousGuardianNotRevealed();
@@ -428,20 +438,22 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
         // Validate signatures & guardians
         checkNSignatures(_wallet, recoveryHash, _signatureCount, _signatures);
-        // If (numConfirmed == numGuardian) => execute recovery
+        // If (numConfirmed == numGuardian) => execute recovery 
         if (_signatureCount == walletGuardian[_wallet].guardians.size()) {
             _executeRecovery(_wallet, _newOwners);
         }
-        // If (numConfirmed < threshold || numConfirmed > threshold) => pending recovery
-        if (_signatureCount < threshold(_wallet) || _signatureCount > threshold(_wallet)) {
+        // If (numConfirmed < threshold || _signatureCount > threshold) => pending recovery
+        if ((_signatureCount < threshold(_wallet)) 
+            || ((_signatureCount > threshold(_wallet)) && (_signatureCount != walletGuardian[_wallet].guardians.size()))) {
             _pendingRecovery(_wallet, _newOwners, _nonce);
         }
+        emit BatchApproveRecovery(_wallet, _newOwners, _signatureCount, _signatures, recoveryHash);
     }
 
     /// @dev Referece from gnosis safe validation
     function checkNSignatures(address _wallet, bytes32 _dataHash, uint256 _signatureCount, bytes memory _signatures)
         public
-        view
+        // view
     {
         // Check that the provided signature data is not too short
         require(_signatures.length >= _signatureCount * 65, "signatures too short");
@@ -503,8 +515,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 // eip712 verify
                 currentOwner = ecrecover(_dataHash, v, r, s);
             }
-            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed");
+            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed"); 
             lastOwner = currentOwner;
+            // Hash approval
+            approvedRecords[currentOwner][_dataHash] = 1;
         }
     }
 

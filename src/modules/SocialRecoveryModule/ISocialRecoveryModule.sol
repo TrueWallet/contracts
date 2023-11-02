@@ -73,6 +73,8 @@ interface ISocialRecoveryModule {
     /// @notice Emitted when a guardian approves a recovery
     event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
 
+    event BatchApproveRecovery(address indexed wallet, address[] indexed newOwners, uint256 signatureCount, bytes signatures, bytes32 indexed recoveryHash);
+
     /// @notice Indicates a recovery process is pending and waiting for approval or execution
     event PendingRecovery(address indexed wallet, address[] indexed newOwners, uint256 nonce, uint256 executeAfter);
 
