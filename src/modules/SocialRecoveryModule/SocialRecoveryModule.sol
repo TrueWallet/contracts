@@ -148,6 +148,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete recoveryEntries[_sender];
     }
 
+    function isInit(address _wallet) external view returns (bool) {
+        return inited(_wallet); 
+    }
+
     function _processGuardianUpdatesIfDue(address _wallet) private {
         if (
             walletPendingGuardian[_wallet].pendingUntil > 0

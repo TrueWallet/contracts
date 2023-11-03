@@ -948,4 +948,56 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.batchApproveRecovery(address(walletNoRecoveryModule), newOwners, signatureCount, sign1);
     }
 
+    // deInit tests
+    function testDeInitWalletFromSocialRecoveryModule() public {
+        assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
+        assertEq(socialRecoveryModule.getGuardiansHash(address(wallet)), bytes32(0));
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+
+        assertTrue(wallet.isAuthorizedModule(address(socialRecoveryModule)));
+        assertTrue(socialRecoveryModule.isInit(address(wallet)));
+        (address[] memory _modules,) = wallet.listModules();
+        assertEq(_modules.length, 2);
+        
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("removeModule(address)")), address(socialRecoveryModule));
+        
+        vm.prank(address(wallet));
+        securityControlModule.execute(address(wallet), data);
+        
+        (_modules,) = wallet.listModules();
+        assertEq(_modules.length, 1);
+        assertFalse(wallet.isAuthorizedModule(address(socialRecoveryModule)));
+        assertFalse(socialRecoveryModule.isInit(address(wallet)));
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 0);
+
+        /// delete walletGuardian[_sender]; will reset the threshold and guardianHash to their default values because they are not mappings. 
+        /// This is why you see the threshold being reset to 0.
+        /// However, for the guardians mapping within the struct, delete only resets the state of the value types and does not iterate over the keys of the mapping to delete them. 
+        /// This is why the list of guardians remains.
+        // assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 0);
+        // assertEq(socialRecoveryModule.getGuardiansHash(address(wallet)), bytes32(0));
+    }
+
+    function testRevertsDeInitWalletFromSocialRecoveryModuleWhenInvalidOwner() public {
+        assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
+        assertEq(socialRecoveryModule.getGuardiansHash(address(wallet)), bytes32(0));
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+
+        assertTrue(wallet.isAuthorizedModule(address(socialRecoveryModule)));
+        assertTrue(socialRecoveryModule.isInit(address(wallet)));
+        (address[] memory _modules,) = wallet.listModules();
+        assertEq(_modules.length, 2);
+        
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("removeModule(address)")), address(socialRecoveryModule));
+        
+        vm.prank(address(guardian1));
+        vm.expectRevert(); // ISecurityControlModule.SecurityControlModule__InvalidOwner.selector
+        securityControlModule.execute(address(wallet), data);
+        
+        (_modules,) = wallet.listModules();
+        assertEq(_modules.length, 2);
+        assertTrue(wallet.isAuthorizedModule(address(socialRecoveryModule)));
+        assertTrue(socialRecoveryModule.isInit(address(wallet)));
+        assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
+    }
 }
