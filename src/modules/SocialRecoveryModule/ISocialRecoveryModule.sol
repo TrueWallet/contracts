@@ -67,13 +67,21 @@ interface ISocialRecoveryModule {
 
     error SocialRecovery__OnlyWalletItselfCanCancelRecovery();
 
+    error SocialRecovery__OnlyWalletItselfCanUpdateGuardians();
+
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 
     /// @notice Emitted when a guardian approves a recovery
     event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
 
-    event BatchApproveRecovery(address indexed wallet, address[] indexed newOwners, uint256 signatureCount, bytes signatures, bytes32 indexed recoveryHash);
+    event BatchApproveRecovery(
+        address indexed wallet,
+        address[] indexed newOwners,
+        uint256 signatureCount,
+        bytes signatures,
+        bytes32 indexed recoveryHash
+    );
 
     /// @notice Indicates a recovery process is pending and waiting for approval or execution
     event PendingRecovery(address indexed wallet, address[] indexed newOwners, uint256 nonce, uint256 executeAfter);
@@ -94,7 +102,7 @@ interface ISocialRecoveryModule {
     /// @param guardians List of new guardian addresses
     /// @param threshold The new threshold of guardians required
     /// @param guardianHash Hash related to the new set of guardians
-    function updateGuardians(address[] calldata guardians, uint256 threshold, bytes32 guardianHash) external;
+    function updatePendingGuardians(address[] calldata guardians, uint256 threshold, bytes32 guardianHash) external;
 
     /// @notice Cancel the process of updating guardians
     /// @param wallet The address of the wallet for which the process is being canceled

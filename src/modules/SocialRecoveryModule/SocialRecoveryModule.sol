@@ -39,7 +39,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
     uint128 private __seed;
 
-    modifier onlyAuthorized(address _wallet) {
+    modifier authorized(address _wallet) {
         if (!IWallet(_wallet).isAuthorizedModule(address(this))) {
             revert SocialRecovery__Unauthorized();
         }
@@ -149,10 +149,10 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     function isInit(address _wallet) external view returns (bool) {
-        return inited(_wallet); 
+        return inited(_wallet);
     }
 
-    function _processGuardianUpdatesIfDue(address _wallet) private {
+    function _checkApplyGuardianUpdate(address _wallet) private {
         if (
             walletPendingGuardian[_wallet].pendingUntil > 0
                 && walletPendingGuardian[_wallet].pendingUntil > block.timestamp
@@ -175,21 +175,19 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 }
             }
             walletGuardian[_wallet].threshold = walletPendingGuardian[_wallet].threshold; //
-
             delete walletPendingGuardian[_wallet];
         }
     }
 
-    modifier processGuardianUpdatesIfDue(address _wallet) {
-        _processGuardianUpdatesIfDue(_wallet);
+    modifier checkPendingGuardian(address _wallet) {
+        _checkApplyGuardianUpdate(_wallet);
         _;
     }
 
     // TODO TBC: addGuardians to existing list
-    // _processGuardianUpdatesIfDue allows only new list of guardians addresses, not previous
-    function processGuardianUpdates(address _wallet) external {
-        _processGuardianUpdatesIfDue(_wallet);
-        // walletGuardian[_wallet].threshold = walletPendingGuardian[_wallet].threshold;
+    // _checkApplyGuardianUpdate allows only new list of guardians addresses, not previous
+    function processGuardianUpdates(address _wallet) external authorized(sender()) {
+        _checkApplyGuardianUpdate(_wallet);
     }
 
     function guardiansCount(address _wallet) public view returns (uint256) {
@@ -226,11 +224,11 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         );
     }
 
-    function updateGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
+    function updatePendingGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
         external
-        onlyAuthorized(sender())
+        authorized(sender())
         whenNotRecovery(sender())
-        processGuardianUpdatesIfDue(sender())
+        checkPendingGuardian(sender())
     {
         address wallet = sender();
         if (_guardians.length > 0) {
@@ -258,7 +256,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     // the wallet itself or an existing guardian for that wallet
-    function cancelSetGuardians(address _wallet) external onlyAuthorized(_wallet) {
+    function cancelSetGuardians(address _wallet) external authorized(_wallet) {
         if (walletPendingGuardian[_wallet].pendingUntil == 0) {
             revert SocialRecovery__NoPendingGuardian();
         }
@@ -268,15 +266,15 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             }
         }
 
-        _processGuardianUpdatesIfDue(_wallet);
+        _checkApplyGuardianUpdate(_wallet);
 
         delete walletPendingGuardian[_wallet]; // 2 times delete
     }
 
     function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, uint256 _salt)
         public
-        onlyAuthorized(_wallet)
-        processGuardianUpdatesIfDue(_wallet)
+        authorized(_wallet)
+        checkPendingGuardian(_wallet)
     {
         if (_wallet != sender()) {
             if (!isGuardian(_wallet, sender())) {
@@ -315,7 +313,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return keccak256(abi.encodePacked(_guardians, _salt));
     }
 
-    function approveRecovery(address _wallet, address[] memory _newOwners) external onlyAuthorized(_wallet) {
+    function approveRecovery(address _wallet, address[] memory _newOwners) external authorized(_wallet) {
         if (_newOwners.length == 0) revert SocialRecovery__OwnersEmpty();
         if (!isGuardian(_wallet, sender())) {
             revert SocialRecovery__Unauthorized();
@@ -342,7 +340,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         emit PendingRecovery(_wallet, _newOwners, _nonce, executeAfter);
     }
 
-    function executeRecovery(address _wallet) external whenRecovery(_wallet) onlyAuthorized(_wallet) {
+    function executeRecovery(address _wallet) external whenRecovery(_wallet) authorized(_wallet) {
         // guardians should be revealed before execution - covered by whenRecovery(_wallet)
         if ((walletGuardian[_wallet].guardianHash != 0) && (walletGuardian[_wallet].guardians.size() > 0)) {
             revert SocialRecovery__AnonymousGuardianNotRevealed();
@@ -416,7 +414,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return approvedRecords[_guardian][recoveryHash];
     }
 
-    function cancelRecovery(address _wallet) external onlyAuthorized(_wallet) whenRecovery(_wallet) {
+    function cancelRecovery(address _wallet) external authorized(_wallet) whenRecovery(_wallet) {
         if (msg.sender != _wallet) {
             revert SocialRecovery__OnlyWalletItselfCanCancelRecovery();
         }
@@ -424,15 +422,14 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete recoveryEntries[_wallet];
     }
 
-    
     function batchApproveRecovery(
         address _wallet,
         address[] calldata _newOwners,
         uint256 _signatureCount,
         bytes memory _signatures // guardians signatures arranged based on the sorted addresses.
-    ) external onlyAuthorized(_wallet) {
+    ) external authorized(_wallet) {
         // Apply & clear pending guardians settings
-        _processGuardianUpdatesIfDue(_wallet);
+        _checkApplyGuardianUpdate(_wallet);
         // Check that guardians revealed
         if ((walletGuardian[_wallet].guardianHash != 0) || (walletGuardian[_wallet].guardians.size() == 0)) {
             revert SocialRecovery__AnonymousGuardianNotRevealed();
@@ -442,13 +439,15 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         bytes32 recoveryHash = getSocialRecoveryHash(_wallet, _newOwners, _nonce);
         // Validate signatures & guardians
         checkNSignatures(_wallet, recoveryHash, _signatureCount, _signatures);
-        // If (numConfirmed == numGuardian) => execute recovery 
+        // If (numConfirmed == numGuardian) => execute recovery
         if (_signatureCount == walletGuardian[_wallet].guardians.size()) {
             _executeRecovery(_wallet, _newOwners);
         }
         // If (numConfirmed < threshold || _signatureCount > threshold) => pending recovery
-        if ((_signatureCount < threshold(_wallet)) 
-            || ((_signatureCount > threshold(_wallet)) && (_signatureCount != walletGuardian[_wallet].guardians.size()))) {
+        if (
+            (_signatureCount < threshold(_wallet))
+                || ((_signatureCount > threshold(_wallet)) && (_signatureCount != walletGuardian[_wallet].guardians.size()))
+        ) {
             _pendingRecovery(_wallet, _newOwners, _nonce);
         }
         emit BatchApproveRecovery(_wallet, _newOwners, _signatureCount, _signatures, recoveryHash);
@@ -457,7 +456,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @dev Referece from gnosis safe validation
     function checkNSignatures(address _wallet, bytes32 _dataHash, uint256 _signatureCount, bytes memory _signatures)
         public
-        // view
+    // view
     {
         // Check that the provided signature data is not too short
         require(_signatures.length >= _signatureCount * 65, "signatures too short");
@@ -519,7 +518,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
                 // eip712 verify
                 currentOwner = ecrecover(_dataHash, v, r, s);
             }
-            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed"); 
+            require(currentOwner > lastOwner && isGuardian(_wallet, currentOwner), "verify failed");
             lastOwner = currentOwner;
             // Hash approval
             approvedRecords[currentOwner][_dataHash] = 1;
