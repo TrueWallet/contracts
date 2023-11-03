@@ -61,13 +61,14 @@ interface ISocialRecoveryModule {
     /// @dev Throws when recovery period still pending.
     error SocialRecovery__RecoveryPeriodStillPending();
 
+    /// @dev Thrown if there are not enough approvals from guardians to proceed with a recovery operation.
     error SocialRecovery__NotEnoughApprovals();
-
+    
+    /// @dev Thrown if an anonymous guardian has not been revealed when required.
     error SocialRecovery__AnonymousGuardianNotRevealed();
-
+    
+    /// @dev  Thrown if any entity other than the wallet itself attempts to cancel a recovery process.
     error SocialRecovery__OnlyWalletItselfCanCancelRecovery();
-
-    error SocialRecovery__OnlyWalletItselfCanUpdateGuardians();
 
     /// @notice Emitted when guardians for a wallet are revealed without disclosing their identity
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
@@ -75,6 +76,7 @@ interface ISocialRecoveryModule {
     /// @notice Emitted when a guardian approves a recovery
     event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
 
+    /// @notice Emitted when a batch approval for a wallet recovery is processed.
     event BatchApproveRecovery(
         address indexed wallet,
         address[] indexed newOwners,

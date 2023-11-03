@@ -79,6 +79,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         wallet = TrueWallet(payable(address(proxy)));
     }
 
+    ///////////////////////////////////
+    //       setupState Tests        //
+    ///////////////////////////////////
+
     function testSetupState() public {
         assertTrue(wallet.isAuthorizedModule(address(securityControlModule)));
         assertTrue(wallet.isAuthorizedModule(address(socialRecoveryModule)));
@@ -119,6 +123,10 @@ contract SocialRecoveryModuleUnitTest is Test {
     function testGetThreshold() public {
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
     }
+
+    ///////////////////////////////////
+    //       initModule Tests        //
+    ///////////////////////////////////
 
     event ModuleInit(address indexed wallet);
     event ModuleAdded(address indexed module);
@@ -259,7 +267,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
     }
 
-    // updatePendingGuardians tests
+    ///////////////////////////////////
+    // updatePendingGuardians Tests  //
+    ///////////////////////////////////
+
     address[] guardians2 = new address[](3);
     address guardian2_1 = makeAddr("guardian2_1");
     address guardian2_2 = makeAddr("guardian2_2");
@@ -351,7 +362,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(guardiansUpdated.length, 0);
     }
 
-    // processGuardianUpdates tests
+    ///////////////////////////////////
+    // processGuardianUpdates Tests  //
+    ///////////////////////////////////
+
     function testProcessGuardianUpdates() public {
         testUpdatePendingGuardians();
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
@@ -380,7 +394,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.processGuardianUpdates(address(wallet));
     }
 
-    // cancelSetGuardians tests
+    ///////////////////////////////////
+    //   cancelSetGuardians Tests    //
+    ///////////////////////////////////
+
     function testCancelSetGuardiansByOwnerViaWallet() public {
         testUpdatePendingGuardians();
         vm.prank(address(wallet));
@@ -438,7 +455,9 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(guardiansUpdated.length, 0);
     }
 
-    // revealAnonymousGuardians tests
+    ////////////////////////////////////
+    // revealAnonymousGuardians Tests //
+    ////////////////////////////////////
 
     event AnonymousGuardianRevealed(address indexed wallet, address[] indexed guardians, bytes32 guardianHash);
 
@@ -501,21 +520,6 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValitSalt);
     }
 
-    // function testRevertsRevealAnonymousGuardiansIfUnauthorizedWallet() public {
-    //     testCanInitWithAnonymousGuardians();
-    //     assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
-    //     assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
-
-    //     uint256 salt = 42;
-    //     bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
-    //     assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
-
-    //     TrueWallet walletNoRecoveryModule = createWalletWithoutSocialRecovery();
-    //     vm.prank(address(walletNoRecoveryModule));
-    //     vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector); //SocialRecovery__InvalidGuardianHash
-    //     socialRecoveryModule2.revealAnonymousGuardians(address(walletNoRecoveryModule), guardians, salt);
-    // }
-
     // helper
     function createWalletWithoutSocialRecovery() public returns (TrueWallet) {
         TrueWallet walletNoRecoveryModule;
@@ -530,7 +534,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         return walletNoRecoveryModule;
     }
 
-    // approveRecovery tests
+    ///////////////////////////////////
+    //     approveRecovery Tests     //
+    ///////////////////////////////////
+
     event ApproveRecovery(address indexed wallet, address indexed guardian, bytes32 indexed recoveryHash);
 
     address newOwner1 = makeAddr("newOwner1");
@@ -596,7 +603,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule2.approveRecovery(address(wallet), newOwners);
     }
 
-    // executeRecovery tests
+    ////////////////////////////////////
+    //      executeRecovery Tests     //
+    ////////////////////////////////////
+
     event SocialRecoveryExecuted(address indexed wallet, address[] indexed newOwners);
 
     function testExecuteRecoveryWithOnchainGuardians() public {
@@ -683,7 +693,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.executeRecovery(address(wallet));
     }
 
-    // cancelRecovery tests
+    ////////////////////////////////////
+    //      cancelRecovery Tests      //
+    ////////////////////////////////////
+
     event SocialRecoveryCanceled(address indexed wallet, uint256 nonce);
 
     function testCancelRecovery() public {
@@ -734,7 +747,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.nonce, IWallet(wallet).nonce());
     }
 
-    // batchApproveRecovery tests
+    ////////////////////////////////////
+    //   batchApproveRecovery Tests   //
+    ////////////////////////////////////
+
     // If (numConfirmed < threshold) => pending recovery
     function testBatchApproveRecoveryWhenNumConfirmedLowerThreshold() public {
         assertEq(wallet.owner(), walletOwner);
@@ -985,7 +1001,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.batchApproveRecovery(address(walletNoRecoveryModule), newOwners, signatureCount, sign1);
     }
 
-    // deInit tests
+    ////////////////////////////////////
+    //          deInit Tests          //
+    ////////////////////////////////////
+
     function testDeInitWalletFromSocialRecoveryModule() public {
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertEq(socialRecoveryModule.getGuardiansHash(address(wallet)), bytes32(0));
