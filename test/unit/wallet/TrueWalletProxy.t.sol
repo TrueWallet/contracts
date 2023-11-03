@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint, IEntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockWalletV2} from "../../mocks/MockWalletV2.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
 import {MockERC721} from "../../mocks/MockERC721.sol";
@@ -34,7 +34,7 @@ contract TrueWalletProxyUnitTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         wallet = new TrueWallet();
-        factory = new TrueWalletFactory(address(wallet), address(this));
+        factory = new TrueWalletFactory(address(wallet), address(this), address(entryPoint));
         walletV2 = new MockWalletV2();
         erc20token = new MockERC20();
         erc721token = new MockERC721("Token", "TKN");

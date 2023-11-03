@@ -20,7 +20,7 @@ library AccountStorage {
         /// │     base data     │                                   /// TrueWallet.sol
         IEntryPoint entryPoint; /// entryPoint
         address owner; /// owner slot
-        uint96 nonce; /// explicit sizes of nonce, to fit a single storage cell with "owner"
+        mapping(address => address) owners;
         uint256[50] __gap_0;
         /// └───────────────────┘
 

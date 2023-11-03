@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint, IEntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../../mocks/MockSetter.sol";
 
 import {MockSignatureChecker} from "../../mocks/MockSignatureChecker.sol";
@@ -52,7 +52,7 @@ contract EntryPointUnitTest is Test {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(mockModule, initData);
 
-        factory = new TrueWalletFactory(address(wallet), address(this));
+        factory = new TrueWalletFactory(address(wallet), address(this), address(entryPoint));
     }
 
     function encodeError(
@@ -95,6 +95,7 @@ contract EntryPointUnitTest is Test {
                 address(entryPoint),
                 ownerAddress,
                 upgradeDelay,
+                modules,
                 salt
             )
         );
@@ -173,7 +174,11 @@ contract EntryPointUnitTest is Test {
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
+        assertEq(entryPoint.getNonce(address(sender), 0), 0);
+
         // // Deploy wallet through the entryPoint
         entryPoint.handleOps(userOps, payable(address(ownerAddress)));
+        // Verify wallet nonce incrementation 
+        assertEq(entryPoint.getNonce(address(sender), 0), 1);
     }
 }

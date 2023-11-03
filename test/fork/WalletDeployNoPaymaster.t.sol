@@ -20,6 +20,7 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
     address walletOwner = MumbaiConfig.WALLET_OWNER;
+    address securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
     // Test case
     bytes32 public userOpHash;
@@ -34,15 +35,20 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
             )
         );
     uint32 upgradeDelay = 172800; // 2 days in seconds
+    bytes[] modules = new bytes[](1);
 
     UserOperation public userOp;
 
     function setUp() public {
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(securityModule, initData);
+
         // 0. Determine what the sender account will be beforehand
         address sender = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         vm.deal(sender, 1 ether);
@@ -63,6 +69,9 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
         });
 
         // 2. Set initCode, to trigger wallet deploy
+        // bytes memory initData = abi.encode(uint32(1));
+        // modules[0] = abi.encodePacked(securityModule, initData);
+
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
@@ -70,6 +79,7 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
                 address(entryPoint),
                 walletOwner,
                 upgradeDelay,
+                modules,
                 salt
             )
         );
@@ -109,6 +119,7 @@ contract WalletDeployNoPaymasterEntToEndTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         IWallet deployedWallet = IWallet(expectedWalletAddress);

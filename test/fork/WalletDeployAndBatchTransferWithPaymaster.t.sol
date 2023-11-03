@@ -24,6 +24,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
     address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
     address walletOwner = MumbaiConfig.WALLET_OWNER;
+    address securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
     // Test case
     MockERC1155 public token;
@@ -43,15 +44,20 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
             )
         );
     uint32 upgradeDelay = 172800; // 2 days in seconds
+    bytes[] modules = new bytes[](1);
 
     UserOperation public userOp;
 
     function setUp() public {
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(securityModule, initData);
+
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
         wallet = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         vm.deal(wallet, 1 ether);
@@ -85,6 +91,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
                 address(entryPoint),
                 walletOwner,
                 upgradeDelay,
+                modules,
                 salt
             )
         );
@@ -168,6 +175,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         IWallet deployedWallet = IWallet(expectedWalletAddress);
@@ -198,6 +206,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         deployedWallet = IWallet(expectedWalletAddress);

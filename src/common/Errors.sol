@@ -16,6 +16,12 @@ contract WalletErrors {
 
     /// @notice Throws when a provided signature is not valid.
     error InvalidSignature();
+
+    /// @notice Throws when an invalid entry point is provided or detected.
+    error InvalidEntryPoint();
+    
+    /// @notice Throws when create2 call failed.
+    error WalletFactory__Create2CallFailed();
 }
 
 contract SocialRecoveryErrors {
@@ -73,4 +79,12 @@ contract ModuleManagerErrors {
 
     /// @notice Throws when the selectors of a module are required but not provided.
     error ModuleSelectorsEmpty();
+}
+
+contract OwnerManagerErrors {
+    /// @dev Throws when an operation requires an owner but none exist.
+    error NoOwner();
+
+    /// @dev Throws when the caller must be the contract itself or one of its modules.
+    error CallerMustBeSelfOfModule();
 }

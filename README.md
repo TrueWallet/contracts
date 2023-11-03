@@ -3,10 +3,10 @@
 <h3 align="center"> This repository contains the smart contract suite used in TrueWallet project </h3>
 <br>
 
-![Github Actions](https://github.com/devanonon/hardhat-foundry-template/workflows/test/badge.svg)
 
 ## Features
 + Support [ERC-4337: Account Abstraction](https://eips.ethereum.org/EIPS/eip-4337)
++ Modular design
 + Social Recovery with Guardians
 + Upgradability: The smart contract wallet can be upgraded in a secure way to add new features or fix vulnerabilities in the future
 
@@ -40,7 +40,7 @@ cp .env.example .env
 ```bash
 yarn test:fork
 ```
-### Get gas report:
+### Gas report:
 ```bash
 yarn gas-report
 ```
@@ -48,5 +48,7 @@ yarn gas-report
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
-* <a href='https://github.com/eth-infinitism/account-abstraction'>eth-infinitism/account-abstraction</a>
-* <a href='https://eips.ethereum.org/EIPS/eip-4337'>EIP-4337: Account Abstraction via Entry Point Contract specification </a>
+* <a href='https://eips.ethereum.org/EIPS/eip-4337'>EIP-4337: Account Abstraction via Entry Point Contract specification</a>
+* <a href='https://github.com/eth-infinitism/account-abstraction'>Infinitism Account Abstraction Contracts</a>
+* <a href='https://github.com/SoulWallet/soul-wallet-contract/tree/main'>SoulWallet Contracts</a>
+* <a href='https://github.com/safe-global/safe-contracts'>Gnosis Safe Contracts</a>

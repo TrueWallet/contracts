@@ -42,7 +42,7 @@ interface IWallet is IModuleManager {
     function entryPoint() external view returns (address);
 
     /// @notice Get the nonce on the wallet
-    function nonce() external view returns (uint96);
+    function nonce() external view returns (uint256);
 
     /// @notice Method called by the entryPoint to execute a userOperation
     function execute(
@@ -63,4 +63,7 @@ interface IWallet is IModuleManager {
         bytes32 messageHash,
         bytes memory signature
     ) external view returns (bytes4);
+
+    /// @notice Transfer ownership by owner
+    function transferOwnership(address newOwner) external;
 }

@@ -7,8 +7,7 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
-
-import {MockModule} from "test/mocks/MockModule.sol";
+import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 
 contract DeployWalletProxyScript is Script {
     TrueWalletFactory public factory;
@@ -27,7 +26,7 @@ contract DeployWalletProxyScript is Script {
         );
     uint32 upgradeDelay = 172800;
 
-    MockModule mockModule;
+    address public securityModule;
     bytes[] modules = new bytes[](1);
 
     function setUp() public {
@@ -35,11 +34,11 @@ contract DeployWalletProxyScript is Script {
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         factory = TrueWalletFactory(MumbaiConfig.FACTORY);
         entryPoint = MumbaiConfig.ENTRY_POINT;
+        securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
         // mock
         bytes memory initData = abi.encode(uint32(1));
-        mockModule = new MockModule();
-        modules[0] = abi.encodePacked(mockModule, initData);
+        modules[0] = abi.encodePacked(securityModule, initData);
     }
 
     function run() public {

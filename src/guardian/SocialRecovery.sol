@@ -140,8 +140,9 @@ contract SocialRecovery is SocialRecoveryErrors {
     }
 
     /// @dev Get wallet's nonce
-    function _getWalletNonce() internal view returns (uint96) {
-        return AccountStorage.layout().nonce;
+    function _getWalletNonce() internal view returns (uint256) {
+        AccountStorage.Layout storage layout = AccountStorage.layout();
+        return (layout.entryPoint).getNonce(address(this), 0);
     }
 
     /// @notice Lets the owner cancel an ongoing recovery request

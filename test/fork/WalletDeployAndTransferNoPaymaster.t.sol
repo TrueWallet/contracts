@@ -21,6 +21,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
     address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
     address walletOwner = MumbaiConfig.WALLET_OWNER;
+    address securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
     // Test case
     MockERC721 public token;
@@ -38,15 +39,20 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
             )
         );
     uint32 upgradeDelay = 172800; // 2 days in seconds
+    bytes[] modules = new bytes[](1);
 
     UserOperation public userOp;
 
     function setUp() public {
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(securityModule, initData);
+
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
         wallet = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         vm.deal(wallet, 1 ether);
@@ -79,6 +85,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
                 address(entryPoint),
                 walletOwner,
                 upgradeDelay,
+                modules,
                 salt
             )
         );
@@ -122,6 +129,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         IWallet deployedWallet = IWallet(expectedWalletAddress);
@@ -144,14 +152,19 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
+        assertEq(entryPoint.getNonce(address(wallet), 0), 0);
+
         // Deploy wallet and transfer token through the entryPoint
         entryPoint.handleOps(userOps, bundler);
+
+        assertEq(entryPoint.getNonce(address(wallet), 0), 1);
 
         // Verify wallet was deployed as expected
         expectedWalletAddress = walletFactory.getWalletAddress(
             address(entryPoint),
             walletOwner,
             upgradeDelay,
+            modules,
             salt
         );
         deployedWallet = IWallet(expectedWalletAddress);
@@ -172,5 +185,65 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         assertEq(token.balanceOf(address(wallet)), 0);
         assertEq(token.balanceOf(address(recipient)), 1);
         assertEq(token.ownerOf(tokenId), address(recipient));
+        // Verify wallet nonce incrementation
+        assertEq(entryPoint.getNonce(address(deployedWallet), 0), 1);
+
+        // Tx interaction with deployed wallet
+        uint256 recipientEthBalanceBefore = address(recipient).balance;
+        // Generate a  new userOperation
+        uint256 currentNonce = IWallet(deployedWallet).nonce();
+
+        UserOperation memory userOp2 = UserOperation({
+            sender: address(deployedWallet),
+            nonce: currentNonce,
+            initCode: "",
+            callData: "",
+            callGasLimit: 70_000,
+            verificationGasLimit: 958666,
+            preVerificationGas: 115256,
+            maxFeePerGas: 1000105660,
+            maxPriorityFeePerGas: 1000000000,
+            paymasterAndData: "",
+            signature: ""
+        });
+
+        // Encode userOperation transfer
+        uint256 etherTransferAmount = 1 ether;
+
+        userOp2.callData = abi.encodeWithSelector(
+            IWallet(deployedWallet).execute.selector,
+            address(recipient),
+            etherTransferAmount,
+            ""
+        );
+
+        // Sign userOperation and attach signature
+        userOpHash = entryPoint.getUserOpHash(userOp2);
+        bytes memory signature = createSignature(
+            userOp2,
+            userOpHash,
+            ownerPrivateKey,
+            vm
+        );
+        userOp2.signature = signature;
+
+        // Set remainder of test case
+        missingWalletFunds = 1096029019333521;
+
+        userOps[0] = userOp2;
+
+        // Fund deployer with ETH
+        vm.deal(address(deployedWallet), 5 ether);
+
+        assertEq(address(wallet), address(deployedWallet));
+
+        // Transfer ether through the entryPoint
+        vm.prank(address(bundler));
+        entryPoint.handleOps(userOps, bundler);
+
+        // Verify the balance after tx execution
+        assertEq(address(recipient).balance, recipientEthBalanceBefore + 1 ether);
+        // Verify wallet nonce incrementation 
+        assertEq(entryPoint.getNonce(address(deployedWallet), 0), 2);
     }
 }
