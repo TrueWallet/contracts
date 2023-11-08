@@ -8,13 +8,9 @@ import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {WalletErrors} from "src/common/Errors.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
-import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
-import {ModuleManager} from "../base/ModuleManager.sol";
+import {ModuleManager} from "src/base/ModuleManager.sol";
+import {TokenManager} from "src/base/TokenManager.sol";
 import {Authority} from "src/authority/Authority.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
@@ -25,9 +21,9 @@ contract TrueWallet is
     Initializable,
     Authority,
     ModuleManager,
+    TokenManager,
     LogicUpgradeControl,
-    TokenCallbackHandler,
-    WalletErrors
+    TokenCallbackHandler
 {
     /// @notice All state variables are stored in AccountStorage. Layout with specific storage slot to avoid storage collision.
     using AccountStorage for AccountStorage.Layout;
@@ -38,10 +34,6 @@ contract TrueWallet is
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event ReceivedETH(address indexed sender, uint256 indexed amount);
-    event TransferedETH(address indexed to, uint256 amount);
-    event TransferedERC20(address token, address indexed to, uint256 amount);
-    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
@@ -181,32 +173,6 @@ contract TrueWallet is
     /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
-    }
-
-    /////////////////  ASSETS MANAGER ///////////////
-
-    /// @notice Transfer ETH out of the wallet. Permissioned to only the owner
-    function transferETH(address payable to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransferETH(to, amount);
-        emit TransferedETH(to, amount);
-    }
-
-    /// @notice Transfer ERC20 tokens out of the wallet. Permissioned to only the owner
-    function transferERC20(address token, address to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit TransferedERC20(token, to, amount);
-    }
-
-    /// @notice Transfer ERC721 tokens out of the wallet. Permissioned to only the owner
-    function transferERC721(address collection, uint256 tokenId, address to) external onlyOwner {
-        IERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit TransferedERC721(collection, tokenId, to);
-    }
-
-    /// @notice Transfer ERC1155 tokens out of the wallet. Permissioned to only the owner
-    function transferERC1155(address collection, uint256 tokenId, address to, uint256 amount) external onlyOwner {
-        IERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
-        emit TransferedERC1155(collection, tokenId, amount, to);
     }
 
     /////////////////  DEPOSITE MANAGER ///////////////
