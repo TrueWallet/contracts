@@ -2,6 +2,9 @@
 pragma solidity ^0.8.19;
 
 contract WalletErrors {
+    /// @notice Throws when an invalid owner address is provided or detected.
+    error InvalidOwner();
+    
     /// @notice Throws when an invalid entry point or owner is provided or detected.
     error InvalidEntryPointOrOwner();
 

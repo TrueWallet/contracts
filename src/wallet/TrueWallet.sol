@@ -6,7 +6,6 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
-import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
 import {WalletErrors} from "src/common/Errors.sol";
@@ -26,7 +25,6 @@ contract TrueWallet is
     Initializable,
     Authority,
     ModuleManager,
-    SocialRecovery,
     LogicUpgradeControl,
     TokenCallbackHandler,
     WalletErrors
@@ -38,7 +36,6 @@ contract TrueWallet is
 
     event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
-    // event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event ReceivedETH(address indexed sender, uint256 indexed amount);
     event TransferedETH(address indexed to, uint256 amount);
@@ -184,20 +181,6 @@ contract TrueWallet is
     /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
-    }
-
-    /// @notice Lets the owner set guardians and threshold for the wallet
-    /// @param guardians List of guardians' addresses
-    /// @param threshold Required number of guardians to confirm replacement
-    function addGuardianWithThreshold(address[] calldata guardians, uint16 threshold) external onlyOwner {
-        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
-    }
-
-    /// @notice Lets the owner revoke a guardian from the wallet and change threshold respectively
-    /// @param guardian The guardian address to revoke
-    /// @param threshold The new required number of guardians to confirm replacement
-    function revokeGuardianWithThreshold(address guardian, uint16 threshold) external onlyOwner {
-        SocialRecovery._revokeGuardianWithThreshold(guardian, threshold);
     }
 
     /////////////////  ASSETS MANAGER ///////////////
