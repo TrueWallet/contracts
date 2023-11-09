@@ -3,8 +3,9 @@ pragma solidity ^0.8.19;
 
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
+import {IOwnerManager} from "src/interfaces/IOwnerManager.sol";
 
-interface IWallet is IModuleManager {
+interface IWallet is IModuleManager, IOwnerManager {
     /**
      * Validate user's signature and nonce
      * the entryPoint will make the call to the recipient only if this validation call returns successfully.
@@ -35,9 +36,6 @@ interface IWallet is IModuleManager {
         uint256 missingAccountFunds
     ) external returns (uint256 validationData);
 
-    /// @notice Owner of the contract
-    function owner() external view returns (address);
-
     /// @notice Entrypoint connected to the wallet
     function entryPoint() external view returns (address);
 
@@ -63,7 +61,4 @@ interface IWallet is IModuleManager {
         bytes32 messageHash,
         bytes memory signature
     ) external view returns (bytes4);
-
-    /// @notice Transfer ownership by owner
-    function transferOwnership(address newOwner) external;
 }

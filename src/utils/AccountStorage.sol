@@ -19,7 +19,6 @@ library AccountStorage {
         /// ┌───────────────────┐
         /// │     base data     │                                   /// TrueWallet.sol
         IEntryPoint entryPoint; /// entryPoint
-        address owner; /// owner slot
         mapping(address => address) owners;
         uint256[50] __gap_0;
         /// └───────────────────┘

@@ -8,8 +8,8 @@ import {IOwnerManager} from "../interfaces/IOwnerManager.sol";
 import {AddressLinkedList} from "../libraries/AddressLinkedList.sol";
 import {OwnerManagerErrors} from "../common/Errors.sol";
 
-/// @title IOwnerManager
-/// @dev Provides functionality for adding, removing, checking, and listing owners
+/// @title OwnerManager
+/// @dev Provides functionality for adding, removing, checking, and listing owners.
 abstract contract OwnerManager is IOwnerManager, Authority {
     using AddressLinkedList for mapping(address => address);
 
@@ -70,7 +70,7 @@ abstract contract OwnerManager is IOwnerManager, Authority {
         }
     }
 
-    function listOwner() external view override returns (address[] memory owners) {
+    function listOwner() public view override returns (address[] memory owners) {
         uint256 size = _ownerMapping().size();
         owners = _ownerMapping().list(AddressLinkedList.SENTINEL_ADDRESS, size);
     }

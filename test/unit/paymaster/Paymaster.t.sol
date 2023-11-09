@@ -47,7 +47,7 @@ contract PaymasterUnitTest is Test {
     }
 
     function testSetupState() public {
-        assertEq(wallet.owner(), address(ownerAddress));
+        assertTrue(wallet.isOwner(ownerAddress));
         assertEq(address(wallet.entryPoint()), address(entryPoint));
 
         assertEq(paymaster.owner(), address(ownerAddress));

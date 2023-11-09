@@ -89,7 +89,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         (address[] memory _modules, bytes4[][] memory _selectors) = wallet.listModules();
         assertEq(_modules.length, 2);
         assertEq(_modules[0], address(socialRecoveryModule)); // [0] - revers order in returned list of modules
-        assertEq(_selectors[0].length, 3);
+        assertEq(_selectors[0].length, 2);
 
         // assertEq(socialRecoveryModule.walletInitSeed(address(wallet)), 1);
         assertEq(socialRecoveryModule.nonce(address(wallet)), 0);
@@ -98,7 +98,6 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes4[] memory selectors = socialRecoveryModule.requiredFunctions();
         assertEq(selectors[0], bytes4(keccak256("resetOwner(address)")));
         assertEq(selectors[1], bytes4(keccak256("resetOwners(address[])")));
-        assertEq(selectors[2], bytes4(keccak256("transferOwnership(address)")));
     }
 
     function testGuardianCount() public {
@@ -610,7 +609,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     event SocialRecoveryExecuted(address indexed wallet, address[] indexed newOwners);
 
     function testExecuteRecoveryWithOnchainGuardians() public {
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
 
@@ -643,7 +642,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         emit SocialRecoveryExecuted(address(wallet), newOwners);
         socialRecoveryModule.executeRecovery(address(wallet));
 
-        assertEq(wallet.owner(), newOwner1);
+        assertTrue(wallet.isOwner(newOwner1));
 
         request = socialRecoveryModule.getRecoveryEntry(address(wallet));
         assertEq(request.newOwners.length, 0);
@@ -652,7 +651,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     }
 
     function testRevertsExecuteRecoveryWithOnchainGuardians() public {
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
 
@@ -683,7 +682,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.executeAfter, executeAfter);
         assertEq(request.nonce, IWallet(wallet).nonce());
 
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
     }
 
     function testRevertsExecuteRecoveryWhenNotRevealedAnonymousGuardians() public {
@@ -753,7 +752,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
     // If (numConfirmed < threshold) => pending recovery
     function testBatchApproveRecoveryWhenNumConfirmedLowerThreshold() public {
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian1));
@@ -780,12 +779,12 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.executeAfter, block.timestamp + 2 days);
         assertEq(request.nonce, IWallet(wallet).nonce());
 
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
     }
 
     // If (numConfirmed == numGuardian) => execute recovery
     function testBatchApproveRecoveryWhenExactMatchOfNumConfirmedAndThreshold() public {
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian1));
@@ -817,7 +816,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.executeAfter, 0);
         assertEq(request.nonce, 0);
 
-        assertEq(wallet.owner(), newOwner1);
+        assertTrue(wallet.isOwner(newOwner1));
         assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 3);
     }
 
@@ -860,7 +859,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
     // If (_signatureCount > threshold) => pending recovery
     function testBatchApproveRecoveryWhenNumConfirmedHigherThreshold() public {
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.threshold(address(wallet)), 2);
         assertEq(socialRecoveryModule.guardiansCount(address(wallet)), 3);
         assertTrue(socialRecoveryModule.isGuardian(address(wallet), guardian1));
@@ -948,7 +947,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(request.executeAfter, block.timestamp + 2 days);
         assertEq(request.nonce, IWallet(wallet).nonce());
 
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 4);
         assertEq(socialRecoveryModule.hasGuardianApproved(guardian3_1, address(wallet), newOwners), 1);
         assertEq(socialRecoveryModule.hasGuardianApproved(guardian3_2, address(wallet), newOwners), 1);

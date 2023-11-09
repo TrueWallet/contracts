@@ -84,7 +84,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -119,7 +119,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -139,7 +139,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -159,7 +159,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = TrueWallet(payable(address(proxy)));
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -183,7 +183,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -205,7 +205,7 @@ contract TrueWalletProxyUnitTest is Test {
         proxyWallet.upgrade();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(proxyWallet).balance, 2 ether);
         assertEq(erc20token.balanceOf(address(proxyWallet)), 1 ether);
@@ -232,7 +232,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -249,7 +249,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 
@@ -269,7 +269,7 @@ contract TrueWalletProxyUnitTest is Test {
         TrueWallet proxyWallet = deployWallet();
 
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), ownerAddress);
+        assertTrue(proxyWallet.isOwner(ownerAddress));
 
         assertEq(address(entryPoint).balance, 0);
 

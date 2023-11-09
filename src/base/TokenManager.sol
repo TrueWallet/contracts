@@ -9,7 +9,7 @@ import {ERC1155} from "solmate/tokens/ERC1155.sol";
 import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {WalletErrors} from "src/common/Errors.sol";
 
-/// @title Token Manager Contract
+/// @title TokenManager
 /// @notice This abstract contract defines a set of functionalities to manage various types of token transfers, 
 /// including ETH, ERC20, ERC721, and ERC1155 tokens. It ensures that only the owner can initiate the transfers.
 abstract contract TokenManager is OwnerAuth, WalletErrors {
