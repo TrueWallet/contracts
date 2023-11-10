@@ -1,10 +1,10 @@
 # UpgradeWalletErrors
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/common/Errors.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/common/Errors.sol)
 
 
 ## Errors
 ### UpgradeDelayNotElapsed
-*Reverts when perform implementation upgrade in an inappropriate activateTime*
+Throws when attempting to perform an upgrade before the delay period has elapsed.
 
 
 ```solidity

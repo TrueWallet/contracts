@@ -1,5 +1,5 @@
 # StakeManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/entrypoint/StakeManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/entrypoint/StakeManager.sol)
 
 **Inherits:**
 [IStakeManager](/src/interfaces/IStakeManager.sol/interface.IStakeManager.md)
@@ -26,10 +26,23 @@ mapping(address => DepositInfo) public deposits;
 ```solidity
 function getDepositInfo(address account) public view returns (DepositInfo memory info);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`info`|`DepositInfo`|- full deposit information of given account|
+
+
+### _getStakeInfo
+
+
+```solidity
+function _getStakeInfo(address addr) internal view returns (StakeInfo memory info);
+```
 
 ### balanceOf
 
-*return the deposit (for gas payment) of the account*
+Return the deposit (for gas payment) of the account
 
 
 ```solidity
@@ -66,13 +79,13 @@ any pending unstake is first cancelled.
 
 
 ```solidity
-function addStake(uint32 _unstakeDelaySec) public payable;
+function addStake(uint32 unstakeDelaySec) public payable;
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_unstakeDelaySec`|`uint32`|the new lock duration before the deposit can be withdrawn.|
+|`unstakeDelaySec`|`uint32`|the new lock duration before the deposit can be withdrawn.|
 
 
 ### unlockStake
@@ -88,7 +101,7 @@ function unlockStake() external;
 ### withdrawStake
 
 Withdraw from the (unlocked) stake.
-Must first call unlockStake and wait for the unstakeDelay to pass.
+must first call unlockStake and wait for the unstakeDelay to pass
 
 
 ```solidity

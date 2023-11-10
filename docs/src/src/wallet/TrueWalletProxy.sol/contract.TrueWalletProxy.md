@@ -1,5 +1,5 @@
 # TrueWalletProxy
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/wallet/TrueWalletProxy.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/wallet/TrueWalletProxy.sol)
 
 **Inherits:**
 [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md)

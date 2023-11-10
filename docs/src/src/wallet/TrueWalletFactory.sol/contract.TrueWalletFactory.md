@@ -1,15 +1,30 @@
 # TrueWalletFactory
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/wallet/TrueWalletFactory.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/wallet/TrueWalletFactory.sol)
 
 **Inherits:**
 Ownable, Pausable, [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
 
+A factory contract for deploying and managing TrueWallet smart contracts.
+
+*This contract allows for the creation of TrueWallet instances using the CREATE2 opcode for predictable addresses.*
+
 
 ## State Variables
 ### walletImplementation
+Address of the wallet implementation contract.
+
 
 ```solidity
 address public immutable walletImplementation;
+```
+
+
+### entryPoint
+Address of the entry point contract.
+
+
+```solidity
+address public immutable entryPoint;
 ```
 
 
@@ -18,38 +33,148 @@ address public immutable walletImplementation;
 
 
 ```solidity
-constructor(address _walletImplementation, address _owner) Ownable Pausable;
+constructor(address _walletImplementation, address _owner, address _entryPoint) Ownable Pausable;
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_walletImplementation`|`address`|Address of the wallet implementation contract.|
+|`_owner`|`address`|Address of the owner of this factory contract.|
+|`_entryPoint`|`address`|Address of the entry point contract.|
+
 
 ### createWallet
 
-Deploy a smart wallet, with an entryPoint and Owner specified by the user
-Intended that all wallets are deployed through this factory, so if no initCode is passed
-then just returns the CREATE2 computed address
+Deploy a new TrueWallet smart contract.
 
 
 ```solidity
-function createWallet(address entryPoint, address walletOwner, uint32 upgradeDelay, bytes32 salt)
-    external
-    whenNotPaused
-    returns (TrueWallet);
+function createWallet(
+    address _entryPoint,
+    address _walletOwner,
+    uint32 _upgradeDelay,
+    bytes[] calldata _modules,
+    bytes32 _salt
+) external whenNotPaused returns (TrueWallet proxy);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
+|`_walletOwner`|`address`|The owner address for the new wallet.|
+|`_upgradeDelay`|`uint32`|Delay (in seconds) before an upgrade can take effect.|
+|`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
+|`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`proxy`|`TrueWallet`|The address of the newly created TrueWallet contract.|
+
 
 ### getWalletAddress
 
-Deterministically compute the address of a smart wallet using Create2
+Computes the deterministic address for a potential wallet deployment using CREATE2.
+
+*This doesn't deploy the wallet, just calculates its address.*
 
 
 ```solidity
-function getWalletAddress(address entryPoint, address walletOwner, uint32 upgradeDelay, bytes32 salt)
-    public
-    view
-    returns (address);
+function getWalletAddress(
+    address _entryPoint,
+    address _walletOwner,
+    uint32 _upgradeDelay,
+    bytes[] calldata _modules,
+    bytes32 _salt
+) public view returns (address);
 ```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
+|`_walletOwner`|`address`|The owner address for the new wallet.|
+|`_upgradeDelay`|`uint32`|Delay (in seconds) before an upgrade can take effect.|
+|`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
+|`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`address`|Address of the wallet that would be created using the provided parameters.|
+
+
+### deposit
+
+Deposit funds into the EntryPoint associated with the factory.
+
+
+```solidity
+function deposit() public payable;
+```
+
+### withdrawTo
+
+Withdraw funds from the EntryPoint.
+
+
+```solidity
+function withdrawTo(address payable _withdrawAddress, uint256 _withdrawAmount) public onlyOwner;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_withdrawAddress`|`address payable`|The address to send withdrawn funds to.|
+|`_withdrawAmount`|`uint256`|The amount of funds to withdraw.|
+
+
+### addStake
+
+*Add to the account's stake - amount and delay any pending unstake is first cancelled.*
+
+
+```solidity
+function addStake(uint32 _unstakeDelaySec) external payable onlyOwner;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_unstakeDelaySec`|`uint32`|the new lock duration before the deposit can be withdrawn.|
+
+
+### unlockStake
+
+*Unlock staked funds from the EntryPoint contract.*
+
+
+```solidity
+function unlockStake() external onlyOwner;
+```
+
+### withdrawStake
+
+*Withdraw unlocked staked funds from the EntryPoint contract.*
+
+
+```solidity
+function withdrawStake(address payable _withdrawAddress) external onlyOwner;
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_withdrawAddress`|`address payable`|The address to send withdrawn funds to.|
+
 
 ### pause
 
-Pause the TrueWalletFactory to prevent new wallet creation. OnlyOwner
+Pause the factory to prevent new wallet creation.
 
 
 ```solidity
@@ -58,10 +183,19 @@ function pause() public onlyOwner;
 
 ### unpause
 
-Unpause the TrueWalletFactory to allow new wallet creation. OnlyOwner
+Resume operations and allow new wallet creation.
 
 
 ```solidity
 function unpause() public onlyOwner;
+```
+
+## Events
+### TrueWalletCreation
+Event emitted when a new TrueWallet is created.
+
+
+```solidity
+event TrueWalletCreation(TrueWallet wallet);
 ```
 

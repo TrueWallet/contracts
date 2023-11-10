@@ -1,5 +1,5 @@
 # IPaymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/interfaces/IPaymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/interfaces/IPaymaster.sol)
 
 The interface exposed by a paymaster contract, who agrees to pay the gas for user's operations.
 A paymaster must hold a stake to cover the required entrypoint stake and also the gas for the transaction.
@@ -18,7 +18,7 @@ The paymaster pre-pays using its deposit, and receive back a refund after the po
 ```solidity
 function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
     external
-    returns (bytes memory context, uint256 deadline);
+    returns (bytes memory context, uint256 validationData);
 ```
 **Parameters**
 
@@ -33,7 +33,7 @@ function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHa
 |Name|Type|Description|
 |----|----|-----------|
 |`context`|`bytes`|value to send to a postOp zero length to signify postOp is not required.|
-|`deadline`|`uint256`|the last block timestamp this operation is valid, or zero if it is valid indefinitely. Note that the validation code cannot use block.timestamp (or block.number) directly.|
+|`validationData`|`uint256`|signature and time-range of this operation, encoded the same as the return value of validateUserOperation <20-byte> sigAuthorizer - 0 for valid signature, 1 to mark signature failure, otherwise, an address of an "authorizer" contract. <6-byte> validUntil - last timestamp this operation is valid. 0 for "indefinite" <6-byte> validAfter - first timestamp this operation is valid Note that the validation code cannot use block.timestamp (or block.number) directly.|
 
 
 ### postOp

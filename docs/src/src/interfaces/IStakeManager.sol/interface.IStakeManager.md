@@ -1,5 +1,5 @@
 # IStakeManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/interfaces/IStakeManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/interfaces/IStakeManager.sol)
 
 Manage deposits and stakes.
 Deposit is just a balance used to pay for UserOperations (either by a paymaster or an account).
@@ -13,15 +13,25 @@ Stake is value locked for at least "unstakeDelay" by a paymaster.
 ```solidity
 function getDepositInfo(address account) external view returns (DepositInfo memory info);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`info`|`DepositInfo`|- full deposit information of given account|
+
 
 ### balanceOf
-
-Return the deposit (for gas payment) of the account
 
 
 ```solidity
 function balanceOf(address account) external view returns (uint256);
 ```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`uint256`|the deposit (for gas payment) of the account|
+
 
 ### depositTo
 
@@ -100,7 +110,7 @@ event Deposited(address indexed account, uint256 totalDeposit);
 ### Withdrawn
 
 ```solidity
-event Withdrawn(address indexed account, address withdrawAddress, uint256 withdrawAmount);
+event Withdrawn(address indexed account, address withdrawAddress, uint256 amount);
 ```
 
 ### StakeLocked
@@ -108,7 +118,7 @@ Emitted when stake or unstake delay are modified
 
 
 ```solidity
-event StakeLocked(address indexed account, uint256 totalStaked, uint256 withdrawTime);
+event StakeLocked(address indexed account, uint256 totalStaked, uint256 unstakeDelaySec);
 ```
 
 ### StakeUnlocked
@@ -122,16 +132,16 @@ event StakeUnlocked(address indexed account, uint256 withdrawTime);
 ### StakeWithdrawn
 
 ```solidity
-event StakeWithdrawn(address indexed account, address withdrawAddress, uint256 withdrawAmount);
+event StakeWithdrawn(address indexed account, address withdrawAddress, uint256 amount);
 ```
 
 ## Structs
 ### DepositInfo
-*sizes were chosen so that (deposit,staked) fit into one cell (used during handleOps)
+*sizes were chosen so that (deposit,staked, stake) fit into one cell (used during handleOps)
 and the rest fit into a 2nd cell.
-112 bit allows for 2^15 eth
-64 bit for full timestamp
-32 bit allow 150 years for unstake delay*
+112 bit allows for 10^15 eth
+48 bit for full timestamp
+32 bit allows 150 years for unstake delay*
 
 
 ```solidity
@@ -140,7 +150,16 @@ struct DepositInfo {
     bool staked;
     uint112 stake;
     uint32 unstakeDelaySec;
-    uint64 withdrawTime;
+    uint48 withdrawTime;
+}
+```
+
+### StakeInfo
+
+```solidity
+struct StakeInfo {
+    uint256 stake;
+    uint256 unstakeDelaySec;
 }
 ```
 

@@ -1,5 +1,5 @@
 # IWalletFactory
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/wallet/IWalletFactory.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/wallet/IWalletFactory.sol)
 
 
 ## Functions
@@ -11,9 +11,13 @@ then just returns the CREATE2 computed address
 
 
 ```solidity
-function createWallet(address entryPoint, address walletOwner, uint32 upgradeDelay, bytes32 salt)
-    external
-    returns (TrueWallet);
+function createWallet(
+    address entryPoint,
+    address walletOwner,
+    uint32 upgradeDelay,
+    bytes[] calldata modules,
+    bytes32 salt
+) external returns (TrueWallet);
 ```
 
 ### getWalletAddress
@@ -22,9 +26,12 @@ Deterministically compute the address of a smart wallet using Create2
 
 
 ```solidity
-function getWalletAddress(address entryPoint, address walletOwner, uint32 upgradeDelay, bytes32 salt)
-    external
-    view
-    returns (address);
+function getWalletAddress(
+    address entryPoint,
+    address walletOwner,
+    uint32 upgradeDelay,
+    bytes[] calldata modules,
+    bytes32 salt
+) external view returns (address);
 ```
 
