@@ -78,7 +78,7 @@ contract SecurityControlModule is BaseModule {
     /// @param target The target wallet address.
     function _authorized(address target) internal view {
         address _sender = sender();
-        if (_sender != target && IWallet(target).owner() != _sender) {
+        if (_sender != target && !IWallet(target).isOwner(_sender)) {
             revert SecurityControlModule__InvalidOwner();
         }
         if (walletInitSeed[target] == 0) {

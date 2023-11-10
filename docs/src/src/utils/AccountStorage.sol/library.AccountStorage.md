@@ -1,5 +1,5 @@
 # AccountStorage
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/utils/AccountStorage.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/utils/AccountStorage.sol)
 
 
 ## State Variables
@@ -33,8 +33,7 @@ struct RoleData {
 ```solidity
 struct Layout {
     IEntryPoint entryPoint;
-    address owner;
-    uint96 nonce;
+    mapping(address => address) owners;
     uint256[50] __gap_0;
     ILogicUpgradeControl.UpgradeLayout logicUpgrade;
     Initializable.InitializableLayout initializableLayout;
@@ -49,6 +48,9 @@ struct Layout {
     mapping(bytes32 => bool) isExecuted;
     mapping(bytes32 => mapping(address => bool)) isConfirmed;
     uint256[50] __gap_3;
+    mapping(address => address) modules;
+    mapping(address => mapping(bytes4 => bytes4)) moduleSelectors;
+    uint256[50] __gap_4;
 }
 ```
 

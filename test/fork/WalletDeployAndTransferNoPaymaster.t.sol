@@ -172,7 +172,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         // Extract the code at the expected address after deployment
         codeSize = expectedWalletAddress.code.length;
         assertGt(codeSize, 0);
-        assertEq(deployedWallet.owner(), walletOwner);
+        assertTrue(deployedWallet.isOwner(walletOwner));
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         uint256 finalAccountDepositBalance = entryPoint.balanceOf(

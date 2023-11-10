@@ -60,7 +60,7 @@ contract ModuleManagerUnitTest is Test {
     }
 
     function testSetupState() public {
-        assertEq(wallet.owner(), address(ownerAddress));
+        assertTrue(wallet.isOwner(ownerAddress));
         assertEq(address(wallet.entryPoint()), address(entryPoint));
         assertTrue(wallet.isAuthorizedModule(address(module)));
 

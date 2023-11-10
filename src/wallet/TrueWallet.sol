@@ -6,16 +6,12 @@ import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
-import {SocialRecovery} from "src/guardian/SocialRecovery.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {WalletErrors} from "src/common/Errors.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {IERC721} from "openzeppelin-contracts/token/ERC721/IERC721.sol";
-import {IERC1155} from "openzeppelin-contracts/token/ERC1155/IERC1155.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
-import {ModuleManager} from "../base/ModuleManager.sol";
+import {ModuleManager} from "src/base/ModuleManager.sol";
+import {OwnerManager} from "src/base/OwnerManager.sol";
+import {TokenManager} from "src/base/TokenManager.sol";
 import {Authority} from "src/authority/Authority.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
@@ -26,10 +22,10 @@ contract TrueWallet is
     Initializable,
     Authority,
     ModuleManager,
-    SocialRecovery,
+    OwnerManager,
+    TokenManager,
     LogicUpgradeControl,
-    TokenCallbackHandler,
-    WalletErrors
+    TokenCallbackHandler
 {
     /// @notice All state variables are stored in AccountStorage. Layout with specific storage slot to avoid storage collision.
     using AccountStorage for AccountStorage.Layout;
@@ -38,19 +34,14 @@ contract TrueWallet is
 
     event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
-    // event PayPrefund(address indexed payee, uint256 amount);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event ReceivedETH(address indexed sender, uint256 indexed amount);
-    event TransferedETH(address indexed to, uint256 amount);
-    event TransferedERC20(address token, address indexed to, uint256 amount);
-    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
-    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /////////////////  MODIFIERS ///////////////
 
     /// @dev Only from EOA owner, or through the account itself (which gets redirected through execute())
     modifier onlyOwner() {
-        if (msg.sender != owner() && msg.sender != address(this)) {
+        if (!_isOwner(msg.sender) && msg.sender != address(this)) {
             revert InvalidOwner();
         }
         _;
@@ -58,7 +49,7 @@ contract TrueWallet is
 
     /// @notice Validate that only the entryPoint or Owner is able to call a method
     modifier onlyEntryPointOrOwner() {
-        if (msg.sender != address(entryPoint()) && msg.sender != owner() && msg.sender != address(this)) {
+        if (msg.sender != address(entryPoint()) && !_isOwner(msg.sender) && msg.sender != address(this)) {
             revert InvalidEntryPointOrOwner();
         }
         _;
@@ -85,9 +76,10 @@ contract TrueWallet is
             revert ZeroAddressProvided();
         }
 
+        _addOwner(_owner);
+
         AccountStorage.Layout storage layout = AccountStorage.layout();
         layout.entryPoint = IEntryPoint(_entryPoint);
-        layout.owner = _owner;
 
         if (_upgradeDelay < 2 days) revert InvalidUpgradeDelay();
         layout.logicUpgrade.upgradeDelay = _upgradeDelay;
@@ -117,11 +109,6 @@ contract TrueWallet is
     /// @notice Returns the contract nonce
     function nonce() public view returns (uint256) {
         return IEntryPoint(entryPoint()).getNonce(address(this), 0);
-    }
-
-    /// @notice Returns the contract owner
-    function owner() public view returns (address) {
-        return AccountStorage.layout().owner;
     }
 
     /// @notice Set the entrypoint contract, restricted to onlyOwner
@@ -174,56 +161,9 @@ contract TrueWallet is
         }
     }
 
-    /// @notice Transfer ownership by owner
-    function transferOwnership(address newOwner) public virtual onlySelfOrModule {
-        AccountStorage.Layout storage layout = AccountStorage.layout();
-        layout.owner = newOwner;
-        emit OwnershipTransferred(msg.sender, newOwner);
-    }
-
     /// @notice preUpgradeTo is called before upgrading the wallet
     function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner {
         _preUpgradeTo(newImplementation);
-    }
-
-    /// @notice Lets the owner set guardians and threshold for the wallet
-    /// @param guardians List of guardians' addresses
-    /// @param threshold Required number of guardians to confirm replacement
-    function addGuardianWithThreshold(address[] calldata guardians, uint16 threshold) external onlyOwner {
-        SocialRecovery._addGuardianWithThreshold(guardians, threshold);
-    }
-
-    /// @notice Lets the owner revoke a guardian from the wallet and change threshold respectively
-    /// @param guardian The guardian address to revoke
-    /// @param threshold The new required number of guardians to confirm replacement
-    function revokeGuardianWithThreshold(address guardian, uint16 threshold) external onlyOwner {
-        SocialRecovery._revokeGuardianWithThreshold(guardian, threshold);
-    }
-
-    /////////////////  ASSETS MANAGER ///////////////
-
-    /// @notice Transfer ETH out of the wallet. Permissioned to only the owner
-    function transferETH(address payable to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransferETH(to, amount);
-        emit TransferedETH(to, amount);
-    }
-
-    /// @notice Transfer ERC20 tokens out of the wallet. Permissioned to only the owner
-    function transferERC20(address token, address to, uint256 amount) external onlyOwner {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit TransferedERC20(token, to, amount);
-    }
-
-    /// @notice Transfer ERC721 tokens out of the wallet. Permissioned to only the owner
-    function transferERC721(address collection, uint256 tokenId, address to) external onlyOwner {
-        IERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit TransferedERC721(collection, tokenId, to);
-    }
-
-    /// @notice Transfer ERC1155 tokens out of the wallet. Permissioned to only the owner
-    function transferERC1155(address collection, uint256 tokenId, address to, uint256 amount) external onlyOwner {
-        IERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
-        emit TransferedERC1155(collection, tokenId, amount, to);
     }
 
     /////////////////  DEPOSITE MANAGER ///////////////
@@ -253,7 +193,7 @@ contract TrueWallet is
     {
         bytes32 messageHash = ECDSA.toEthSignedMessageHash(userOpHash);
         address signer = ECDSA.recover(messageHash, userOp.signature);
-        if (signer != owner()) {
+        if (!_isOwner(signer)) {
             return 1;
         }
         return 0;
@@ -290,7 +230,7 @@ contract TrueWallet is
 
     /// @dev Returns true if the caller is the wallet owner. Compatibility with OwnerAuth
     function _isOwner() internal view override returns (bool) {
-        if (msg.sender == owner()) {
+        if (_isOwner(msg.sender)) {
             return true;
         }
         return false;
@@ -300,7 +240,7 @@ contract TrueWallet is
 
     /// @notice Support ERC-1271, verifies that the signer is the owner of the signing contract
     function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bytes4 magicValue) {
-        return ECDSA.recover(hash, signature) == owner() ? this.isValidSignature.selector : bytes4(0);
+        return ECDSA.recover(hash, signature) == listOwner()[0] ? this.isValidSignature.selector : bytes4(0);
     }
 
     /// @notice Support ERC165, query if a contract implements an interface

@@ -29,7 +29,6 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
     bytes4 private constant _FUNC_RESET_OWNER = bytes4(keccak256("resetOwner(address)"));
     bytes4 private constant _FUNC_RESET_OWNERS = bytes4(keccak256("resetOwners(address[])"));
-    bytes4 private constant _FUNC_TRANSFER_OWNERSHIP = bytes4(keccak256("transferOwnership(address)"));
 
     mapping(address => uint256) walletRecoveryNonce;
     mapping(address => uint256) walletInitSeed;
@@ -329,8 +328,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
         IWallet wallet = IWallet(payable(_wallet));
         // update owners
-        wallet.transferOwnership(_newOwners[0]);
-        // wallet.resetOwners(_newOwners);
+        wallet.resetOwners(_newOwners);
 
         emit SocialRecoveryExecuted(_wallet, _newOwners);
     }
@@ -664,10 +662,9 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @dev These function selectors are used for interface validation.
     /// @return selectors An array of bytes4 representing the required function signatures.
     function requiredFunctions() external pure returns (bytes4[] memory) {
-        bytes4[] memory functions = new bytes4[](3);
+        bytes4[] memory functions = new bytes4[](2);
         functions[0] = _FUNC_RESET_OWNER;
         functions[1] = _FUNC_RESET_OWNERS;
-        functions[2] = _FUNC_TRANSFER_OWNERSHIP;
         return functions;
     }
 }

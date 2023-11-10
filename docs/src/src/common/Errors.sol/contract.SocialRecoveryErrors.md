@@ -1,10 +1,10 @@
 # SocialRecoveryErrors
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/common/Errors.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/common/Errors.sol)
 
 
 ## Errors
 ### InvalidOwner
-*Reverts in case not valid owner*
+Throws when an invalid owner address is provided or detected.
 
 
 ```solidity
@@ -12,7 +12,7 @@ error InvalidOwner();
 ```
 
 ### InvalidGuardian
-*Reverts in case not valid guardian*
+Throws when an invalid guardian address is provided or detected.
 
 
 ```solidity
@@ -20,7 +20,7 @@ error InvalidGuardian();
 ```
 
 ### InvalidThreshold
-*Reverts in case not valid threshold*
+Throws when an invalid threshold value is provided or detected.
 
 
 ```solidity
@@ -28,7 +28,7 @@ error InvalidThreshold();
 ```
 
 ### ZeroAddressForGuardianProvided
-*Reverts when zero address is assigned for guardian*
+Throws when a zero address is provided where a guardian address is required.
 
 
 ```solidity
@@ -36,7 +36,7 @@ error ZeroAddressForGuardianProvided();
 ```
 
 ### DuplicateGuardianProvided
-*Reverts when guardian provided is already in the list*
+Throws when a duplicate guardian address is provided.
 
 
 ```solidity
@@ -44,7 +44,7 @@ error DuplicateGuardianProvided();
 ```
 
 ### RecoveryAlreadyExecuted
-*Reverts when the particular recovery requist is already executed*
+Throws when a recovery operation has already been executed.
 
 
 ```solidity
@@ -52,7 +52,7 @@ error RecoveryAlreadyExecuted();
 ```
 
 ### RecoveryNotEnoughConfirmations
-*Reverts when not enough confirmation from guardians for recovery requist*
+Throws when there are not enough confirmations for a recovery operation.
 
 
 ```solidity
@@ -60,7 +60,7 @@ error RecoveryNotEnoughConfirmations();
 ```
 
 ### RecoveryPeriodStillPending
-*Reverts when recovery period is still pending before execution*
+Throws when the recovery period is still pending.
 
 
 ```solidity
@@ -68,7 +68,7 @@ error RecoveryPeriodStillPending();
 ```
 
 ### RecoveryNotInitiated
-*Reverts when no ongoing recovery requiests*
+Throws when attempting to execute a recovery operation that has not been initiated.
 
 
 ```solidity

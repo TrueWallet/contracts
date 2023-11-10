@@ -4,3 +4,4 @@ forge-std/=lib/forge-std/src/
 hardhat/=node_modules/hardhat/
 solmate/=lib/solmate/src/
 openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/
+account-abstraction/=lib/account-abstraction/contracts/

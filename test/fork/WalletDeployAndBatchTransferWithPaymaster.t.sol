@@ -214,7 +214,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         // Extract the code at the expected address after deployment
         codeSize = expectedWalletAddress.code.length;
         assertGt(codeSize, 0);
-        assertEq(deployedWallet.owner(), walletOwner);
+        assertTrue(deployedWallet.isOwner(walletOwner));
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas

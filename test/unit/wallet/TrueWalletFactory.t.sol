@@ -112,8 +112,8 @@ contract TrueWalletFactoryUnitTest is Test {
 
         assertEq(address(proxyWallet), computedWalletAddress);
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        assertEq(proxyWallet.owner(), walletOwner);
         // assertEq(proxyWallet.upgradeDelay(), upgradeDelay);
+        assertTrue(proxyWallet.isOwner(walletOwner));
     }
 
     function testCreateWalletInCaseAlreadyDeployed() public {
@@ -167,7 +167,7 @@ contract TrueWalletFactoryUnitTest is Test {
             modules,
             salt
         );
-        assertEq(wallet.owner(), walletOwner);
+        assertTrue(wallet.isOwner(walletOwner));
 
         factory.pause();
         assertEq(factory.paused(), true);

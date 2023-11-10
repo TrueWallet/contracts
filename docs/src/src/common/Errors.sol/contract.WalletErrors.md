@@ -1,10 +1,18 @@
 # WalletErrors
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/common/Errors.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/common/Errors.sol)
 
 
 ## Errors
+### InvalidOwner
+Throws when an invalid owner address is provided or detected.
+
+
+```solidity
+error InvalidOwner();
+```
+
 ### InvalidEntryPointOrOwner
-*Reverts in case not valid entryPoint or owner*
+Throws when an invalid entry point or owner is provided or detected.
 
 
 ```solidity
@@ -12,7 +20,7 @@ error InvalidEntryPointOrOwner();
 ```
 
 ### ZeroAddressProvided
-*Reverts when zero address is assigned*
+Throws when an address provided is the zero address.
 
 
 ```solidity
@@ -20,7 +28,7 @@ error ZeroAddressProvided();
 ```
 
 ### InvalidUpgradeDelay
-*Reverts when upgrade delay is invalid*
+Throws when an invalid delay is provided for an upgrade.
 
 
 ```solidity
@@ -28,7 +36,7 @@ error InvalidUpgradeDelay();
 ```
 
 ### LengthMismatch
-*Reverts when array argument size mismatch*
+Throws when the lengths of two comparable arrays or sets of data do not match.
 
 
 ```solidity
@@ -36,10 +44,26 @@ error LengthMismatch();
 ```
 
 ### InvalidSignature
-*Reverts in case not valid signature*
+Throws when a provided signature is not valid.
 
 
 ```solidity
 error InvalidSignature();
+```
+
+### InvalidEntryPoint
+Throws when an invalid entry point is provided or detected.
+
+
+```solidity
+error InvalidEntryPoint();
+```
+
+### WalletFactory__Create2CallFailed
+Throws when create2 call failed.
+
+
+```solidity
+error WalletFactory__Create2CallFailed();
 ```
 

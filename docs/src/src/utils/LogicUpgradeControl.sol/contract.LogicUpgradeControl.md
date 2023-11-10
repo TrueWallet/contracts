@@ -1,5 +1,5 @@
 # LogicUpgradeControl
-[Git Source](https://github.com/TrueWallet/contracts/blob/b38849a85d65fd71e42df8fc5190581d11c83fec/src/utils/LogicUpgradeControl.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/utils/LogicUpgradeControl.sol)
 
 **Inherits:**
 [ILogicUpgradeControl](/src/interfaces/ILogicUpgradeControl.sol/interface.ILogicUpgradeControl.md), [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md), [UpgradeWalletErrors](/src/common/Errors.sol/contract.UpgradeWalletErrors.md)
