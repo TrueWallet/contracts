@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.19;
 
-import {AccountStorage} from "../utils/AccountStorage.sol";
+import {AccountStorage} from "../libraries/AccountStorage.sol";
 import {IModule} from "../interfaces/IModule.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
 import {ModuleAuth} from "src/authority/ModuleAuth.sol";
@@ -90,11 +90,11 @@ abstract contract ModuleManager is IModuleManager, ModuleAuth, ModuleManagerErro
     function _modulesMapping() private view returns (mapping(address => address) storage modules) {
         modules = AccountStorage.layout().modules;
     }
-    
+
     function _moduleSelectorsMapping()
         private
         view
-        returns (mapping(address => mapping(bytes4 => bytes4)) storage moduleSelectors) 
+        returns (mapping(address => mapping(bytes4 => bytes4)) storage moduleSelectors)
     {
         moduleSelectors = AccountStorage.layout().moduleSelectors;
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.19;
 
-import {AccountStorage} from "../utils/AccountStorage.sol";
+import {AccountStorage} from "../libraries/AccountStorage.sol";
 import {Authority} from "../authority/Authority.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
 import {IOwnerManager} from "../interfaces/IOwnerManager.sol";

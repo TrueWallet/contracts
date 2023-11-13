@@ -4,7 +4,7 @@
 pragma solidity ^0.8.19;
 
 import "openzeppelin-contracts/utils/Address.sol";
-import "./AccountStorage.sol";
+import "../libraries/AccountStorage.sol";
 
 /**
  * @dev This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
@@ -70,11 +70,7 @@ abstract contract Initializable {
         bool _initializing;
     }
 
-    function _layout()
-        internal
-        view
-        returns (InitializableLayout storage layout)
-    {
+    function _layout() internal view returns (InitializableLayout storage layout) {
         return AccountStorage.layout().initializableLayout;
     }
 
@@ -97,9 +93,8 @@ abstract contract Initializable {
 
         bool isTopLevelCall = !layout._initializing;
         require(
-            (isTopLevelCall && layout._initialized < 1) ||
-                (!Address.isContract(address(this)) &&
-                    layout._initialized == 1),
+            (isTopLevelCall && layout._initialized < 1)
+                || (!Address.isContract(address(this)) && layout._initialized == 1),
             "Initializable: contract is already initialized"
         );
         layout._initialized = 1;
@@ -135,8 +130,7 @@ abstract contract Initializable {
         InitializableLayout storage layout = _layout();
 
         require(
-            !layout._initializing && layout._initialized < version,
-            "Initializable: contract is already initialized"
+            !layout._initializing && layout._initialized < version, "Initializable: contract is already initialized"
         );
         layout._initialized = version;
         layout._initializing = true;
@@ -150,10 +144,7 @@ abstract contract Initializable {
      * {initializer} and {reinitializer} modifiers, directly or indirectly.
      */
     modifier onlyInitializing() {
-        require(
-            _layout()._initializing,
-            "Initializable: contract is not initializing"
-        );
+        require(_layout()._initializing, "Initializable: contract is not initializing");
         _;
     }
 
@@ -168,10 +159,7 @@ abstract contract Initializable {
     function _disableInitializers() internal virtual {
         InitializableLayout storage layout = _layout();
 
-        require(
-            !layout._initializing,
-            "Initializable: contract is initializing"
-        );
+        require(!layout._initializing, "Initializable: contract is initializing");
         if (layout._initialized < type(uint8).max) {
             layout._initialized = type(uint8).max;
             emit Initialized(type(uint8).max);

@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
-import {AccountStorage} from "src/utils/AccountStorage.sol";
+import {AccountStorage} from "src/libraries/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
