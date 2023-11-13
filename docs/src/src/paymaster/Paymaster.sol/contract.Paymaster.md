@@ -1,5 +1,5 @@
 # Paymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/paymaster/Paymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/paymaster/Paymaster.sol)
 
 **Inherits:**
 [ITruePaymaster](/src/paymaster/ITruePaymaster.sol/interface.ITruePaymaster.md), Owned
@@ -68,7 +68,8 @@ all transactions by everyone to be paid for through this paymaster.
 function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
     external
     pure
-    returns (bytes memory context, uint256 deadline);
+    override
+    returns (bytes memory context, uint256 validationData);
 ```
 
 ### postOp

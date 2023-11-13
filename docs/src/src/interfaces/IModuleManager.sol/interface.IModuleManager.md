@@ -1,5 +1,5 @@
 # IModuleManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/interfaces/IModuleManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/interfaces/IModuleManager.sol)
 
 
 ## Functions

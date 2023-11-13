@@ -5,8 +5,6 @@
 - [base](/src/base)
 - [callback](/src/callback)
 - [common](/src/common)
-- [entrypoint](/src/entrypoint)
-- [helper](/src/helper)
 - [interfaces](/src/interfaces)
 - [libraries](/src/libraries)
 - [modules](/src/modules)

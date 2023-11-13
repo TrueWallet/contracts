@@ -1,5 +1,5 @@
 # GuardianInfo
-[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
 
 This contract allows wallet owners to set guardians for their wallets
 and use these guardians for recovery purposes.

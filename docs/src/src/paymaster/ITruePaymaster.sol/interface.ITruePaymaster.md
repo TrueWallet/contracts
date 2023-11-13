@@ -1,5 +1,5 @@
 # ITruePaymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/paymaster/ITruePaymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/paymaster/ITruePaymaster.sol)
 
 **Inherits:**
 [IPaymaster](/src/interfaces/IPaymaster.sol/interface.IPaymaster.md)
@@ -18,7 +18,7 @@ The paymaster pre-pays using its deposit, and receive back a refund after the po
 ```solidity
 function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
     external
-    returns (bytes memory context, uint256 deadline);
+    returns (bytes memory context, uint256 validationData);
 ```
 **Parameters**
 
@@ -33,7 +33,7 @@ function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHa
 |Name|Type|Description|
 |----|----|-----------|
 |`context`|`bytes`|value to send to a postOp zero length to signify postOp is not required.|
-|`deadline`|`uint256`|the last block timestamp this operation is valid, or zero if it is valid indefinitely. Note that the validation code cannot use block.timestamp (or block.number) directly.|
+|`validationData`|`uint256`|the last block timestamp this operation is valid, or zero if it is valid indefinitely. Note that the validation code cannot use block.timestamp (or block.number) directly.|
 
 
 ### getStake
