@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Vm} from "forge-std/Test.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
@@ -30,12 +30,7 @@ function getUserOperation(
         signature: ""
     });
     bytes32 userOpHash = getUserOpHash(userOp, entryPoint, chainId);
-    bytes memory signature = createSignature(
-        userOp,
-        userOpHash,
-        ownerPrivateKey,
-        vm
-    );
+    bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
     userOp.signature = signature;
 
     return (userOp, userOpHash);

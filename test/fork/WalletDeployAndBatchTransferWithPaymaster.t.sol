@@ -3,23 +3,19 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC1155} from "../mocks/MockERC1155.sol";
 
-contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint =
-        IEntryPoint(MumbaiConfig.ENTRY_POINT);
-    IWalletFactory public constant walletFactory =
-        IWalletFactory(MumbaiConfig.FACTORY);
-    ITruePaymaster public constant paymaster =
-        ITruePaymaster(MumbaiConfig.PAYMASTER);
+contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
+    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -35,14 +31,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
     address recipient = 0x9fD12be3448d73c4eF4B0ae189E090c4FD83C9A1;
     bytes32 public userOpHash;
     uint256 missingWalletFunds;
-    bytes32 salt =
-        keccak256(
-            abi.encodePacked(
-                address(walletFactory),
-                address(entryPoint),
-                block.timestamp
-            )
-        );
+    bytes32 salt = keccak256(abi.encodePacked(address(walletFactory), address(entryPoint), block.timestamp));
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes[] modules = new bytes[](1);
 
@@ -53,13 +42,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
-        wallet = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         vm.deal(wallet, 1 ether);
 
         // 1. Deploy a MockERC1155 and fund smart wallet with this tokens
@@ -87,42 +70,23 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
-                walletFactory.createWallet.selector,
-                address(entryPoint),
-                walletOwner,
-                upgradeDelay,
-                modules,
-                salt
+                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
             )
         );
         userOp.initCode = initCode;
 
         // 4. Encode userOperation batch transfer
         etherTransferAmount = 0.7 ether;
-        (
-            address[] memory target,
-            uint256[] memory values,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
-        userOp.callData = abi.encodeWithSelector(
-            IWallet(wallet).executeBatch.selector,
-            target,
-            values,
-            payloads
-        );
+        userOp.callData = abi.encodeWithSelector(IWallet(wallet).executeBatch.selector, target, values, payloads);
 
         // 5. Set paymaster on UserOperation
         userOp.paymasterAndData = abi.encodePacked(address(paymaster));
 
         // 6. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(
-            userOp,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
         // 7. Set remainder of test case
@@ -139,11 +103,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
     }
 
     // helper
-    function createBatchData()
-        public
-        view
-        returns (address[] memory, uint256[] memory, bytes[] memory)
-    {
+    function createBatchData() public view returns (address[] memory, uint256[] memory, bytes[] memory) {
         address[] memory target = new address[](2);
         target[0] = address(token);
         target[1] = address(recipient);
@@ -153,14 +113,8 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         values[1] = uint256(etherTransferAmount);
 
         bytes[] memory payloads = new bytes[](2);
-        payloads[0] = abi.encodeWithSelector(
-                token.safeTransferFrom.selector,
-                address(wallet),
-                recipient,
-                tokenId,
-                amount,
-                ""
-            );
+        payloads[0] =
+            abi.encodeWithSelector(token.safeTransferFrom.selector, address(wallet), recipient, tokenId, amount, "");
         payloads[1] = "";
 
         return (target, values, payloads);
@@ -171,15 +125,10 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
     /// The wallet executes batch assets transfer and Paymaster pays for gas.
     function testWalletDeployAndAssetsBatchTransferWithPaymaster() public {
         // Verify wallet was not deployed yet
-        address expectedWalletAddress = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        address expectedWalletAddress =
+            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
-        
+
         // Extract the code at the expected address
         uint256 codeSize = expectedWalletAddress.code.length;
         assertEq(codeSize, 0);
@@ -202,13 +151,8 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         entryPoint.handleOps(userOps, bundler);
 
         // Verify wallet was deployed as expected
-        expectedWalletAddress = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        expectedWalletAddress =
+            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address after deployment
@@ -218,18 +162,15 @@ contract WalletDeployAndBatchTransferWithPaymasterEntToEndTest is Test {
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
-            paymaster.getDeposit();
+        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
         assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify bundler balance received gas fee
-        uint256 gasFeeBundlerCompensated = address(bundler).balance -
-            initialBundlerETHBalance;
+        uint256 gasFeeBundlerCompensated = address(bundler).balance - initialBundlerETHBalance;
         assertEq(gasFeeBundlerCompensated, gasFeePaymasterPayd);
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 gasFeeWalletPayd = initialWalletETHBalance -
-            address(wallet).balance - etherTransferAmount;
+        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance - etherTransferAmount;
         assertEq(gasFeeWalletPayd, 0);
 
         // Verify the wallet and recipient balances after deployment

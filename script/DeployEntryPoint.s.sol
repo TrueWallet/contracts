@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Script.sol";
 
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 
 contract DeployEntryPointScript is Script {
     EntryPoint public entryPoint;

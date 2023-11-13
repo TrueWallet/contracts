@@ -3,20 +3,17 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
 
-contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint =
-        IEntryPoint(MumbaiConfig.ENTRY_POINT);
-    IWalletFactory public constant walletFactory =
-        IWalletFactory(MumbaiConfig.FACTORY);
+contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
 
     address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -30,14 +27,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
     address wallet;
     bytes32 public userOpHash;
     uint256 missingWalletFunds;
-    bytes32 salt =
-        keccak256(
-            abi.encodePacked(
-                address(walletFactory),
-                address(entryPoint),
-                block.timestamp
-            )
-        );
+    bytes32 salt = keccak256(abi.encodePacked(address(walletFactory), address(entryPoint), block.timestamp));
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes[] modules = new bytes[](1);
 
@@ -48,13 +38,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
-        wallet = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         vm.deal(wallet, 1 ether);
 
         // 1. Deploy a MockERC721 and fund smart wallet with token
@@ -81,12 +65,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
-                walletFactory.createWallet.selector,
-                address(entryPoint),
-                walletOwner,
-                upgradeDelay,
-                modules,
-                salt
+                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
             )
         );
         userOp.initCode = initCode;
@@ -96,22 +75,12 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
             IWallet(wallet).execute.selector,
             address(token),
             0,
-            abi.encodeWithSelector(
-                token.transferFrom.selector,
-                address(wallet),
-                recipient,
-                tokenId
-            )
+            abi.encodeWithSelector(token.transferFrom.selector, address(wallet), recipient, tokenId)
         );
 
         // 5. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(
-            userOp,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
         // 6. Set remainder of test case
@@ -125,15 +94,10 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
     /// The AA wallet is only actually deployed when you send the first transaction with the wallet.
     function testWalletDeployAndTokenTransfer() public {
         // Verify wallet was not deployed yet
-        address expectedWalletAddress = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        address expectedWalletAddress =
+            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
-        
+
         // Extract the code at the expected address
         uint256 codeSize = expectedWalletAddress.code.length;
         assertEq(codeSize, 0);
@@ -144,9 +108,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         assertEq(token.ownerOf(tokenId), address(wallet));
         assertEq(token.balanceOf(address(recipient)), 0);
 
-        uint256 initialAccountDepositBalance = entryPoint.balanceOf(
-            userOp.sender
-        );
+        uint256 initialAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
         assertEq(initialAccountDepositBalance, 0);
 
         UserOperation[] memory userOps = new UserOperation[](1);
@@ -160,13 +122,8 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         assertEq(entryPoint.getNonce(address(wallet), 0), 1);
 
         // Verify wallet was deployed as expected
-        expectedWalletAddress = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        expectedWalletAddress =
+            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address after deployment
@@ -175,9 +132,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         assertTrue(deployedWallet.isOwner(walletOwner));
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
-        uint256 finalAccountDepositBalance = entryPoint.balanceOf(
-            userOp.sender
-        );
+        uint256 finalAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
         assertGt(finalAccountDepositBalance, initialAccountDepositBalance);
 
         // Verify the balances after deployment
@@ -211,20 +166,12 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
         uint256 etherTransferAmount = 1 ether;
 
         userOp2.callData = abi.encodeWithSelector(
-            IWallet(deployedWallet).execute.selector,
-            address(recipient),
-            etherTransferAmount,
-            ""
+            IWallet(deployedWallet).execute.selector, address(recipient), etherTransferAmount, ""
         );
 
         // Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp2);
-        bytes memory signature = createSignature(
-            userOp2,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp2, userOpHash, ownerPrivateKey, vm);
         userOp2.signature = signature;
 
         // Set remainder of test case
@@ -243,7 +190,7 @@ contract WalletDeployAndTransferNoPaymasterEntToEndTest is Test {
 
         // Verify the balance after tx execution
         assertEq(address(recipient).balance, recipientEthBalanceBefore + 1 ether);
-        // Verify wallet nonce incrementation 
+        // Verify wallet nonce incrementation
         assertEq(entryPoint.getNonce(address(deployedWallet), 0), 2);
     }
 }

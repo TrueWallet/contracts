@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Script.sol";
 
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
+import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
 contract DeployWalletFactoryScript is Script {

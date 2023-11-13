@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import {UserOperation} from "src/interfaces/UserOperation.sol";
+import {UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 
 /// @notice Get the userOperation hash over a user operation, entryPoint and chainId
-function getUserOpHash(
-    UserOperation memory userOp,
-    address entryPoint,
-    uint256 chainId
-) pure returns (bytes32) {
+function getUserOpHash(UserOperation memory userOp, address entryPoint, uint256 chainId) pure returns (bytes32) {
     bytes32 userOpHash = keccak256(
         abi.encode(
             userOp.sender,

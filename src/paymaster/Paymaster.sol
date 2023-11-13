@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {Owned} from "solmate/auth/Owned.sol";
 import {ITruePaymaster} from "./ITruePaymaster.sol";
-import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
-import {UserOperation} from "../interfaces/UserOperation.sol";
 
 // Based on Paymaster in: https://github.com/eth-infinitism/account-abstraction
 contract Paymaster is ITruePaymaster, Owned {
@@ -57,7 +56,7 @@ contract Paymaster is ITruePaymaster, Owned {
         UserOperation calldata userOp,
         bytes32 userOpHash,
         uint256 maxCost
-    ) external pure returns (bytes memory context, uint256 deadline) {
+    ) external override pure returns (bytes memory context, uint256 validationData) {
         (userOp, userOpHash, maxCost); // unused params
         // Pay for all transactions from everyone, with no check
         return ("", 0);

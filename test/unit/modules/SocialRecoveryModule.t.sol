@@ -12,7 +12,7 @@ import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityC
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
 import {TrueWallet, IWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 import {createSignature3} from "test/utils/createSignature.sol";
 
 contract SocialRecoveryModuleUnitTest is Test {

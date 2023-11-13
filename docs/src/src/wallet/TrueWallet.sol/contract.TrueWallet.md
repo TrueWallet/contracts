@@ -1,5 +1,5 @@
 # TrueWallet
-[Git Source](https://github.com/TrueWallet/contracts/blob/db2e75cb332931da5fdaa38bec9e4d367be1d851/src/wallet/TrueWallet.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/wallet/TrueWallet.sol)
 
 **Inherits:**
 [IWallet](/src/wallet/IWallet.sol/interface.IWallet.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [Authority](/src/authority/Authority.sol/abstract.Authority.md), [ModuleManager](/src/base/ModuleManager.sol/abstract.ModuleManager.md), [OwnerManager](/src/base/OwnerManager.sol/abstract.OwnerManager.md), [TokenManager](/src/base/TokenManager.sol/abstract.TokenManager.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md)

@@ -7,7 +7,7 @@ import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityC
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 import {MockModule2} from "../../mocks/MockModule2.sol";
 import {MockModule2FailedInvalidSelector} from "../../mocks/MockModule2FailedInvalidSelector.sol";
 
