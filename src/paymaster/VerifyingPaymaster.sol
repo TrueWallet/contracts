@@ -4,12 +4,12 @@ pragma solidity ^0.8.19;
 /* solhint-disable reason-string */
 /* solhint-disable no-inline-assembly */
 
-import {ITruePaymaster} from "./ITruePaymaster.sol";
-import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
-import {UserOperationLib, UserOperation} from "../interfaces/UserOperation.sol";
+import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {UserOperationLib, UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
 import {Owned} from "solmate/auth/Owned.sol";
-import "src/helper/Helpers.sol";
+import {ITruePaymaster} from "./ITruePaymaster.sol";
+import "account-abstraction/core/Helpers.sol";
 
 import "lib/forge-std/src/console.sol";
 

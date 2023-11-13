@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 import {ModuleManagerErrors} from "src/common/Errors.sol";
 import {MockModuleFailedEmptySelector} from "test/mocks/MockModuleFailedEmptySelector.sol";
@@ -44,18 +44,14 @@ contract ModuleManagerUnitTest is Test {
         bytes memory initData = abi.encode(uint32(walletInitValue));
         modules[0] = abi.encodePacked(address(module), initData);
 
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay, modules)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
     }
 
-    function encodeError(
-        string memory error
-    ) internal pure returns (bytes memory encoded) {
+    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
         encoded = abi.encodeWithSignature(error);
     }
 
@@ -98,7 +94,7 @@ contract ModuleManagerUnitTest is Test {
         MockModule newModule = new MockModule();
         modules[0] = abi.encodePacked(address(newModule), abi.encode(uint32(1)));
         vm.startPrank(address(user));
-        vm.expectRevert(encodeError("CallerMustBeModule()")); 
+        vm.expectRevert(encodeError("CallerMustBeModule()"));
         wallet.addModule(modules[0]);
         vm.stopPrank();
     }
@@ -106,7 +102,7 @@ contract ModuleManagerUnitTest is Test {
     function testRevertsIfAddModuleWithModuleAddressEmpty() public {
         bytes[] memory _modules = new bytes[](1);
         vm.startPrank(address(module));
-        vm.expectRevert(encodeError("ModuleAddressEmpty()")); 
+        vm.expectRevert(encodeError("ModuleAddressEmpty()"));
         wallet.addModule(_modules[0]);
         vm.stopPrank();
     }
@@ -123,7 +119,7 @@ contract ModuleManagerUnitTest is Test {
     function testRevertsIfAddressAlreadyExists() public {
         modules[0] = abi.encodePacked(address(module), abi.encode(uint32(1)));
         vm.startPrank(address(module));
-        vm.expectRevert(encodeError("AddressAlreadyExists()")); 
+        vm.expectRevert(encodeError("AddressAlreadyExists()"));
         wallet.addModule(modules[0]);
         vm.stopPrank();
     }
@@ -174,13 +170,7 @@ contract ModuleManagerUnitTest is Test {
         assertEq(address(wallet).balance, 5 ether);
         assertEq(address(user).balance, 0);
         uint256 etherTransferAmount = 1 ether;
-        bytes memory callData =
-        abi.encodeWithSelector(
-            wallet.execute.selector,
-            address(user),
-            etherTransferAmount,
-            ""
-        );
+        bytes memory callData = abi.encodeWithSelector(wallet.execute.selector, address(user), etherTransferAmount, "");
         assertTrue(wallet.isAuthorizedModule(address(module)));
         vm.deal(address(module), 1 ether);
         vm.startPrank(address(module));
@@ -194,12 +184,8 @@ contract ModuleManagerUnitTest is Test {
         assertEq(address(wallet).balance, 5 ether);
         assertEq(address(user).balance, 0 ether);
         uint256 etherTransferAmount = 1 ether;
-        bytes memory callData = abi.encodeWithSelector(
-            wallet.execute.selector,
-            address(wallet),
-            etherTransferAmount,
-            ""
-        );
+        bytes memory callData =
+            abi.encodeWithSelector(wallet.execute.selector, address(wallet), etherTransferAmount, "");
         assertTrue(wallet.isAuthorizedModule(address(module)));
         vm.deal(address(module), 1 ether);
         vm.startPrank(address(module));

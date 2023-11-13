@@ -6,7 +6,8 @@ import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
 import {TrueWallet} from "./TrueWallet.sol";
 import {TrueWalletProxy} from "./TrueWalletProxy.sol";
-import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
+import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
+// import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
 import {WalletErrors} from "../common/Errors.sol";
 
 /// @title TrueWalletFactory

@@ -3,10 +3,10 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 import {MockSetter} from "../../mocks/MockSetter.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
 import {MockERC721} from "../../mocks/MockERC721.sol";
@@ -52,10 +52,8 @@ contract TrueWalletUnitTest is Test {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(address(module), initData);
 
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay, modules)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
@@ -63,9 +61,7 @@ contract TrueWalletUnitTest is Test {
         // vm.deal(address(wallet), 5 ether);
     }
 
-    function encodeError(
-        string memory error
-    ) internal pure returns (bytes memory encoded) {
+    function encodeError(string memory error) internal pure returns (bytes memory encoded) {
         encoded = abi.encodeWithSignature(error);
     }
 
@@ -118,10 +114,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteByEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
 
         vm.prank(address(entryPoint));
         wallet.execute(address(setter), 0, payload);
@@ -132,10 +125,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteByOwner() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
 
         vm.prank(address(ownerAddress));
         wallet.execute(address(setter), 0, payload);
@@ -146,10 +136,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteNotEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        bytes memory payload = abi.encodeWithSelector(
-            setter.setValue.selector,
-            1
-        );
+        bytes memory payload = abi.encodeWithSelector(setter.setValue.selector, 1);
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
@@ -159,11 +146,7 @@ contract TrueWalletUnitTest is Test {
         assertEq(setter.value(), 0);
     }
 
-    function createBatchData()
-        public
-        view
-        returns (address[] memory, uint256[] memory, bytes[] memory)
-    {
+    function createBatchData() public view returns (address[] memory, uint256[] memory, bytes[] memory) {
         address[] memory target = new address[](2);
         target[0] = address(setter);
         target[1] = address(setter);
@@ -182,11 +165,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchByEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        (
-            address[] memory target,
-            uint256[] memory values,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         vm.prank(address(entryPoint));
         wallet.executeBatch(target, values, payloads);
@@ -197,11 +176,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchByOwner() public {
         assertEq(setter.value(), 0);
 
-        (
-            address[] memory target,
-            uint256[] memory values,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         vm.prank(address(ownerAddress));
         wallet.executeBatch(target, values, payloads);
@@ -212,11 +187,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchNotEntryPoint() public {
         assertEq(setter.value(), 0);
 
-        (
-            address[] memory target,
-            uint256[] memory values,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (address[] memory target, uint256[] memory values, bytes[] memory payloads) = createBatchData();
 
         address notEntryPoint = address(13);
         vm.prank(address(notEntryPoint));
@@ -229,11 +200,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchLengthMismatch() public {
         assertEq(setter.value(), 0);
 
-        (
-            ,
-            uint256[] memory values,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (, uint256[] memory values, bytes[] memory payloads) = createBatchData();
         address[] memory target = new address[](1);
         target[0] = address(setter);
 
@@ -247,11 +214,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchLengthMismatch2() public {
         assertEq(setter.value(), 0);
 
-        (
-            address[] memory target,
-            ,
-            bytes[] memory payloads
-        ) = createBatchData();
+        (address[] memory target,, bytes[] memory payloads) = createBatchData();
         uint256[] memory values = new uint256[](1);
         values[0] = uint256(0);
 
@@ -265,11 +228,7 @@ contract TrueWalletUnitTest is Test {
     function testExecuteBatchLengthMismatch3() public {
         assertEq(setter.value(), 0);
 
-        (
-            address[] memory target,
-            uint256[] memory values,
-
-        ) = createBatchData();
+        (address[] memory target, uint256[] memory values,) = createBatchData();
         bytes[] memory payloads = new bytes[](1);
         payloads[0] = abi.encodeWithSelector(setter.setValue.selector, 1);
 
@@ -300,18 +259,11 @@ contract TrueWalletUnitTest is Test {
         uint256 missingWalletFunds = 0.001 ether;
 
         vm.prank(address(entryPoint));
-        uint256 deadline = wallet.validateUserOp(
-            userOp,
-            digest,
-            missingWalletFunds
-        );
+        uint256 deadline = wallet.validateUserOp(userOp, digest, missingWalletFunds);
         assertEq(deadline, 0);
         // assertEq(wallet.nonce(), 1);
 
-        assertEq(
-            address(entryPoint).balance,
-            balanceBefore + missingWalletFunds
-        );
+        assertEq(address(entryPoint).balance, balanceBefore + missingWalletFunds);
     }
 
     function testTransferERC20() public {
@@ -344,9 +296,9 @@ contract TrueWalletUnitTest is Test {
         hoax(address(this), 1 ether);
         vm.expectEmit(true, true, false, false);
         emit ReceivedETH(address(this), 1 ether);
-        (bool success, ) = payable(address(wallet)).call{value: 1 ether}("");
+        (bool success,) = payable(address(wallet)).call{value: 1 ether}("");
         require(success);
-        
+
         assertEq(address(entryPoint).balance, 0);
 
         vm.prank(address(ownerAddress));
@@ -399,12 +351,7 @@ contract TrueWalletUnitTest is Test {
         vm.prank(from);
         erc721token.setApprovalForAll(address(this), true);
 
-        erc721token.safeTransferFrom(
-            from,
-            address(wallet),
-            1237,
-            "testing 1237"
-        );
+        erc721token.safeTransferFrom(from, address(wallet), 1237, "testing 1237");
 
         assertEq(erc721token.getApproved(1237), address(0));
         assertEq(erc721token.ownerOf(1237), address(wallet));
@@ -419,12 +366,7 @@ contract TrueWalletUnitTest is Test {
         assertEq(erc721token.balanceOf(address(to)), 0);
 
         address target = address(erc721token);
-        bytes memory payload = abi.encodeWithSelector(
-            erc721token.transferFrom.selector,
-            address(wallet),
-            to,
-            1237
-        );
+        bytes memory payload = abi.encodeWithSelector(erc721token.transferFrom.selector, address(wallet), to, 1237);
 
         vm.prank(address(entryPoint));
         wallet.execute(target, 0, payload);
@@ -454,18 +396,8 @@ contract TrueWalletUnitTest is Test {
         target[0] = address(erc721token);
         target[1] = address(erc721token);
         bytes[] memory payloads = new bytes[](2);
-        payloads[0] = abi.encodeWithSelector(
-            erc721token.transferFrom.selector,
-            address(wallet),
-            to,
-            1237
-        );
-        payloads[1] = abi.encodeWithSelector(
-            erc721token.transferFrom.selector,
-            address(wallet),
-            to,
-            1238
-        );
+        payloads[0] = abi.encodeWithSelector(erc721token.transferFrom.selector, address(wallet), to, 1237);
+        payloads[1] = abi.encodeWithSelector(erc721token.transferFrom.selector, address(wallet), to, 1238);
         uint256[] memory values = new uint256[](2);
         values[0] = uint256(0);
         values[1] = uint256(0);
@@ -493,13 +425,7 @@ contract TrueWalletUnitTest is Test {
         vm.prank(from);
         erc1155token.setApprovalForAll(address(this), true);
 
-        erc1155token.safeTransferFrom(
-            from,
-            address(wallet),
-            1237,
-            70,
-            "testing 1237"
-        );
+        erc1155token.safeTransferFrom(from, address(wallet), 1237, 70, "testing 1237");
 
         assertEq(erc1155token.balanceOf(address(wallet), 1237), 70);
         assertEq(erc1155token.balanceOf(from, 1237), 30);
@@ -514,12 +440,7 @@ contract TrueWalletUnitTest is Test {
 
         address target = address(erc1155token);
         bytes memory payload = abi.encodeWithSelector(
-            erc1155token.safeTransferFrom.selector,
-            address(wallet),
-            to,
-            1237,
-            40,
-            "testing 1237"
+            erc1155token.safeTransferFrom.selector, address(wallet), to, 1237, 40, "testing 1237"
         );
 
         vm.prank(address(entryPoint));
@@ -543,20 +464,10 @@ contract TrueWalletUnitTest is Test {
         target[1] = address(erc1155token);
         bytes[] memory payloads = new bytes[](2);
         payloads[0] = abi.encodeWithSelector(
-            erc1155token.safeTransferFrom.selector,
-            address(wallet),
-            to0,
-            1237,
-            35,
-            "testing 1237"
+            erc1155token.safeTransferFrom.selector, address(wallet), to0, 1237, 35, "testing 1237"
         );
         payloads[1] = abi.encodeWithSelector(
-            erc1155token.safeTransferFrom.selector,
-            address(wallet),
-            to1,
-            1237,
-            35,
-            "testing 1237"
+            erc1155token.safeTransferFrom.selector, address(wallet), to1, 1237, 35, "testing 1237"
         );
         uint256[] memory values = new uint256[](2);
         values[0] = uint256(0);
@@ -636,58 +547,37 @@ contract TrueWalletUnitTest is Test {
 
     function testIsValidSignature() public {
         bytes32 messageHash = keccak256(abi.encode("Signed Message"));
-        bytes memory signature = createSignature2(
-            messageHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature2(messageHash, ownerPrivateKey, vm);
 
-        bool _sigValid = signatureChecker.isValidSignatureNow(
-            address(wallet),
-            ECDSA.toEthSignedMessageHash(messageHash),
-            signature
-        );
+        bool _sigValid =
+            signatureChecker.isValidSignatureNow(address(wallet), ECDSA.toEthSignedMessageHash(messageHash), signature);
 
         assertEq(_sigValid, true);
     }
 
     function testIsValidSignatureNotOwner() public {
         // address notContractOwnerAddress = 0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f; // anvil account (8)
-        uint256 notContractOwnerPrivateKey = uint256(
-            0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
-        );
+        uint256 notContractOwnerPrivateKey = uint256(0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97);
         bytes32 messageHash = keccak256(abi.encode("Signed Message"));
 
-        bytes memory signature = createSignature2(
-            messageHash,
-            notContractOwnerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature2(messageHash, notContractOwnerPrivateKey, vm);
 
-        bool _sigValid = signatureChecker.isValidSignatureNow(
-            address(wallet),
-            ECDSA.toEthSignedMessageHash(messageHash),
-            signature
-        );
+        bool _sigValid =
+            signatureChecker.isValidSignatureNow(address(wallet), ECDSA.toEthSignedMessageHash(messageHash), signature);
 
         assertEq(_sigValid, false);
     }
 
     function testInitializeWithZeroEntryPointAddress() public {
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(0), ownerAddress, upgradeDelay, modules)
-        );
+        bytes memory data = abi.encodeCall(TrueWallet.initialize, (address(0), ownerAddress, upgradeDelay, modules));
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);
     }
 
     function testInitializeWithZeroOwnerAddress() public {
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), address(0), upgradeDelay, modules)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(0), upgradeDelay, modules));
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);
@@ -695,10 +585,8 @@ contract TrueWalletUnitTest is Test {
 
     function testInitializeWithInvalidUpgradeDelay() public {
         upgradeDelay = 172799; // < 2 days in seconds
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), address(ownerAddress), upgradeDelay, modules)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(ownerAddress), upgradeDelay, modules));
 
         vm.expectRevert(encodeError("InvalidUpgradeDelay()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);

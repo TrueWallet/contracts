@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
+import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import "../interfaces/ILogicUpgradeControl.sol";
-import "../interfaces/IEntryPoint.sol";
 import "./Initializable.sol";
 
 library AccountStorage {

@@ -3,22 +3,19 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 
-contract ETHTransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint =
-        IEntryPoint(MumbaiConfig.ENTRY_POINT);
+contract ETHTransferNoPaymasterEndToEndTest is Test {
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster =
-        ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -55,21 +52,11 @@ contract ETHTransferNoPaymasterEntToEndTest is Test {
         // 2. Encode userOperation transfer
         etherTransferAmount = 1 ether;
 
-        userOp.callData = abi.encodeWithSelector(
-            wallet.execute.selector,
-            address(recipient),
-            etherTransferAmount,
-            ""
-        );
+        userOp.callData = abi.encodeWithSelector(wallet.execute.selector, address(recipient), etherTransferAmount, "");
 
         // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(
-            userOp,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
         // 4. Set remainder of test case
@@ -99,18 +86,13 @@ contract ETHTransferNoPaymasterEntToEndTest is Test {
 
         // Verify ether transfer from wallet to recipient
         uint256 finalRecipientETHBalance = address(recipient).balance;
-        assertEq(
-            finalRecipientETHBalance,
-            initialRecipientETHBalance + etherTransferAmount
-        );
+        assertEq(finalRecipientETHBalance, initialRecipientETHBalance + etherTransferAmount);
 
         uint256 finalWalletETHBalance = address(wallet).balance;
         assertLt(finalWalletETHBalance, initialWalletETHBalance);
 
         // Verify wallet paid for gas
-        uint256 walletEthGasPaid = initialWalletETHBalance -
-            finalWalletETHBalance -
-            etherTransferAmount;
+        uint256 walletEthGasPaid = initialWalletETHBalance - finalWalletETHBalance - etherTransferAmount;
         assertGt(walletEthGasPaid, 0);
     }
 }

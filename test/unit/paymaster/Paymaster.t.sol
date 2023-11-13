@@ -3,13 +3,12 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
-import {EntryPoint} from "src/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 
 contract PaymasterUnitTest is Test {
@@ -37,10 +36,8 @@ contract PaymasterUnitTest is Test {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(mockModule, initData);
 
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay, modules)
-        );
+        bytes memory data =
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));

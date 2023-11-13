@@ -3,23 +3,19 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
-contract WalletDeployWithPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint =
-        IEntryPoint(MumbaiConfig.ENTRY_POINT);
+contract WalletDeployWithPaymasterEndToEndTest is Test {
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.FACTORY);
-    IWalletFactory public constant walletFactory =
-        IWalletFactory(MumbaiConfig.FACTORY);
-    ITruePaymaster public constant paymaster =
-        ITruePaymaster(MumbaiConfig.PAYMASTER);
+    IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
+    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -30,14 +26,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
     bytes32 public userOpHash;
     address aggregator;
     uint256 missingWalletFunds;
-    bytes32 salt =
-        keccak256(
-            abi.encodePacked(
-                address(walletFactory),
-                address(entryPoint),
-                block.timestamp
-            )
-        );
+    bytes32 salt = keccak256(abi.encodePacked(address(walletFactory), address(entryPoint), block.timestamp));
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes[] modules = new bytes[](1);
 
@@ -46,15 +35,9 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
     function setUp() public {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(securityModule, initData);
-        
+
         // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         vm.deal(sender, 1 ether);
 
         // 1. Generate a userOperation
@@ -76,12 +59,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
-                walletFactory.createWallet.selector,
-                address(entryPoint),
-                walletOwner,
-                upgradeDelay,
-                modules,
-                salt
+                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
             )
         );
         userOp.initCode = initCode;
@@ -91,12 +69,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
 
         // 4. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(
-            userOp,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
         // 5. Set remainder of test case
@@ -125,13 +98,8 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress = walletFactory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            upgradeDelay,
-            modules,
-            salt
-        );
+        address expectedWalletAddress =
+            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -146,8 +114,7 @@ contract WalletDeployWithPaymasterEntToEndTest is Test {
         assertGt(initialPaymasterDeposite, paymaster.getDeposit());
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 gasFeeWalletPayd = initialWalletETHBalance -
-            address(wallet).balance;
+        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance;
         assertEq(gasFeeWalletPayd, 0);
     }
 }

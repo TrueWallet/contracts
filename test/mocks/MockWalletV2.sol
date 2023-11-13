@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {AccountStorage} from "src/utils/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
@@ -205,7 +204,7 @@ contract MockWalletV2 is
         emit TransferedETH(to, amount);
     }
 
-    /// @notice Transfer ERC20 tokens out of the wallet. 
+    /// @notice Transfer ERC20 tokens out of the wallet.
     /// @param token The ERC20 token contract address.
     /// @param to The recipient's address.
     /// @param amount The amount of tokens to transfer.

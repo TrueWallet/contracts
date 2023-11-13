@@ -3,22 +3,19 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
-import {IEntryPoint} from "src/interfaces/IEntryPoint.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
-import {UserOperation} from "src/interfaces/UserOperation.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
 
-contract ERC721TransferNoPaymasterEntToEndTest is Test {
-    IEntryPoint public constant entryPoint =
-        IEntryPoint(MumbaiConfig.ENTRY_POINT);
+contract ERC721TransferNoPaymasterEndToEndTest is Test {
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
-    ITruePaymaster public constant paymaster =
-        ITruePaymaster(MumbaiConfig.PAYMASTER);
+    ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
     uint256 ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
@@ -62,22 +59,12 @@ contract ERC721TransferNoPaymasterEntToEndTest is Test {
             wallet.execute.selector,
             address(token),
             0,
-            abi.encodeWithSelector(
-                token.transferFrom.selector,
-                address(wallet),
-                recipient,
-                tokenId
-            )
+            abi.encodeWithSelector(token.transferFrom.selector, address(wallet), recipient, tokenId)
         );
 
         // 3. Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(
-            userOp,
-            userOpHash,
-            ownerPrivateKey,
-            vm
-        );
+        bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
         // 4. Set remainder of test case
@@ -113,8 +100,7 @@ contract ERC721TransferNoPaymasterEntToEndTest is Test {
         assertEq(token.ownerOf(tokenId), address(recipient));
 
         // Verify wallet paid for gas
-        uint256 walletEthLoss = initialWalletETHBalance -
-            address(wallet).balance;
+        uint256 walletEthLoss = initialWalletETHBalance - address(wallet).balance;
         assertGt(walletEthLoss, 0);
     }
 }
