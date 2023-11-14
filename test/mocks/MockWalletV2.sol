@@ -35,7 +35,7 @@ contract MockWalletV2 is
 
     /////////////////  EVENTS ///////////////
 
-    event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
+    event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
     event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
     event OwnershipTransferred(address indexed sender, address indexed newOwner);
     event ReceivedETH(address indexed sender, uint256 indexed amount);
@@ -69,9 +69,8 @@ contract MockWalletV2 is
     /// @notice Initialize function to setup the true wallet contract
     /// @param  _entryPoint trused entrypoint
     /// @param  _owner wallet sign key address
-    /// @param  _upgradeDelay upgrade delay which update take effect
     /// @param _modules The list of encoded modules to be added and its associated initialization data.
-    function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay, bytes[] calldata _modules)
+    function initialize(address _entryPoint, address _owner, bytes[] calldata _modules)
         public
         initializer
     {
@@ -83,10 +82,7 @@ contract MockWalletV2 is
 
         AccountStorage.Layout storage layout = AccountStorage.layout();
         layout.entryPoint = IEntryPoint(_entryPoint);
-        // layout.owner = _owner;
 
-        if (_upgradeDelay < 2 days) revert InvalidUpgradeDelay();
-        layout.logicUpgrade.upgradeDelay = _upgradeDelay;
 
         for (uint256 i; i < _modules.length;) {
             _addModule(_modules[i]);
@@ -95,7 +91,7 @@ contract MockWalletV2 is
             }
         }
 
-        emit AccountInitialized(address(this), address(_entryPoint), _owner, _upgradeDelay);
+        emit AccountInitialized(address(this), address(_entryPoint), _owner);
     }
 
     /////////////////  FUNCTIONS ///////////////

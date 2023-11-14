@@ -32,8 +32,6 @@ contract TrueWalletUnitTest is Test {
     MockERC1155 erc1155token;
     MockSignatureChecker signatureChecker;
 
-    uint32 upgradeDelay = 172800; // 2 days in seconds
-
     event ReceivedETH(address indexed sender, uint256 indexed amount);
 
     MockModule module;
@@ -53,7 +51,7 @@ contract TrueWalletUnitTest is Test {
         modules[0] = abi.encodePacked(address(module), initData);
 
         bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
@@ -569,7 +567,7 @@ contract TrueWalletUnitTest is Test {
     }
 
     function testInitializeWithZeroEntryPointAddress() public {
-        bytes memory data = abi.encodeCall(TrueWallet.initialize, (address(0), ownerAddress, upgradeDelay, modules));
+        bytes memory data = abi.encodeCall(TrueWallet.initialize, (address(0), ownerAddress, modules));
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);
@@ -577,18 +575,9 @@ contract TrueWalletUnitTest is Test {
 
     function testInitializeWithZeroOwnerAddress() public {
         bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(0), upgradeDelay, modules));
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(0), modules));
 
         vm.expectRevert(encodeError("ZeroAddressProvided()"));
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-    }
-
-    function testInitializeWithInvalidUpgradeDelay() public {
-        upgradeDelay = 172799; // < 2 days in seconds
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(ownerAddress), upgradeDelay, modules));
-
-        vm.expectRevert(encodeError("InvalidUpgradeDelay()"));
         proxy = new TrueWalletProxy(address(walletImpl), data);
     }
 

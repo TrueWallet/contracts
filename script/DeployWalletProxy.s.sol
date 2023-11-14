@@ -15,8 +15,7 @@ contract DeployWalletProxyScript is Script {
     address public entryPoint;
     address public owner;
     uint256 public deployerPrivateKey;
-    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), upgradeDelay, block.timestamp));
-    uint32 upgradeDelay = 172800;
+    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), block.timestamp));
 
     address public securityModule;
     bytes[] modules = new bytes[](1);
@@ -35,7 +34,7 @@ contract DeployWalletProxyScript is Script {
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
-        wallet = factory.createWallet(address(entryPoint), owner, upgradeDelay, modules, salt);
+        wallet = factory.createWallet(address(entryPoint), owner, modules, salt);
         vm.stopBroadcast();
     }
 }

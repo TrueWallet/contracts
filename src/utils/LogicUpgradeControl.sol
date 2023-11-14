@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import "openzeppelin-contracts/utils/Address.sol";
+import {Address} from "openzeppelin-contracts/utils/Address.sol";
 import {ILogicUpgradeControl} from "../interfaces/ILogicUpgradeControl.sol";
 import {AccountStorage} from "../libraries/AccountStorage.sol";
 import {Upgradeable} from "./Upgradeable.sol";
@@ -9,6 +9,8 @@ import {UpgradeWalletErrors} from "../common/Errors.sol";
 
 contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWalletErrors {
     using AccountStorage for AccountStorage.Layout;
+    
+    uint256 public constant upgradeDelay = 2 days;
 
     /// @dev Returns Logic updgrade layout info
     function logicUpgradeInfo() public view returns (ILogicUpgradeControl.UpgradeLayout memory) {
@@ -25,7 +27,7 @@ contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWallet
 
             layout.pendingImplementation = newImplementation;
 
-            layout.activateTime = uint64(block.timestamp + layout.upgradeDelay);
+            layout.activateTime = uint64(block.timestamp + upgradeDelay);
         } else {
             layout.activateTime = 0;
         }

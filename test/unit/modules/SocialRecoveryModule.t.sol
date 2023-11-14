@@ -41,7 +41,6 @@ contract SocialRecoveryModuleUnitTest is Test {
 
     bytes[] initModules = new bytes[](2);
     uint32 controlModuleInitData = 1;
-    uint32 upgradeDelay = 172800;
     bytes moduleAddressAndInitData;
 
     function setUp() public {
@@ -73,7 +72,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModules[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
         initModules[1] = abi.encodePacked(address(socialRecoveryModule), socialRecoveryModuleInitData);
         bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModules)
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
         );
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));
@@ -148,7 +147,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
         bytes memory data2 = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModules2)
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules2)
         );
 
         TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
@@ -238,7 +237,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
         bytes memory data2 = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModules2)
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules2)
         );
 
         TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
@@ -527,7 +526,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModule[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
         bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModule));
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModule));
         proxy = new TrueWalletProxy(address(walletImpl), data);
         walletNoRecoveryModule = TrueWallet(payable(address(proxy)));
         return walletNoRecoveryModule;

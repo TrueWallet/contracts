@@ -26,7 +26,6 @@ contract VerifyingPaymasterUnitTest is Test {
     EntryPoint newEntryPoint;
     address user = address(12);
     address notOwner = address(13);
-    uint32 upgradeDelay = 172800; // 2 days in seconds
 
     MockModule mockModule;
     bytes[] modules = new bytes[](1);
@@ -45,7 +44,7 @@ contract VerifyingPaymasterUnitTest is Test {
         modules[0] = abi.encodePacked(mockModule, initData);
 
         bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
 
         TrueWalletProxy proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));

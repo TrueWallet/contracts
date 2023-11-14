@@ -4,10 +4,9 @@ pragma solidity ^0.8.19;
 import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
+import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {TrueWallet} from "./TrueWallet.sol";
 import {TrueWalletProxy} from "./TrueWalletProxy.sol";
-import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
-// import {IEntryPoint} from "../interfaces/IEntryPoint.sol";
 import {WalletErrors} from "../common/Errors.sol";
 
 /// @title TrueWalletFactory
@@ -42,21 +41,18 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Deploy a new TrueWallet smart contract.
     /// @param _entryPoint The address of the EntryPoint contract for the new wallet.
     /// @param _walletOwner The owner address for the new wallet.
-    /// @param _upgradeDelay Delay (in seconds) before an upgrade can take effect.
     /// @param _modules Array of initial module addresses for the wallet.
     /// @param _salt A salt value used in the CREATE2 opcode for deterministic address generation.
     /// @return proxy The address of the newly created TrueWallet contract.
     function createWallet(
         address _entryPoint,
         address _walletOwner,
-        uint32 _upgradeDelay,
         bytes[] calldata _modules,
         bytes32 _salt
     ) external whenNotPaused returns (TrueWallet proxy) {
         address walletAddress = getWalletAddress(
             _entryPoint,
             _walletOwner,
-            _upgradeDelay,
             _modules,
             _salt
         );
@@ -67,7 +63,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
                 walletImplementation,
                 abi.encodeCall(
                     TrueWallet.initialize,
-                    (_entryPoint, _walletOwner, _upgradeDelay, _modules)
+                    (_entryPoint, _walletOwner, _modules)
                 )
             )
         );
@@ -94,14 +90,12 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @dev This doesn't deploy the wallet, just calculates its address.
     /// @param _entryPoint The address of the EntryPoint contract for the new wallet.
     /// @param _walletOwner The owner address for the new wallet.
-    /// @param _upgradeDelay Delay (in seconds) before an upgrade can take effect.
     /// @param _modules Array of initial module addresses for the wallet.
     /// @param _salt A salt value used in the CREATE2 opcode for deterministic address generation.
     /// @return Address of the wallet that would be created using the provided parameters.
     function getWalletAddress(
         address _entryPoint,
         address _walletOwner,
-        uint32 _upgradeDelay,
         bytes[] calldata _modules,
         bytes32 _salt
     ) public view returns (address) {
@@ -111,7 +105,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
                 walletImplementation,
                 abi.encodeCall(
                     TrueWallet.initialize,
-                    (_entryPoint, _walletOwner, _upgradeDelay, _modules)
+                    (_entryPoint, _walletOwner, _modules)
                 )
             )
         );

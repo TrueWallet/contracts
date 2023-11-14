@@ -25,8 +25,8 @@ contract TrueWalletProxyUnitTest is Test {
     address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
     uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
 
-    uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes32 salt;
+    uint32 upgradeDelay = 172800; // 2 days in seconds
 
     MockModule mockModule;
     bytes[] modules = new bytes[](1);
@@ -45,7 +45,7 @@ contract TrueWalletProxyUnitTest is Test {
 
         bytes memory data = abi.encodeCall(
             TrueWallet.initialize,
-            (address(entryPoint), ownerAddress, upgradeDelay, modules)
+            (address(entryPoint), ownerAddress, modules)
         );
 
         proxy = new TrueWalletProxy(address(wallet), data);
@@ -53,8 +53,7 @@ contract TrueWalletProxyUnitTest is Test {
         salt = keccak256(
             abi.encodePacked(
                 address(factory),
-                address(entryPoint),
-                upgradeDelay
+                address(entryPoint)
             )
         );
     }
@@ -63,7 +62,6 @@ contract TrueWalletProxyUnitTest is Test {
         proxyWallet = factory.createWallet(
             address(entryPoint),
             ownerAddress,
-            upgradeDelay,
             modules,
             salt
         );
