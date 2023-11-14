@@ -28,7 +28,6 @@ contract SecurityControlModuleUnitTest is Test {
 
     bytes[] initModules = new bytes[](1);
     uint32 moduleInitData = 1;
-    uint32 upgradeDelay = 172800;
     bytes moduleAddressAndInitData;
 
     event Execute(address target, bytes data, address sender);
@@ -51,7 +50,7 @@ contract SecurityControlModuleUnitTest is Test {
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule), initData);
         bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModules)
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
         );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
@@ -190,7 +189,7 @@ contract SecurityControlModuleUnitTest is Test {
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule2), initData);
         bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), upgradeDelay, initModules)
+            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
         );
 
         proxy = new TrueWalletProxy(address(walletImpl), data);

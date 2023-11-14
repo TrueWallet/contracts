@@ -1,5 +1,5 @@
 # TrueWalletFactory
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/wallet/TrueWalletFactory.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/wallet/TrueWalletFactory.sol)
 
 **Inherits:**
 Ownable, Pausable, [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
@@ -50,13 +50,10 @@ Deploy a new TrueWallet smart contract.
 
 
 ```solidity
-function createWallet(
-    address _entryPoint,
-    address _walletOwner,
-    uint32 _upgradeDelay,
-    bytes[] calldata _modules,
-    bytes32 _salt
-) external whenNotPaused returns (TrueWallet proxy);
+function createWallet(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+    external
+    whenNotPaused
+    returns (TrueWallet proxy);
 ```
 **Parameters**
 
@@ -64,7 +61,6 @@ function createWallet(
 |----|----|-----------|
 |`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
 |`_walletOwner`|`address`|The owner address for the new wallet.|
-|`_upgradeDelay`|`uint32`|Delay (in seconds) before an upgrade can take effect.|
 |`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
 |`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
 
@@ -83,13 +79,10 @@ Computes the deterministic address for a potential wallet deployment using CREAT
 
 
 ```solidity
-function getWalletAddress(
-    address _entryPoint,
-    address _walletOwner,
-    uint32 _upgradeDelay,
-    bytes[] calldata _modules,
-    bytes32 _salt
-) public view returns (address);
+function getWalletAddress(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+    public
+    view
+    returns (address);
 ```
 **Parameters**
 
@@ -97,7 +90,6 @@ function getWalletAddress(
 |----|----|-----------|
 |`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
 |`_walletOwner`|`address`|The owner address for the new wallet.|
-|`_upgradeDelay`|`uint32`|Delay (in seconds) before an upgrade can take effect.|
 |`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
 |`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
 

@@ -1,5 +1,5 @@
 # TrueWallet
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/wallet/TrueWallet.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/wallet/TrueWallet.sol)
 
 **Inherits:**
 [IWallet](/src/wallet/IWallet.sol/interface.IWallet.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [Authority](/src/authority/Authority.sol/abstract.Authority.md), [ModuleManager](/src/base/ModuleManager.sol/abstract.ModuleManager.md), [OwnerManager](/src/base/OwnerManager.sol/abstract.OwnerManager.md), [TokenManager](/src/base/TokenManager.sol/abstract.TokenManager.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md)
@@ -42,9 +42,7 @@ Initialize function to setup the true wallet contract
 
 
 ```solidity
-function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay, bytes[] calldata _modules)
-    public
-    initializer;
+function initialize(address _entryPoint, address _owner, bytes[] calldata _modules) public initializer;
 ```
 **Parameters**
 
@@ -52,7 +50,6 @@ function initialize(address _entryPoint, address _owner, uint32 _upgradeDelay, b
 |----|----|-----------|
 |`_entryPoint`|`address`|trused entrypoint|
 |`_owner`|`address`|wallet sign key address|
-|`_upgradeDelay`|`uint32`|upgrade delay which update take effect|
 |`_modules`|`bytes[]`|The list of encoded modules to be added and its associated initialization data.|
 
 
@@ -260,19 +257,13 @@ All state variables are stored in AccountStorage. Layout with specific storage s
 
 
 ```solidity
-event AccountInitialized(address indexed account, address indexed entryPoint, address owner, uint32 upgradeDelay);
+event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
 ```
 
 ### UpdateEntryPoint
 
 ```solidity
 event UpdateEntryPoint(address indexed newEntryPoint, address indexed oldEntryPoint);
-```
-
-### OwnershipTransferred
-
-```solidity
-event OwnershipTransferred(address indexed sender, address indexed newOwner);
 ```
 
 ### ReceivedETH

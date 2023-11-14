@@ -20,8 +20,6 @@ contract ModuleManagerUnitTest is Test {
     uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
     uint256 chainId = block.chainid;
 
-    uint32 upgradeDelay = 172800; // 2 days in seconds
-
     MockModule module;
     bytes[] modules = new bytes[](1);
     uint32 walletInitValue;
@@ -45,7 +43,7 @@ contract ModuleManagerUnitTest is Test {
         modules[0] = abi.encodePacked(address(module), initData);
 
         bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, upgradeDelay, modules));
+            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
 
         proxy = new TrueWalletProxy(address(walletImpl), data);
         wallet = TrueWallet(payable(address(proxy)));

@@ -1,5 +1,5 @@
 # Initializable
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/utils/Initializable.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/utils/Initializable.sol)
 
 *This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
 behind a proxy. Since proxied contracts do not make use of a constructor, it's common to move constructor logic to an

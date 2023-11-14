@@ -6,7 +6,6 @@ pragma solidity ^0.8.19;
  */
 interface ILogicUpgradeControl {
     struct UpgradeLayout {
-        uint32 upgradeDelay; // upgradeDelay
         uint64 activateTime; // activateTime
         address pendingImplementation; // pendingImplementation
         uint256[50] __gap;

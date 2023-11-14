@@ -1,5 +1,5 @@
 # ISocialRecoveryModule
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
 
 *If a user is already in a recovery process, they cannot change guardians.
 If a user starts the recovery process while guardians are being changed, the change of guardians will be canceled.*

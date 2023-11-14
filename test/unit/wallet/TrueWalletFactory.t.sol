@@ -16,7 +16,6 @@ contract TrueWalletFactoryUnitTest is Test {
     EntryPoint entryPoint;
     address walletOwner = address(12);
     bytes32 salt;
-    uint32 upgradeDelay = 172800; // 2 days in seconds
 
     MockModule mockModule;
     bytes[] modules = new bytes[](1);
@@ -26,8 +25,7 @@ contract TrueWalletFactoryUnitTest is Test {
     event AccountInitialized(
         address indexed account,
         address indexed entryPoint,
-        address owner,
-        uint32 upgradeDelay
+        address owner
     );
 
     event TrueWalletCreation(TrueWallet wallet);
@@ -44,8 +42,7 @@ contract TrueWalletFactoryUnitTest is Test {
         salt = keccak256(
             abi.encodePacked(
                 address(factory),
-                address(entryPoint),
-                upgradeDelay
+                address(entryPoint)
             )
         );
 
@@ -79,7 +76,6 @@ contract TrueWalletFactoryUnitTest is Test {
         factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -89,7 +85,6 @@ contract TrueWalletFactoryUnitTest is Test {
         address computedWalletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -98,21 +93,18 @@ contract TrueWalletFactoryUnitTest is Test {
         emit AccountInitialized(
             computedWalletAddress,
             address(entryPoint),
-            address(walletOwner),
-            upgradeDelay
+            address(walletOwner)
         );
         emit TrueWalletCreation(TrueWallet(payable(computedWalletAddress)));
         TrueWallet proxyWallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
 
         assertEq(address(proxyWallet), computedWalletAddress);
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
-        // assertEq(proxyWallet.upgradeDelay(), upgradeDelay);
         assertTrue(proxyWallet.isOwner(walletOwner));
     }
 
@@ -120,7 +112,6 @@ contract TrueWalletFactoryUnitTest is Test {
         address walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -131,7 +122,6 @@ contract TrueWalletFactoryUnitTest is Test {
         wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -139,7 +129,6 @@ contract TrueWalletFactoryUnitTest is Test {
         walletAddress = factory.getWalletAddress(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -150,7 +139,6 @@ contract TrueWalletFactoryUnitTest is Test {
         TrueWallet wallet2 = factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -163,7 +151,6 @@ contract TrueWalletFactoryUnitTest is Test {
         wallet = factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
@@ -175,7 +162,6 @@ contract TrueWalletFactoryUnitTest is Test {
         factory.createWallet(
             address(entryPoint),
             walletOwner,
-            upgradeDelay,
             modules,
             salt
         );
