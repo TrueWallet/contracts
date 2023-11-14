@@ -1,5 +1,5 @@
 # OwnerManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/base/OwnerManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/base/OwnerManager.sol)
 
 **Inherits:**
 [IOwnerManager](/src/interfaces/IOwnerManager.sol/interface.IOwnerManager.md), [Authority](/src/authority/Authority.sol/abstract.Authority.md)

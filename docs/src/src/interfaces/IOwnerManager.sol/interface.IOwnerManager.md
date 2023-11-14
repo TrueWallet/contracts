@@ -1,5 +1,5 @@
 # IOwnerManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/43e94f0622a36448f24323cfe74a0e2604784f80/src/interfaces/IOwnerManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/interfaces/IOwnerManager.sol)
 
 Interface for managing ownership in a contract
 
