@@ -26,7 +26,7 @@
     "deployPaymaster:mumbai": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --gas-limit $GAS_LIMIT --gas-price 40000000000 --verify -vvvv",
     "deployContractManagerAndSecurityModule:mumbai": "source .env && forge script script/DeployContractManagerAndSecurityModule.s.sol:DeployContractManagerAndSecurityModule --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
     "deploySocialRecoveryModule:mumbai": "source .env && forge script script/DeploySocialRecoveryModule.s.sol:DeploySocialRecoveryModuleScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
-    "deployFull:local": "source .env && forge script script/deployFull.s.sol:DeployFullScript --rpc-url http://127.0.0.1:8545 --broadcast"
+    "deployFull:local": "source .env && forge script script/DeployFull.s.sol:DeployFullScript --rpc-url http://127.0.0.1:8545 --broadcast"
   },
   "keywords": [],
   "author": "VitalR",
