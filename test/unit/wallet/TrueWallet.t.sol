@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import {UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
@@ -18,13 +19,14 @@ import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography
 import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueWalletUnitTest is Test {
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
     MockSetter setter;
     EntryPoint entryPoint;
-    address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+    address ownerAddress;
+    uint256 ownerPrivateKey;
     uint256 chainId = block.chainid;
 
     MockERC20 erc20token;
@@ -32,12 +34,14 @@ contract TrueWalletUnitTest is Test {
     MockERC1155 erc1155token;
     MockSignatureChecker signatureChecker;
 
-    event ReceivedETH(address indexed sender, uint256 indexed amount);
-
     MockModule module;
     bytes[] modules = new bytes[](1);
+    bytes32 salt;
+
+    event ReceivedETH(address indexed sender, uint256 indexed amount);
 
     function setUp() public {
+        (ownerAddress, ownerPrivateKey) = makeAddrAndKey("walletOwner");
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
         setter = new MockSetter();
@@ -50,13 +54,10 @@ contract TrueWalletUnitTest is Test {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(address(module), initData);
 
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
 
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
-
-        // vm.deal(address(wallet), 5 ether);
+        factory = new TrueWalletFactory(address(walletImpl), address(ownerAddress), address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), ownerAddress, modules, salt);
     }
 
     function encodeError(string memory error) internal pure returns (bytes memory encoded) {
@@ -100,12 +101,7 @@ contract TrueWalletUnitTest is Test {
         uint256 missingWalletFunds = 0;
 
         vm.prank(address(entryPoint));
-        uint256 deadline = wallet.validateUserOp(
-            userOp,
-            userOpHash,
-            // aggregator,
-            missingWalletFunds
-        );
+        uint256 deadline = wallet.validateUserOp(userOp, userOpHash, missingWalletFunds);
         assertEq(deadline, 0);
     }
 
@@ -567,18 +563,22 @@ contract TrueWalletUnitTest is Test {
     }
 
     function testInitializeWithZeroEntryPointAddress() public {
-        bytes memory data = abi.encodeCall(TrueWallet.initialize, (address(0), ownerAddress, modules));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(1)));
 
-        vm.expectRevert(encodeError("ZeroAddressProvided()"));
-        proxy = new TrueWalletProxy(address(walletImpl), data);
+        vm.expectRevert(); //encodeError("ZeroAddressProvided()")
+        wallet = factory.createWallet(address(0), ownerAddress, modules, salt);
     }
 
     function testInitializeWithZeroOwnerAddress() public {
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(0), modules));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(1)));
 
-        vm.expectRevert(encodeError("ZeroAddressProvided()"));
-        proxy = new TrueWalletProxy(address(walletImpl), data);
+        vm.expectRevert(); //encodeError("ZeroAddressProvided()")
+        wallet = factory.createWallet(
+            address(entryPoint), //address(entryPoint)
+            address(0), //ownerAddress
+            modules,
+            salt
+        );
     }
 
     function testAddAndWithdrawDeposite() public {

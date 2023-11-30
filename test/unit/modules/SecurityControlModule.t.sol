@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
@@ -14,6 +15,7 @@ import {MockModule2FailedInvalidSelector} from "../../mocks/MockModule2FailedInv
 contract SecurityControlModuleUnitTest is Test {
     SecurityControlModule securityControlModule;
     TrueContractManager contractManager;
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
@@ -29,6 +31,7 @@ contract SecurityControlModuleUnitTest is Test {
     bytes[] initModules = new bytes[](1);
     uint32 moduleInitData = 1;
     bytes moduleAddressAndInitData;
+    bytes32 salt;
 
     event Execute(address target, bytes data, address sender);
 
@@ -49,12 +52,10 @@ contract SecurityControlModuleUnitTest is Test {
         walletImpl = new TrueWallet();
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule), initData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
-        );
 
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
 
         module = new MockModule2();
 
@@ -188,12 +189,8 @@ contract SecurityControlModuleUnitTest is Test {
         walletImpl = new TrueWallet();
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule2), initData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
-        );
 
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
 
         // test
         module = new MockModule2();

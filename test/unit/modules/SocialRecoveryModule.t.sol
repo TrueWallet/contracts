@@ -10,6 +10,7 @@ import {
 } from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet, IWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
@@ -19,6 +20,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     SocialRecoveryModule socialRecoveryModule;
     SecurityControlModule securityControlModule;
     TrueContractManager contractManager;
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
@@ -42,6 +44,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     bytes[] initModules = new bytes[](2);
     uint32 controlModuleInitData = 1;
     bytes moduleAddressAndInitData;
+    bytes32 deplSalt;
 
     function setUp() public {
         (adminAddress, adminPrivateKey) = makeAddrAndKey("adminAddress");
@@ -71,11 +74,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
         initModules[1] = abi.encodePacked(address(socialRecoveryModule), socialRecoveryModuleInitData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
-        );
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+
+        deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, deplSalt);
     }
 
     ///////////////////////////////////
@@ -146,12 +148,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
-        bytes memory data2 = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules2)
-        );
-
-        TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
-        wallet2 = TrueWallet(payable(address(proxy2)));
+        wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
 
         // tests
         // negative cases
@@ -236,12 +233,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
-        bytes memory data2 = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules2)
-        );
-
-        TrueWalletProxy proxy2 = new TrueWalletProxy(address(walletImpl), data2);
-        wallet2 = TrueWallet(payable(address(proxy2)));
+        wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
 
         // test
         // (_guardians.length == 0) && (_guardianHash != bytes32(0))
@@ -525,10 +517,9 @@ contract SocialRecoveryModuleUnitTest is Test {
         controlModuleInitData = 1;
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModule[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModule));
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        walletNoRecoveryModule = TrueWallet(payable(address(proxy)));
+        deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
+        walletNoRecoveryModule = factory.createWallet(address(entryPoint), walletOwner, initModule, deplSalt);
         return walletNoRecoveryModule;
     }
 
