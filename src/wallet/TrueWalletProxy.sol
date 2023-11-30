@@ -3,76 +3,34 @@ pragma solidity ^0.8.19;
 
 import {Upgradeable} from "src/utils/Upgradeable.sol";
 
+/// @title TrueWalletProxy
+/// @notice A proxy contract that forwards calls to an implementation contract.
+/// @dev This proxy uses the EIP-1967 standard for storage slots.
 contract TrueWalletProxy is Upgradeable {
     /**
-     * @dev Initializes the upgradeable proxy with an initial implementation specified by `logic`.
-     *
-     * If `data` is nonempty, it's used as data in a delegate call to `logic`. This will typically be an encoded
-     * function call, and allows initializing the storage of the proxy like a Solidity constructor.
+     * @notice Initializes the proxy with the address of the initial implementation contract.
+     * @param logic Address of the initial implementation.
      */
-    constructor(address logic, bytes memory data) payable {
-        _initialize(logic, data);
-    }
-
-    /**
-     * @dev Delegates the current call to `implementation`.
-     *
-     * This function does not return to its internal call site, it will return directly to the external caller.
-     */
-    function _delegate(address implementation) private {
-        assembly {
-            // Copy msg.data. We take full control of memory in this inline assembly
-            // block because it will not return to Solidity code. We overwrite the
-            // Solidity scratch pad at memory position 0.
-            calldatacopy(0, 0, calldatasize())
-
-            // Call the implementation.
-            // out and outsize are 0 because we don't know the size yet.
-            let result := delegatecall(
-                gas(),
-                implementation,
-                0,
-                calldatasize(),
-                0,
-                0
-            )
-
-            // Copy the returned data.
-            returndatacopy(0, 0, returndatasize())
-
-            switch result
-            // delegatecall returns 0 on error.
-            case 0 {
-                revert(0, returndatasize())
-            }
-            default {
-                return(0, returndatasize())
-            }
+    constructor(address logic) {
+        assembly ("memory-safe") {
+            sstore(_IMPLEMENTATION_SLOT, logic)
         }
     }
 
     /**
-     * @dev Delegates the current call to the address returned by `_implementation()`.
-     *
-     * This function does not return to its internal call site, it will return directly to the external caller.
-     */
-    function _fallback() internal {
-        _delegate(_getImplementation());
-    }
-
-    /**
-     * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
-     * function in the contract matches the call data.
+     * @notice Fallback function which forwards all calls to the implementation contract.
+     * @dev Uses delegatecall to ensure the context remains within the proxy.
      */
     fallback() external payable {
-        _fallback();
-    }
-
-    /**
-     * @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if call data
-     * is empty.
-     */
-    receive() external payable {
-        _fallback();
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            /* not memory-safe */
+            let _singleton := and(sload(_IMPLEMENTATION_SLOT), 0xffffffffffffffffffffffffffffffffffffffff)
+            calldatacopy(0, 0, calldatasize())
+            let success := delegatecall(gas(), _singleton, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if eq(success, 0) { revert(0, returndatasize()) }
+            return(0, returndatasize())
+        }
     }
 }
