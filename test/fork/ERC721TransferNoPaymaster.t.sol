@@ -13,7 +13,7 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
 
 contract ERC721TransferNoPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 

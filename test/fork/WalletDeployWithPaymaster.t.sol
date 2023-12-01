@@ -12,7 +12,7 @@ import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract WalletDeployWithPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.FACTORY);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
@@ -37,7 +37,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         vm.deal(sender, 1 ether);
 
         // 1. Generate a userOperation
@@ -59,7 +59,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
-                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
+                walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt
             )
         );
         userOp.initCode = initCode;
@@ -98,8 +98,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress =
-            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address

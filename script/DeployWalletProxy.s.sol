@@ -24,7 +24,7 @@ contract DeployWalletProxyScript is Script {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         factory = TrueWalletFactory(MumbaiConfig.FACTORY);
-        entryPoint = MumbaiConfig.ENTRY_POINT;
+        entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
         securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
         // mock

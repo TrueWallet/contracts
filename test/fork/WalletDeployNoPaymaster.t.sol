@@ -12,7 +12,7 @@ import {Bundler} from "test/mocks/protocol/Bundler.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract WalletDeployNoPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);
@@ -36,7 +36,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // Determine what the sender account will be beforehand
-        sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
 
         // Generate a userOperation
         userOp = UserOperation({
@@ -57,7 +57,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
-                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
+                walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt
             )
         );
         userOp.initCode = initCode;
@@ -102,8 +102,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         assertEq(sender.code.length > 0, true, "sender.code.length == 0");
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress =
-            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
