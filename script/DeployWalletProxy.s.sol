@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 

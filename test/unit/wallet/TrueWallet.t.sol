@@ -7,7 +7,7 @@ import {UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MockSetter} from "../../mocks/MockSetter.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
 import {MockERC721} from "../../mocks/MockERC721.sol";

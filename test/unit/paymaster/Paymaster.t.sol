@@ -8,7 +8,7 @@ import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol"
 import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 

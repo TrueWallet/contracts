@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
-import {EntryPoint, IEntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint, IEntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MockWalletV2} from "../../mocks/MockWalletV2.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
 import {MockERC721} from "../../mocks/MockERC721.sol";

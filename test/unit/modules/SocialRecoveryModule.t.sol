@@ -13,7 +13,7 @@ import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContra
 import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet, IWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {createSignature3} from "test/utils/createSignature.sol";
 
 contract SocialRecoveryModuleUnitTest is Test {
