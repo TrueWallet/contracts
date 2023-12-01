@@ -8,6 +8,7 @@ import {IWallet} from "src/wallet/IWallet.sol";
 import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
+import {Bundler} from "test/mocks/protocol/Bundler.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract WalletDeployNoPaymasterEndToEndTest is Test {
@@ -21,23 +22,23 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
 
     // Test case
     bytes32 public userOpHash;
-    address aggregator;
     uint256 missingWalletFunds;
     bytes32 salt = keccak256(abi.encodePacked(address(walletFactory), address(entryPoint), block.timestamp));
     uint32 upgradeDelay = 172800; // 2 days in seconds
     bytes[] modules = new bytes[](1);
 
     UserOperation public userOp;
+    Bundler public bundler;
+    address sender;
 
     function setUp() public {
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(securityModule, initData);
 
-        // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
-        vm.deal(sender, 1 ether);
+        // Determine what the sender account will be beforehand
+        sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
 
-        // 1. Generate a userOperation
+        // Generate a userOperation
         userOp = UserOperation({
             sender: sender,
             nonce: 0, // 0 nonce, wallet is not deployed and won't be called
@@ -52,10 +53,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
             signature: ""
         });
 
-        // 2. Set initCode, to trigger wallet deploy
-        // bytes memory initData = abi.encode(uint32(1));
-        // modules[0] = abi.encodePacked(securityModule, initData);
-
+        // Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
             abi.encodeWithSelector(
@@ -64,27 +62,44 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         );
         userOp.initCode = initCode;
 
-        // 3. Sign userOperation and attach signature
+        // Sign userOperation and attach signature
         userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOp, userOpHash, ownerPrivateKey, vm);
         userOp.signature = signature;
 
-        // 4. Set remainder of test case
+        // Set remainder of test case
         missingWalletFunds = 1096029019333521;
 
-        // 5. Fund deployer with ETH
-        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+        bundler = new Bundler();
     }
 
     /// @notice Validate that the WalletFactory deploys a smart wallet
     function testWalletDeploy() public {
         uint256 initialAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
+        uint256 initialBeneficiaryBalance = address(beneficiary).balance;
 
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
 
+        vm.expectRevert(abi.encodeWithSelector(IEntryPoint.FailedOp.selector, 0, "AA21 didn't pay prefund"));
+
+        // Deploy wallet through the bundler
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp);
         // Deploy wallet through the entryPoint
-        entryPoint.handleOps(userOps, beneficiary);
+        // entryPoint.handleOps(userOps, beneficiary);
+
+        assertEq(sender.code.length, 0, "sender.code.length != 0");
+
+        // Fund sender with ETH to pay prefund
+        vm.deal(sender, 1 ether);
+        // Deploy wallet through the bundler
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp);
+        // Deploy wallet through the entryPoint
+        // entryPoint.handleOps(userOps, beneficiary);
+
+        assertEq(sender.code.length > 0, true, "sender.code.length == 0");
 
         // Verify wallet was deployed as expected
         address expectedWalletAddress =
@@ -92,12 +107,15 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
-        uint256 codeSize = expectedWalletAddress.code.length;
-        assertGt(codeSize, 0);
-        assertTrue(deployedWallet.isOwner(walletOwner));
+        assertEq(address(sender), address(expectedWalletAddress));
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
+        assertEq(deployedWallet.nonce(), 1);
+        assertTrue(deployedWallet.isOwner(walletOwner));
 
         uint256 finalAccountDepositBalance = entryPoint.balanceOf(userOp.sender);
         assertGt(finalAccountDepositBalance, initialAccountDepositBalance);
+
+        uint256 finalBeneficiaryBalance = address(beneficiary).balance;
+        assertEq(finalBeneficiaryBalance > initialBeneficiaryBalance, true, "beneficiary didn't receive payment");
     }
 }
