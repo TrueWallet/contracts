@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IModule} from "src/interfaces/IModule.sol";
 import {IModuleManager} from "src/interfaces/IModuleManager.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 import {ModuleManagerErrors} from "src/common/Errors.sol";
 
 /// @title Base Module - provides basic functionalities for initializing and deinitializing a wallet modules.

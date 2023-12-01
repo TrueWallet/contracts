@@ -4,8 +4,8 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
-import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
+import {IWalletFactory} from "src/interfaces/IWalletFactory.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
@@ -69,9 +69,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         // 3. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(
-                walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt
-            )
+            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
         );
         userOp.initCode = initCode;
 

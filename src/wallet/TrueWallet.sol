@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 import {AccountStorage} from "src/libraries/AccountStorage.sol";
 import {LogicUpgradeControl} from "src/utils/LogicUpgradeControl.sol";
 import {TokenCallbackHandler} from "src/callback/TokenCallbackHandler.sol";
@@ -65,10 +65,7 @@ contract TrueWallet is
     /// @param _entryPoint trused entrypoint
     /// @param _owner wallet sign key address
     /// @param _modules The list of encoded modules to be added and its associated initialization data.
-    function initialize(address _entryPoint, address _owner, bytes[] calldata _modules)
-        public
-        initializer
-    {
+    function initialize(address _entryPoint, address _owner, bytes[] calldata _modules) public initializer {
         if (_entryPoint == address(0) || _owner == address(0)) {
             revert ZeroAddressProvided();
         }

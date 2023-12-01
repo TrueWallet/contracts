@@ -20,7 +20,6 @@ contract DeployWalletFactoryScript is Script {
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
         walletImplementaion = MumbaiConfig.WALLET_IMPL;
-        factory_ = MumbaiConfig.FACTORY;
     }
 
     function run() public {

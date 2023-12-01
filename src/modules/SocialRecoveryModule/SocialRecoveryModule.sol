@@ -5,7 +5,7 @@ import {ISocialRecoveryModule, GuardianInfo, PendingGuardianEntry, RecoveryEntry
 import {BaseModule} from "../BaseModule.sol";
 import {AddressLinkedList} from "src/libraries/AddressLinkedList.sol";
 import {IERC1271} from "openzeppelin-contracts/interfaces/IERC1271.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 
 /**
  * @title SocialRecoveryModule
@@ -293,7 +293,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     }
 
     /// @notice Executes a pending recovery operation if all conditions are met.
-    /// @dev This function will revert if the guardian hash is set and there are guardians present, 
+    /// @dev This function will revert if the guardian hash is set and there are guardians present,
     /// if the recovery period is still pending, or if there are not enough guardian approvals.
     /// It delegates the actual execution to the `_executeRecovery` internal function.
     /// @param _wallet The address of the wallet for which to execute the recovery operation.

@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IModule} from "../interfaces/IModule.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
-import {IWallet} from "../wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 import {ModuleManagerErrors} from "../common/Errors.sol";
 
 /// @title Base Module - provides basic functionalities for initializing and deinitializing a wallet modules.
@@ -24,7 +24,7 @@ abstract contract BaseModule is IModule, ModuleManagerErrors {
                 if (!IWallet(_sender).isAuthorizedModule(address(this))) {
                     revert ModuleNotAuthorized();
                 }
-            } 
+            }
             _init(data);
             emit ModuleInit(_sender);
         }
