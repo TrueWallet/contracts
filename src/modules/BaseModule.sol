@@ -12,18 +12,15 @@ abstract contract BaseModule is IModule, ModuleManagerErrors {
     event ModuleInit(address indexed wallet);
     /// @dev Emitted when a module is de-initialized for a wallet.
     event ModuleDeInit(address indexed wallet);
-
+    
     /// @notice Initializes the module for the sender's wallet with provided data.
     /// @dev Only authorized and not previously initialized modules can perform this action.
     /// @param data Initialization data.
     function walletInit(bytes calldata data) external {
         address _sender = sender();
         if (!inited(_sender)) {
-            // add module after wallet deployment
-            if (_sender.code.length > 0) {
-                if (!IWallet(_sender).isAuthorizedModule(address(this))) {
-                    revert ModuleNotAuthorized();
-                }
+            if (!IWallet(_sender).isAuthorizedModule(address(this))) {
+                revert ModuleNotAuthorized();
             }
             _init(data);
             emit ModuleInit(_sender);
