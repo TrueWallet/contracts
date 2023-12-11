@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {IWallet} from "src/interfaces/IWallet.sol";
 import {IWalletFactory} from "src/interfaces/IWalletFactory.sol";
+import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {Bundler} from "test/mocks/protocol/Bundler.sol";
@@ -114,5 +115,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
 
         uint256 finalBeneficiaryBalance = address(beneficiary).balance;
         assertEq(finalBeneficiaryBalance > initialBeneficiaryBalance, true, "beneficiary didn't receive payment");
+
+        assertTrue(SecurityControlModule(securityModule).walletInitSeed(address(deployedWallet)) > 0);
     }
 }

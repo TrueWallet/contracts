@@ -49,9 +49,9 @@ contract Bundler is Test {
         UserOperation[] memory userOperations = new UserOperation[](1);
         userOperations[0] = userOp;
         // address payable beneficiary = payable(makeAddr("beneficiary"));
-        uint256 gas_before = gasleft();
+        // uint256 gas_before = gasleft();
         entryPoint.handleOps(userOperations, payable(msg.sender)); //beneficiary
-        uint256 gas_after = gasleft();
-        console.log("entryPoint.handleOps => gas: ", gas_before - gas_after);
+        // uint256 gas_after = gasleft();
+        // console.log("entryPoint.handleOps => gas: ", gas_before - gas_after);
     }
 }
