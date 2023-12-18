@@ -501,7 +501,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @return threshold The new threshold to be set after the update.
     /// @return guardianHash The new guardian hash to be set after the update.
     /// @return guardians The list of new guardians to be set after the update.
-    function pendingGuarian(address _wallet) public view returns (uint256, uint256, bytes32, address[] memory) {
+    function pendingGuardian(address _wallet) public view returns (uint256, uint256, bytes32, address[] memory) {
         return (
             walletPendingGuardian[_wallet].pendingUntil,
             walletPendingGuardian[_wallet].threshold,

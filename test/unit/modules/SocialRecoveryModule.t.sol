@@ -276,7 +276,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2);
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold2);
@@ -330,7 +330,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     function testCanReUpdateGuardians() public {
         testUpdatePendingGuardians();
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold2);
         assertEq(bytes32(guardianHash2), bytes32(0));
@@ -344,7 +344,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.updatePendingGuardians(new address[](0), threshold3, guardianHash3);
 
         (pendingUntil, pendingThreshold, pendingGuardianHash, guardiansUpdated) =
-            socialRecoveryModule.pendingGuarian(address(wallet));
+            socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold3);
@@ -359,7 +359,7 @@ contract SocialRecoveryModuleUnitTest is Test {
     function testProcessGuardianUpdates() public {
         testUpdatePendingGuardians();
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold2);
@@ -394,7 +394,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.cancelSetGuardians(address(wallet));
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, 0);
         assertEq(pendingThreshold, 0);
@@ -408,7 +408,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.cancelSetGuardians(address(wallet));
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, 0);
         assertEq(pendingThreshold, 0);
@@ -423,7 +423,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.cancelSetGuardians(address(wallet));
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold2);
@@ -437,7 +437,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.cancelSetGuardians(address(wallet));
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, 0);
         assertEq(pendingThreshold, 0);
@@ -874,7 +874,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.updatePendingGuardians(guardians3, threshold, guardianHash);
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
-        = socialRecoveryModule.pendingGuarian(address(wallet));
+        = socialRecoveryModule.pendingGuardian(address(wallet));
 
         assertEq(pendingUntil, block.timestamp + 2 days);
         assertEq(pendingThreshold, threshold);
