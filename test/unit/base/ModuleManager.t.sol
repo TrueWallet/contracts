@@ -3,27 +3,33 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 import {ModuleManagerErrors} from "src/common/Errors.sol";
 import {MockModuleFailedEmptySelector} from "test/mocks/MockModuleFailedEmptySelector.sol";
 import {MockModuleFailedNotSupportInterface} from "test/mocks/MockModuleFailedNotSupportInterface.sol";
 
 contract ModuleManagerUnitTest is Test {
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
     EntryPoint entryPoint;
-    address ownerAddress = 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955; // anvil account (7)
-    uint256 ownerPrivateKey = uint256(0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356);
+
+    address adminAddress;
+    uint256 adminPrivateKey;
+    address walletOwner;
+    uint256 walletPrivateKey;
     uint256 chainId = block.chainid;
 
     MockModule module;
     bytes[] modules = new bytes[](1);
     uint32 walletInitValue;
     bytes4 constant functionSign = bytes4(keccak256("transferETH(address,uint256)"));
+    bytes32 salt;
 
     address user = makeAddr("user");
 
@@ -34,6 +40,9 @@ contract ModuleManagerUnitTest is Test {
     event ModuleRemovedWithError(address indexed module);
 
     function setUp() public {
+        (adminAddress, adminPrivateKey) = makeAddrAndKey("adminAddress");
+        (walletOwner, walletPrivateKey) = makeAddrAndKey("walletOwner");
+
         entryPoint = new EntryPoint();
         walletImpl = new TrueWallet();
 
@@ -42,11 +51,9 @@ contract ModuleManagerUnitTest is Test {
         bytes memory initData = abi.encode(uint32(walletInitValue));
         modules[0] = abi.encodePacked(address(module), initData);
 
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
-
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, modules, salt);
     }
 
     function encodeError(string memory error) internal pure returns (bytes memory encoded) {
@@ -54,7 +61,7 @@ contract ModuleManagerUnitTest is Test {
     }
 
     function testSetupState() public {
-        assertTrue(wallet.isOwner(ownerAddress));
+        assertTrue(wallet.isOwner(walletOwner));
         assertEq(address(wallet.entryPoint()), address(entryPoint));
         assertTrue(wallet.isAuthorizedModule(address(module)));
 

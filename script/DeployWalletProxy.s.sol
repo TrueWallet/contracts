@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 
@@ -24,7 +24,7 @@ contract DeployWalletProxyScript is Script {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         factory = TrueWalletFactory(MumbaiConfig.FACTORY);
-        entryPoint = MumbaiConfig.ENTRY_POINT;
+        entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
         securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
         // mock

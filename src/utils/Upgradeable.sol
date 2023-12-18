@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import "openzeppelin-contracts/utils/Address.sol";
-
+/**
+ * @title Upgradeable Smart Contract
+ * @dev This abstract contract provides a basic framework for upgradeable contracts using the EIP-1967 standard.
+ *      It includes functionality to get and set the implementation address, and to upgrade the contract.
+ *      EIP-1967 is a standard for handling proxy contracts and their implementation addresses in a predictable manner.
+ */
 abstract contract Upgradeable {
     /**
      * @dev Storage slot with the address of the current implementation.
      * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
      * validated in the constructor.
      */
-    bytes32 internal constant _IMPLEMENTATION_SLOT =
-        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     /**
      * @dev @dev The mask of the lower 160 bits for addresses.
@@ -26,11 +29,7 @@ abstract contract Upgradeable {
     /**
      * @dev Returns the current implementation address.
      */
-    function _getImplementation()
-        internal
-        view
-        returns (address implementation)
-    {
+    function _getImplementation() internal view returns (address implementation) {
         assembly {
             implementation := sload(_IMPLEMENTATION_SLOT)
         }
@@ -40,7 +39,7 @@ abstract contract Upgradeable {
      * @dev Stores a new address in the EIP1967 implementation slot.
      */
     function _setImplementation(address newImplementation) private {
-        require(Address.isContract(newImplementation));
+        require(newImplementation.code.length > 0);
         assembly {
             sstore(_IMPLEMENTATION_SLOT, newImplementation)
         }
@@ -90,21 +89,25 @@ abstract contract Upgradeable {
      *
      * Emits an {Upgraded} event.
      */
-    function _upgradeToAndCall(
-        address newImplementation,
-        bytes memory data
-    ) internal {
+    function _upgradeToAndCall(address newImplementation, bytes memory data) internal {
         _upgradeTo(newImplementation);
         if (data.length > 0) {
-            Address.functionDelegateCall(newImplementation, data);
-        }
-    }
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                // Call the implementation using delegatecall
+                let result := delegatecall(
+                    gas(),              // forward all available gas
+                    newImplementation,  // target address (new implementation)
+                    add(data, 0x20),    // pointer to data, skipping the length field
+                    mload(data),        // size of data
+                    0,                  // we don't use the return value, so no need for output buffer
+                    0                   // output size is zero
+                )
 
-    function _initialize(
-        address newImplementation,
-        bytes memory data
-    ) internal {
-        _upgradeToUnsafe(newImplementation);
-        Address.functionDelegateCall(newImplementation, data);
+                // Check if the delegatecall was successful, revert otherwise
+                switch result
+                case 0 { revert(0, 0) }
+            }
+        }
     }
 }

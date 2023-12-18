@@ -4,15 +4,15 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
-import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
+import {IWalletFactory} from "src/interfaces/IWalletFactory.sol";
 import {ITruePaymaster} from "src/paymaster/ITruePaymaster.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract ETHTransferWithPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 

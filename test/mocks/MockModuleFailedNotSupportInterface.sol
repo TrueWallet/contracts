@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "./MockBaseModuleFailed.sol";
-import "src/wallet/IWallet.sol";
+import "src/interfaces/IWallet.sol";
 
 contract MockModuleFailedNotSupportInterface is MockBaseModuleFailed {
     mapping(address => bool) public isInit;

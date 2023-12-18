@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {BaseModule} from "../BaseModule.sol";
 import {ITrueContractManager} from "../../registry/ITrueContractManager.sol";
 import {IModuleManager} from "../../interfaces/IModuleManager.sol";
-import {IWallet} from "../../wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 
 /// @title SecurityControlModule
 /// @dev A module that provides enhanced security controls for adding and removing modules and executing specific functions on a initialized wallet.

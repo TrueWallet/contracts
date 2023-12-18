@@ -5,15 +5,21 @@ import "forge-std/Test.sol";
 
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {TrueContractManager, ITrueContractManager} from "src/registry/TrueContractManager.sol";
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint, UserOperation} from "test/mocks/protocol/EntryPoint.sol";
 import {MockModule2} from "../../mocks/MockModule2.sol";
 import {MockModule2FailedInvalidSelector} from "../../mocks/MockModule2FailedInvalidSelector.sol";
+
+import {Bundler} from "test/mocks/protocol/Bundler.sol";
+import {createSignature} from "test/utils/createSignature.sol";
+import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 
 contract SecurityControlModuleUnitTest is Test {
     SecurityControlModule securityControlModule;
     TrueContractManager contractManager;
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
@@ -29,6 +35,7 @@ contract SecurityControlModuleUnitTest is Test {
     bytes[] initModules = new bytes[](1);
     uint32 moduleInitData = 1;
     bytes moduleAddressAndInitData;
+    bytes32 salt;
 
     event Execute(address target, bytes data, address sender);
 
@@ -49,12 +56,10 @@ contract SecurityControlModuleUnitTest is Test {
         walletImpl = new TrueWallet();
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule), initData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
-        );
 
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
 
         module = new MockModule2();
 
@@ -188,12 +193,8 @@ contract SecurityControlModuleUnitTest is Test {
         walletImpl = new TrueWallet();
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule2), initData);
-        bytes memory data = abi.encodeCall(
-            TrueWallet.initialize, (address(entryPoint), address(walletOwner), initModules)
-        );
 
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
 
         // test
         module = new MockModule2();
@@ -284,5 +285,52 @@ contract SecurityControlModuleUnitTest is Test {
         assertEq(_modules.length, 2);
         assertTrue(wallet.isAuthorizedModule(address(module)));
         assertTrue(module.isInit(address(wallet)));
+    }
+
+    function testSetupModuleViaBundler() public {
+        // this test has own setup
+        bytes[] memory modules = new bytes[](1);
+        bytes memory initData = abi.encode(uint32(1));
+        modules[0] = abi.encodePacked(securityControlModule, initData);
+        salt = keccak256(abi.encodePacked(uint256(777)));
+
+        address calculatedAddress = factory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+
+        UserOperation memory userOp = UserOperation({
+            sender: calculatedAddress,
+            nonce: 0,
+            initCode: "",
+            callData: "",
+            callGasLimit: 2_000_000,
+            verificationGasLimit: 3_000_000,
+            preVerificationGas: 1_000_000,
+            maxFeePerGas: 10_000,
+            maxPriorityFeePerGas: 10_000,
+            paymasterAndData: hex"",
+            signature: hex""
+        });
+
+        bytes memory initCode = abi.encodePacked(
+            abi.encodePacked(address(factory)),
+            abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+        );
+        userOp.initCode = initCode;
+
+        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
+        bytes memory signature = createSignature(userOp, userOpHash, walletPrivateKey, vm);
+        userOp.signature = signature;
+
+        vm.deal(calculatedAddress, 1 ether);
+        Bundler bundler = new Bundler();
+        address beneficiary = makeAddr("beneficiary");
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp);
+
+        TrueWallet deployedWallet = TrueWallet(payable(address(calculatedAddress)));
+
+        assertEq(deployedWallet.entryPoint(), address(entryPoint));
+        assertEq(deployedWallet.nonce(), 1);
+        assertTrue(deployedWallet.isOwner(walletOwner));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
     }
 }

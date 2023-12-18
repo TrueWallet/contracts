@@ -4,14 +4,16 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {TrueWalletFactory, WalletErrors} from "src/wallet/TrueWalletFactory.sol";
 import {Paymaster} from "src/paymaster/Paymaster.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletProxy} from "src/wallet/TrueWalletProxy.sol";
-import {EntryPoint} from "test/mocks/entrypoint/EntryPoint.sol";
+import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {IPaymaster} from "src/interfaces/IPaymaster.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 
 contract PaymasterUnitTest is Test {
+    TrueWalletFactory factory;
     TrueWallet wallet;
     TrueWallet walletImpl;
     TrueWalletProxy proxy;
@@ -25,6 +27,7 @@ contract PaymasterUnitTest is Test {
 
     MockModule mockModule;
     bytes[] modules = new bytes[](1);
+    bytes32 salt;
 
     function setUp() public {
         entryPoint = new EntryPoint();
@@ -34,12 +37,10 @@ contract PaymasterUnitTest is Test {
         mockModule = new MockModule();
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(mockModule, initData);
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
 
-        bytes memory data =
-            abi.encodeCall(TrueWallet.initialize, (address(entryPoint), ownerAddress, modules));
-
-        proxy = new TrueWalletProxy(address(walletImpl), data);
-        wallet = TrueWallet(payable(address(proxy)));
+        factory = new TrueWalletFactory(address(walletImpl), address(ownerAddress), address(entryPoint));
+        wallet = factory.createWallet(address(entryPoint), ownerAddress, modules, salt);
     }
 
     function testSetupState() public {

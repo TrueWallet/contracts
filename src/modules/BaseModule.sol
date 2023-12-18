@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {IModule} from "../interfaces/IModule.sol";
 import {IModuleManager} from "../interfaces/IModuleManager.sol";
-import {IWallet} from "../wallet/IWallet.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
 import {ModuleManagerErrors} from "../common/Errors.sol";
 
 /// @title Base Module - provides basic functionalities for initializing and deinitializing a wallet modules.
@@ -12,19 +12,16 @@ abstract contract BaseModule is IModule, ModuleManagerErrors {
     event ModuleInit(address indexed wallet);
     /// @dev Emitted when a module is de-initialized for a wallet.
     event ModuleDeInit(address indexed wallet);
-
+    
     /// @notice Initializes the module for the sender's wallet with provided data.
     /// @dev Only authorized and not previously initialized modules can perform this action.
     /// @param data Initialization data.
     function walletInit(bytes calldata data) external {
         address _sender = sender();
         if (!inited(_sender)) {
-            // add module after wallet deployment
-            if (_sender.code.length > 0) {
-                if (!IWallet(_sender).isAuthorizedModule(address(this))) {
-                    revert ModuleNotAuthorized();
-                }
-            } 
+            if (!IWallet(_sender).isAuthorizedModule(address(this))) {
+                revert ModuleNotAuthorized();
+            }
             _init(data);
             emit ModuleInit(_sender);
         }

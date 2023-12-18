@@ -14,7 +14,10 @@ import {WalletErrors} from "../common/Errors.sol";
 /// @dev This contract allows for the creation of TrueWallet instances using the CREATE2 opcode for predictable addresses.
 contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Address of the wallet implementation contract.
-    address public immutable walletImplementation;
+    /// @dev This private immutable variable stores the address of the wallet implementation contract.
+    ///      The address is converted from address to uint256 to fit the specific storage optimization needs.
+    ///      This address is used when creating new wallet instances or when referring to the wallet logic.
+    uint256 private immutable _WALLETIMPL;
 
     /// @notice Address of the entry point contract.
     address public immutable entryPoint;
@@ -22,19 +25,15 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Event emitted when a new TrueWallet is created.
     event TrueWalletCreation(TrueWallet wallet);
 
-    /// @param _walletImplementation Address of the wallet implementation contract.
+    /// @dev Initializes the factory with the wallet implementation and entry point addresses.
+    /// @param _walletImpl Address of the wallet implementation contract.
     /// @param _owner Address of the owner of this factory contract.
     /// @param _entryPoint Address of the entry point contract.
-    constructor(
-        address _walletImplementation,
-        address _owner,
-        address _entryPoint
-    ) Ownable() Pausable() {
-        if (_walletImplementation == address(0) || _owner == address(0) || _entryPoint == address(0)) {
+    constructor(address _walletImpl, address _owner, address _entryPoint) Ownable() Pausable() {
+        if (_walletImpl == address(0) || _owner == address(0) || _entryPoint == address(0)) {
             revert ZeroAddressProvided();
         }
-
-        walletImplementation = _walletImplementation;
+        _WALLETIMPL = uint256(uint160(_walletImpl));
         entryPoint = _entryPoint;
     }
 
@@ -44,46 +43,32 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @param _modules Array of initial module addresses for the wallet.
     /// @param _salt A salt value used in the CREATE2 opcode for deterministic address generation.
     /// @return proxy The address of the newly created TrueWallet contract.
-    function createWallet(
-        address _entryPoint,
-        address _walletOwner,
-        bytes[] calldata _modules,
-        bytes32 _salt
-    ) external whenNotPaused returns (TrueWallet proxy) {
-        address walletAddress = getWalletAddress(
-            _entryPoint,
-            _walletOwner,
-            _modules,
-            _salt
-        );
+    function createWallet(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+        external
+        whenNotPaused
+        returns (TrueWallet proxy)
+    {
+        bytes memory deploymentData =
+            abi.encodePacked(type(TrueWalletProxy).creationCode, _WALLETIMPL);
+        bytes32 salt = _calcSalt(_entryPoint, _walletOwner, _modules, _salt);
 
-        bytes memory deployInitData = abi.encodePacked(
-            type(TrueWalletProxy).creationCode,
-            abi.encode(
-                walletImplementation,
-                abi.encodeCall(
-                    TrueWallet.initialize,
-                    (_entryPoint, _walletOwner, _modules)
-                )
-            )
-        );
-
-        // Determine if a wallet is already deployed at this address, if so return that
-        uint256 codeSize = walletAddress.code.length;
-        if (codeSize > 0) {
-            return TrueWallet(payable(walletAddress));
-        } else {
-            // Deploy and initialize the wallet
-            /// @solidity memory-safe-assembly
-            assembly {
-                proxy := create2(0x0, add(deployInitData, 0x20), mload(deployInitData), _salt)
-            }
-            if (address(proxy) == address(0)) {
-                revert WalletFactory__Create2CallFailed();
-            }
-
-            emit TrueWalletCreation(proxy);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            proxy := create2(0x0, add(deploymentData, 0x20), mload(deploymentData), salt)
         }
+
+        if (address(proxy) == address(0)) {
+            revert();
+        }
+
+        bytes memory initializer = getInitializer(_entryPoint, _walletOwner, _modules);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            let succ := call(gas(), proxy, 0, add(initializer, 0x20), mload(initializer), 0, 0)
+            if eq(succ, 0) { revert(0, 0) }
+        }
+
+        emit TrueWalletCreation(proxy);
     }
 
     /// @notice Computes the deterministic address for a potential wallet deployment using CREATE2.
@@ -92,25 +77,57 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @param _walletOwner The owner address for the new wallet.
     /// @param _modules Array of initial module addresses for the wallet.
     /// @param _salt A salt value used in the CREATE2 opcode for deterministic address generation.
-    /// @return Address of the wallet that would be created using the provided parameters.
-    function getWalletAddress(
-        address _entryPoint,
-        address _walletOwner,
-        bytes[] calldata _modules,
-        bytes32 _salt
-    ) public view returns (address) {
-        bytes memory deployInitData = abi.encodePacked(
-            type(TrueWalletProxy).creationCode,
-            abi.encode(
-                walletImplementation,
-                abi.encodeCall(
-                    TrueWallet.initialize,
-                    (_entryPoint, _walletOwner, _modules)
-                )
-            )
-        );
+    /// @return proxy address of the wallet that would be created using the provided parameters.
+    function getWalletAddress(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+        public
+        view
+        returns (address proxy)
+    {
+        bytes memory deploymentData =
+            abi.encodePacked(type(TrueWalletProxy).creationCode, _WALLETIMPL);
+        bytes32 salt = _calcSalt(_entryPoint, _walletOwner, _modules, _salt);
+        proxy = Create2.computeAddress(salt, keccak256(deploymentData));
+    }
 
-        return Create2.computeAddress(bytes32(_salt), keccak256(deployInitData));
+    /// @notice Returns the wallet implementation address.
+    /// @return Address of the wallet implementation.
+    function walletImplementation() external view returns (address) {
+        return address(uint160(_WALLETIMPL));
+    }
+
+    /// @notice Calculates the salt value used in the deterministic address generation.
+    /// @dev This is an internal function used to compute the salt by hashing initialization parameters together with the provided _salt.
+    function _calcSalt(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+        internal
+        pure
+        returns (bytes32 salt)
+    {
+        return keccak256(abi.encodePacked(keccak256(getInitializer(_entryPoint, _walletOwner, _modules)), _salt));
+    }
+
+    /// @notice Constructs the initializer payload for wallet creation.
+    /// @dev This function prepares the data required to initialize a new wallet, encoding it for the constructor.
+    function getInitializer(address _entryPoint, address _walletOwner, bytes[] calldata _modules)
+        internal
+        pure
+        returns (bytes memory initializer)
+    {
+        return abi.encodeWithSignature("initialize(address,address,bytes[])", _entryPoint, _walletOwner, _modules);
+    }
+
+    /// @notice Returns the proxy's creation code.
+    /// @dev This public function is used to access the creation code of the TrueWalletProxy contract.
+    ///      It's primarily utilized by truewalletlib to calculate the TrueWallet address.
+    /// @return A byte array representing the proxy's creation code.
+    function proxyCode() external pure returns (bytes memory) {
+        return _proxyCode();
+    }
+
+    /// @notice Retrieves the creation code of the TrueWalletProxy contract.
+    /// @dev This private function provides the low-level creation code used by the `proxyCode` function.
+    /// @return A byte array containing the creation code of the TrueWalletProxy contract.
+    function _proxyCode() private pure returns (bytes memory) {
+        return type(TrueWalletProxy).creationCode;
     }
 
     /// @notice Deposit funds into the EntryPoint associated with the factory.
@@ -121,7 +138,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Withdraw funds from the EntryPoint.
     /// @param _withdrawAddress The address to send withdrawn funds to.
     /// @param _withdrawAmount The amount of funds to withdraw.
-    function withdrawTo(address payable _withdrawAddress, uint256 _withdrawAmount) public onlyOwner{
+    function withdrawTo(address payable _withdrawAddress, uint256 _withdrawAmount) public onlyOwner {
         IEntryPoint(entryPoint).withdrawTo(_withdrawAddress, _withdrawAmount);
     }
 

@@ -4,15 +4,15 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
-import {IWallet} from "src/wallet/IWallet.sol";
-import {IWalletFactory} from "src/wallet/IWalletFactory.sol";
+import {IWallet} from "src/interfaces/IWallet.sol";
+import {IWalletFactory} from "src/interfaces/IWalletFactory.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC721} from "../mocks/MockERC721.sol";
 
 contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
 
     address payable public bundler = payable(MumbaiConfig.BENEFICIARY);
@@ -38,7 +38,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
-        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         vm.deal(wallet, 1 ether);
 
         // 1. Deploy a MockERC721 and fund smart wallet with token
@@ -64,9 +64,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         // 3. Set initCode, to trigger wallet deploy
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(
-                walletFactory.createWallet.selector, address(entryPoint), walletOwner, upgradeDelay, modules, salt
-            )
+            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
         );
         userOp.initCode = initCode;
 
@@ -94,8 +92,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
     /// The AA wallet is only actually deployed when you send the first transaction with the wallet.
     function testWalletDeployAndTokenTransfer() public {
         // Verify wallet was not deployed yet
-        address expectedWalletAddress =
-            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -122,8 +119,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         assertEq(entryPoint.getNonce(address(wallet), 0), 1);
 
         // Verify wallet was deployed as expected
-        expectedWalletAddress =
-            walletFactory.getWalletAddress(address(entryPoint), walletOwner, upgradeDelay, modules, salt);
+        expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
         deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address after deployment
