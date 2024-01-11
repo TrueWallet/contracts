@@ -8,6 +8,7 @@ import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityC
 import {SocialRecoveryModule} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
+import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
 
 contract DeployFullScript is Script {
@@ -16,6 +17,7 @@ contract DeployFullScript is Script {
     SocialRecoveryModule public recoveryModule;
     TrueWallet public walletImplementation;
     TrueWalletFactory public factory;
+    address public entryPoint;
 
     address public owner;
     uint256 public deployerPrivateKey;
@@ -23,6 +25,7 @@ contract DeployFullScript is Script {
     function setUp() public {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
+        entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
     }
 
     function run() public {
@@ -37,7 +40,8 @@ contract DeployFullScript is Script {
         contractManager.add(modules);
 
         walletImplementation = new TrueWallet();
-        factory = new TrueWalletFactory(address(walletImplementation), owner, 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789);
+        factory = new TrueWalletFactory(address(walletImplementation), owner, entryPoint);
+        factory.addStake{value: 1 ether}(84600);
 
         console.log("==securityModule addr=%s", address(securityModule));
         console.log("==recoveryModule addr=%s", address(recoveryModule));

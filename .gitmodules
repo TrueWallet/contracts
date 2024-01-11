@@ -9,6 +9,7 @@
 	path = lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
 	branch = v4.8.2
-[submodule "lib/account-abstraction"]
+[submodule "account-abstraction"]
 	path = lib/account-abstraction
-	url = https://github.com/lib/account-abstraction
+	url = https://github.com/eth-infinitism/account-abstraction
+	branch = ver0.6.0
