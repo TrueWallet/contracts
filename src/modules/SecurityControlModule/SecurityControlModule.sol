@@ -21,9 +21,21 @@ contract SecurityControlModule is BaseModule {
     error SecurityControlModule__UnsupportedSelector(bytes4 selector);
     /// @dev Throws when there's an issue executing a function.
     error SecurityControlModule__ExecuteError(address target, bytes data, address sender, bytes returnData);
+    /// @dev Throws when attempting to redo the basic initialization for a wallet that has already been initialized.
+    error SecurityControlModule__BasicInitAlreadyDone();
+    /// @dev Throws when attempting operations requiring basic initialization that hasn't been completed for a wallet.
+    error SecurityControlModule__BasicInitNotDone();
+    /// @dev Throws when attempting to redo the full initialization for a wallet that has already completed full initialization.
+    error SecurityControlModule__FullInitAlreadyDone();
 
     /// @dev The contract manager that checks if a module is trusted.
     ITrueContractManager public immutable trueContractManager;
+
+    /// @dev Mapping to track whether a basic initialization has been done for each wallet address.
+    mapping(address => bool) public _basicInitialized;
+
+    /// @dev Mapping to track whether a full initialization has been done for each wallet address.
+    mapping(address => bool) public _fullInitialized;
 
     /// @dev Mapping to track initialization state for wallets.
     mapping(address wallet => uint256 seed) public walletInitSeed;
@@ -93,11 +105,31 @@ contract SecurityControlModule is BaseModule {
         return walletInitSeed[wallet] != 0;
     }
 
-    /// @dev Initializes the module for a wallet.
-    /// @param data Additional data (not used in this implementation).
+    /// @notice Internal function for basic initialization of the module.
+    /// @dev This function sets the initial state for the module associated with the caller.
+    ///      It should be invoked only once as part of the module's setup process.
+    ///      The function checks if the basic initialization for the caller (`_sender`) has already been completed to prevent re-initialization.
+    ///      The `data` parameter is not currently used but can be utilized for future extensions or additional initialization parameters.
+    /// @param data Additional initialization data; currently unused.
+    /// @custom:note This function is part of the two-step initialization process and is typically called automatically during module deployment.
     function _init(bytes calldata data) internal override {
         (data);
         address _sender = sender();
+        if (_basicInitialized[_sender]) revert SecurityControlModule__BasicInitAlreadyDone();
+        _basicInitialized[_sender] = true;
+    }
+
+    /// @notice Completes the full initialization of the module.
+    /// @dev This function should be called after the basic initialization has been done via `_init`.
+    ///      It finalizes the module setup by assigning a unique seed to the `walletInitSeed` mapping for the caller.
+    ///      This function can only be called once for each wallet to prevent re-initialization.
+    ///      It relies on the internal `sender()` function to determine the caller's address.
+    ///      Ensure that the `sender()` function accurately reflects the wallet's owner or authorized initializer in the context of your system.
+    function fullInit() external {
+        address _sender = sender();
+        if (!_basicInitialized[_sender]) revert SecurityControlModule__BasicInitNotDone();
+        if (_fullInitialized[_sender]) revert SecurityControlModule__FullInitAlreadyDone();
+        _fullInitialized[_sender] = true;
         walletInitSeed[_sender] = _newSeed();
     }
 
