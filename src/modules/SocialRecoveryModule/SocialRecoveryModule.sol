@@ -414,7 +414,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
     /// @notice Retrieves the guardian approval count for this particular recovery request at current nonce.
     /// @param _wallet The target wallet.
-    /// @param _newOwners The new owners' addressess.
+    /// @param _newOwners The new owners' addresses.
     /// @return approvalCount The wallet's current recovery request
     function getRecoveryApprovals(address _wallet, address[] memory _newOwners)
         public
@@ -439,7 +439,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @notice Retrieves specific guardian approval status a particular recovery request at current nonce.
     /// @param _guardian The guardian.
     /// @param _wallet The target wallet.
-    /// @param _newOwners The new owners' addressess.
+    /// @param _newOwners The new owners' addresses.
     /// @return approvalCount The wallet's current recovery request
     function hasGuardianApproved(address _guardian, address _wallet, address[] calldata _newOwners)
         public
@@ -510,7 +510,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         );
     }
 
-    /// @dev Referece from gnosis safe validation.
+    /// @dev Reference from gnosis safe validation.
     /// @dev Validates a set of signatures for a given hash, ensuring they are from guardians.
     /// @param _wallet The address of the wallet to check signatures for.
     /// @param _dataHash The hash of the data the signatures should correspond to.

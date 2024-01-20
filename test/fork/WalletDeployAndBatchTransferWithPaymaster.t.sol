@@ -93,7 +93,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         // 8. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
 
-        // 9. Deposite paymaster to pay for gas
+        // 9. Deposit paymaster to pay for gas
         vm.startPrank(address(MumbaiConfig.DEPLOYER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
@@ -137,8 +137,8 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         uint256 initialWalletETHBalance = address(wallet).balance;
         assertEq(initialWalletETHBalance, 1 ether);
         uint256 initialRecipientETHBalance = address(recipient).balance;
-        uint256 initialPaymasterDeposite = paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, 0);
+        uint256 initialPaymasterDeposit = paymaster.getDeposit();
+        assertGt(initialPaymasterDeposit, 0);
         uint256 initialBundlerETHBalance = address(bundler).balance;
 
         UserOperation[] memory userOps = new UserOperation[](1);
@@ -158,16 +158,16 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, paymaster.getDeposit());
+        uint256 gasFeePaymasterPayed = initialPaymasterDeposit - paymaster.getDeposit();
+        assertGt(initialPaymasterDeposit, paymaster.getDeposit());
 
         // Verify bundler balance received gas fee
         uint256 gasFeeBundlerCompensated = address(bundler).balance - initialBundlerETHBalance;
-        assertEq(gasFeeBundlerCompensated, gasFeePaymasterPayd);
+        assertEq(gasFeeBundlerCompensated, gasFeePaymasterPayed);
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance - etherTransferAmount;
-        assertEq(gasFeeWalletPayd, 0);
+        uint256 gasFeeWalletPayed = initialWalletETHBalance - address(wallet).balance - etherTransferAmount;
+        assertEq(gasFeeWalletPayed, 0);
 
         // Verify the wallet and recipient balances after deployment
         assertEq(address(wallet).balance, initialWalletETHBalance - etherTransferAmount);

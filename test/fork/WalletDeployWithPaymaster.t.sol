@@ -76,7 +76,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         // 6. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
 
-        // 7. Deposite paymaster to pay for gas
+        // 7. Deposit paymaster to pay for gas
         vm.startPrank(address(MumbaiConfig.DEPLOYER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
@@ -86,8 +86,8 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
     /// @notice Validate that the WalletFactory deploys a smart wallet and Paymaster pays for gas
     function testWalletDeployWithPaymaster() public {
         uint256 initialWalletETHBalance = address(wallet).balance;
-        uint256 initialPaymasterDeposite = paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, 0);
+        uint256 initialPaymasterDeposit = paymaster.getDeposit();
+        assertGt(initialPaymasterDeposit, 0);
 
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
@@ -106,12 +106,12 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        // uint256 gasFeePaymasterPayd = initialPaymasterDeposite -
+        // uint256 gasFeePaymasterPayed = initialPaymasterDeposit -
         //     paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, paymaster.getDeposit());
+        assertGt(initialPaymasterDeposit, paymaster.getDeposit());
 
         // Verify smart contract wallet did not use it's gas deposit
-        uint256 gasFeeWalletPayd = initialWalletETHBalance - address(wallet).balance;
-        assertEq(gasFeeWalletPayd, 0);
+        uint256 gasFeeWalletPayed = initialWalletETHBalance - address(wallet).balance;
+        assertEq(gasFeeWalletPayed, 0);
     }
 }

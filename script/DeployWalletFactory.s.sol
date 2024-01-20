@@ -10,7 +10,7 @@ import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 contract DeployWalletFactoryScript is Script {
     TrueWalletFactory public factory;
     address public entryPoint;
-    address public walletImplementaion;
+    address public walletImplementation;
 
     address public owner;
     uint256 public deployerPrivateKey;
@@ -19,12 +19,12 @@ contract DeployWalletFactoryScript is Script {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
-        walletImplementaion = MumbaiConfig.WALLET_IMPL;
+        walletImplementation = MumbaiConfig.WALLET_IMPL;
     }
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
-        factory = new TrueWalletFactory(address(walletImplementaion), owner, entryPoint);
+        factory = new TrueWalletFactory(address(walletImplementation), owner, entryPoint);
         vm.stopBroadcast();
     }
 }

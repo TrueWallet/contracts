@@ -504,10 +504,10 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
 
-        uint256 notValitSalt = 24;
+        uint256 notValidSalt = 24;
         vm.prank(address(wallet2));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidGuardianHash.selector);
-        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValitSalt);
+        socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValidSalt);
     }
 
     // helper
@@ -584,7 +584,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         socialRecoveryModule.approveRecovery(address(walletNoRecoveryModule), newOwners);
     }
 
-    function testRevertsApproveRecoveryWhenUnrevealedAnonymosGuardians() public {
+    function testRevertsApproveRecoveryWhenUnrevealedAnonymousGuardians() public {
         testCanInitWithAnonymousGuardians();
         newOwners[0] = newOwner1;
         vm.prank(address(guardian1));

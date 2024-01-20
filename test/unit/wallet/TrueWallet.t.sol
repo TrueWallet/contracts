@@ -582,26 +582,26 @@ contract TrueWalletUnitTest is Test {
     }
 
     function testAddAndWithdrawDeposite() public {
-        assertEq(wallet.getDeposite(), 0);
+        assertEq(wallet.getDeposit(), 0);
 
-        wallet.addDeposite{value: 0.5 ether}();
+        wallet.addDeposit{value: 0.5 ether}();
 
-        assertEq(wallet.getDeposite(), 0.5 ether);
+        assertEq(wallet.getDeposit(), 0.5 ether);
 
         address notOwner = address(12);
         vm.prank(address(notOwner));
         vm.expectRevert(encodeError("InvalidOwner()"));
-        wallet.withdrawDepositeTo(payable(address(ownerAddress)), 0.3 ether);
-        assertEq(wallet.getDeposite(), 0.5 ether);
+        wallet.withdrawDepositTo(payable(address(ownerAddress)), 0.3 ether);
+        assertEq(wallet.getDeposit(), 0.5 ether);
 
         assertEq(address(notOwner).balance, 0);
         vm.startPrank(address(ownerAddress));
         vm.expectRevert("Withdraw amount too large");
-        wallet.withdrawDepositeTo(payable(address(notOwner)), 0.51 ether);
-        assertEq(wallet.getDeposite(), 0.5 ether);
+        wallet.withdrawDepositTo(payable(address(notOwner)), 0.51 ether);
+        assertEq(wallet.getDeposit(), 0.5 ether);
 
-        wallet.withdrawDepositeTo(payable(address(notOwner)), 0.3 ether);
+        wallet.withdrawDepositTo(payable(address(notOwner)), 0.3 ether);
         assertEq(address(notOwner).balance, 0.3 ether);
-        assertEq(wallet.getDeposite(), 0.2 ether);
+        assertEq(wallet.getDeposit(), 0.2 ether);
     }
 }

@@ -12,7 +12,7 @@ contract LogicUpgradeControl is ILogicUpgradeControl, Upgradeable, UpgradeWallet
     
     uint256 public constant upgradeDelay = 2 days;
 
-    /// @dev Returns Logic updgrade layout info
+    /// @dev Returns Logic upgrade layout info
     function logicUpgradeInfo() public view returns (ILogicUpgradeControl.UpgradeLayout memory) {
         ILogicUpgradeControl.UpgradeLayout memory layout = AccountStorage.layout().logicUpgrade;
         return layout;
