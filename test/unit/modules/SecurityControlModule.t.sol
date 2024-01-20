@@ -67,6 +67,9 @@ contract SecurityControlModuleUnitTest is Test {
         moduleAddressAndInitData = abi.encodeWithSelector(
             bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(module), initModuleData)
         );
+
+        vm.prank(address(wallet));
+        securityControlModule.fullInit();
     }
 
     function testSetupState() public {
@@ -402,4 +405,57 @@ contract SecurityControlModuleUnitTest is Test {
         assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
     }
 
+    function testRevertsFullSetupModuleViaBundlerAndDirectCall_IfBasicInitAlreadyDone() public {
+        testInitSetupModuleViaBundler();
+
+        assertTrue(securityControlModule._basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(beneficiary)); // negative -beneficiary - SecurityControlModule__BasicInitNotDone
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__BasicInitNotDone.selector));
+        securityControlModule.fullInit();
+
+        assertFalse(securityControlModule._fullInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+    }
+
+    function testRevertsFullSetupModuleViaBundlerAndDirectCall_IfBasicInitNotDone() public {
+        testInitSetupModuleViaBundler();
+
+        assertTrue(securityControlModule._basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule._fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+
+        vm.prank(address(beneficiary));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__BasicInitNotDone.selector));
+        securityControlModule.fullInit();
+
+        assertFalse(securityControlModule._fullInitialized(address(beneficiary)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
+
+    function testRevertsFullSetupModuleViaBundlerAndDirectCall_IfFullInitAlreadyDone() public {
+        testInitSetupModuleViaBundler();
+
+        assertTrue(securityControlModule._basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule._fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__FullInitAlreadyDone.selector));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule._fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
 }
