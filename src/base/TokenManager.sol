@@ -22,20 +22,20 @@ abstract contract TokenManager is OwnerAuth, WalletErrors {
     }
 
     /// @notice Emitted when ETH is transferred out of the wallet.
-    event TransferedETH(address indexed to, uint256 amount);
+    event TransferredETH(address indexed to, uint256 amount);
     /// @notice Emitted when ERC20 tokens are transferred out of the wallet.
-    event TransferedERC20(address token, address indexed to, uint256 amount);
+    event TransferredERC20(address token, address indexed to, uint256 amount);
     /// @notice Emitted when ERC721 tokens are transferred out of the wallet.
-    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event TransferredERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
     /// @notice Emitted when ERC1155 tokens are transferred out of the wallet.
-    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event TransferredERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /// @notice Transfer ETH out of the wallet.
     /// @param to The recipient's payable address.
     /// @param amount The amount of ETH to transfer.
     function transferETH(address payable to, uint256 amount) external authorized {
         SafeTransferLib.safeTransferETH(to, amount);
-        emit TransferedETH(to, amount);
+        emit TransferredETH(to, amount);
     }
 
     /// @notice Transfer ERC20 tokens out of the wallet. 
@@ -44,7 +44,7 @@ abstract contract TokenManager is OwnerAuth, WalletErrors {
     /// @param amount The amount of tokens to transfer.
     function transferERC20(address token, address to, uint256 amount) external authorized {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit TransferedERC20(token, to, amount);
+        emit TransferredERC20(token, to, amount);
     }
 
     /// @notice Transfer ERC721 tokens out of the wallet.
@@ -53,7 +53,7 @@ abstract contract TokenManager is OwnerAuth, WalletErrors {
     /// @param to The recipient's address.
     function transferERC721(address collection, uint256 tokenId, address to) external authorized {
         ERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit TransferedERC721(collection, tokenId, to);
+        emit TransferredERC721(collection, tokenId, to);
     }
 
     /// @notice Transfer ERC1155 tokens out of the wallet.
@@ -63,6 +63,6 @@ abstract contract TokenManager is OwnerAuth, WalletErrors {
     /// @param amount The amount of the token type to transfer.
     function transferERC1155(address collection, uint256 tokenId, address to, uint256 amount) external authorized {
         ERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
-        emit TransferedERC1155(collection, tokenId, amount, to);
+        emit TransferredERC1155(collection, tokenId, amount, to);
     }
 }

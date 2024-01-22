@@ -65,7 +65,7 @@ contract ETHTransferWithPaymasterEndToEndTest is Test {
         // 5. Fund deployer with ETH
         vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
 
-        // 6. Deposite paymaster to pay for gas
+        // 6. Deposit paymaster to pay for gas
         vm.startPrank(address(MumbaiConfig.DEPLOYER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
@@ -87,8 +87,8 @@ contract ETHTransferWithPaymasterEndToEndTest is Test {
         uint256 initialRecipientETHBalance = address(recipient).balance;
         uint256 initialWalletETHBalance = address(wallet).balance;
         uint256 initialBeneficiaryETHBalance = address(beneficiary).balance;
-        uint256 initialPaymasterDeposite = paymaster.getDeposit();
-        assertEq(initialPaymasterDeposite, 2 ether);
+        uint256 initialPaymasterDeposit = paymaster.getDeposit();
+        assertEq(initialPaymasterDeposit, 2 ether);
 
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;
@@ -96,21 +96,21 @@ contract ETHTransferWithPaymasterEndToEndTest is Test {
         // Transfer ether through the entryPoint
         entryPoint.handleOps(userOps, beneficiary);
 
-        // Verify ether transfered to recipient
+        // Verify ether transferred to recipient
         uint256 finalRecipientETHBalance = address(recipient).balance;
         assertEq(finalRecipientETHBalance, initialRecipientETHBalance + etherTransferAmount);
 
-        // Verify that all ether funds transfered from wallet
+        // Verify that all ether funds transferred from wallet
         uint256 finalWalletETHBalance = address(wallet).balance;
         assertEq(finalWalletETHBalance, initialWalletETHBalance - etherTransferAmount);
         assertEq(finalWalletETHBalance, 0);
 
         // Verify paymaster deposit on entryPoint was used to pay for gas
-        uint256 gasFeePaymasterPayd = initialPaymasterDeposite - paymaster.getDeposit();
-        assertGt(initialPaymasterDeposite, paymaster.getDeposit());
+        uint256 gasFeePaymasterPayed = initialPaymasterDeposit - paymaster.getDeposit();
+        assertGt(initialPaymasterDeposit, paymaster.getDeposit());
 
         // Verify beneficiary(bundler) balance received gas fee
         uint256 gasFeeBeneficiaryCompensated = address(beneficiary).balance - initialBeneficiaryETHBalance;
-        assertEq(gasFeeBeneficiaryCompensated, gasFeePaymasterPayd);
+        assertEq(gasFeeBeneficiaryCompensated, gasFeePaymasterPayed);
     }
 }

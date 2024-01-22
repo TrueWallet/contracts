@@ -6,7 +6,7 @@ import {IModuleManager} from "../interfaces/IModuleManager.sol";
 import {IWallet} from "src/interfaces/IWallet.sol";
 import {ModuleManagerErrors} from "../common/Errors.sol";
 
-/// @title Base Module - provides basic functionalities for initializing and deinitializing a wallet modules.
+/// @title Base Module - provides basic functionalities for initializing and de-initializing a wallet modules.
 abstract contract BaseModule is IModule, ModuleManagerErrors {
     /// @dev Emitted when a module is initialized for a wallet.
     event ModuleInit(address indexed wallet);

@@ -18,7 +18,7 @@ import {Authority} from "src/authority/Authority.sol";
 import {WalletErrors} from "src/common/Errors.sol";
 
 /// @title TrueWallet - Smart contract wallet compatible with ERC-4337
-/// @dev This contract provides functionality to execute AA (ERC-4337) UserOperetion
+/// @dev This contract provides functionality to execute AA (ERC-4337) UserOperation
 ///      It allows to receive and manage assets using the owner account of the smart contract wallet
 contract MockWalletV2 is
     IWallet,
@@ -67,7 +67,7 @@ contract MockWalletV2 is
     }
 
     /// @notice Initialize function to setup the true wallet contract
-    /// @param  _entryPoint trused entrypoint
+    /// @param  _entryPoint trusted entrypoint
     /// @param  _owner wallet sign key address
     /// @param _modules The list of encoded modules to be added and its associated initialization data.
     function initialize(address _entryPoint, address _owner, bytes[] calldata _modules) public initializer {
@@ -180,20 +180,20 @@ contract MockWalletV2 is
     /////////////////  TOKEN MANAGER ///////////////
 
     /// @notice Emitted when ETH is transferred out of the wallet.
-    event TransferedETH(address indexed to, uint256 amount);
+    event TransferredETH(address indexed to, uint256 amount);
     /// @notice Emitted when ERC20 tokens are transferred out of the wallet.
-    event TransferedERC20(address token, address indexed to, uint256 amount);
+    event TransferredERC20(address token, address indexed to, uint256 amount);
     /// @notice Emitted when ERC721 tokens are transferred out of the wallet.
-    event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+    event TransferredERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
     /// @notice Emitted when ERC1155 tokens are transferred out of the wallet.
-    event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+    event TransferredERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 
     /// @notice Transfer ETH out of the wallet.
     /// @param to The recipient's payable address.
     /// @param amount The amount of ETH to transfer.
     function transferETH(address payable to, uint256 amount) external {
         SafeTransferLib.safeTransferETH(to, amount);
-        emit TransferedETH(to, amount);
+        emit TransferredETH(to, amount);
     }
 
     /// @notice Transfer ERC20 tokens out of the wallet.
@@ -202,7 +202,7 @@ contract MockWalletV2 is
     /// @param amount The amount of tokens to transfer.
     function transferERC20(address token, address to, uint256 amount) external {
         SafeTransferLib.safeTransfer(ERC20(token), to, amount);
-        emit TransferedERC20(token, to, amount);
+        emit TransferredERC20(token, to, amount);
     }
 
     /// @notice Transfer ERC721 tokens out of the wallet.
@@ -211,7 +211,7 @@ contract MockWalletV2 is
     /// @param to The recipient's address.
     function transferERC721(address collection, uint256 tokenId, address to) external {
         ERC721(collection).safeTransferFrom(address(this), to, tokenId);
-        emit TransferedERC721(collection, tokenId, to);
+        emit TransferredERC721(collection, tokenId, to);
     }
 
     /// @notice Transfer ERC1155 tokens out of the wallet.
@@ -221,23 +221,23 @@ contract MockWalletV2 is
     /// @param amount The amount of the token type to transfer.
     function transferERC1155(address collection, uint256 tokenId, address to, uint256 amount) external {
         ERC1155(collection).safeTransferFrom(address(this), to, tokenId, amount, "");
-        emit TransferedERC1155(collection, tokenId, amount, to);
+        emit TransferredERC1155(collection, tokenId, amount, to);
     }
 
-    /////////////////  DEPOSITE MANAGER ///////////////
+    /////////////////  DEPOSIT MANAGER ///////////////
 
     /// @notice Returns the wallet's deposit in EntryPoint
-    function getDeposite() public view returns (uint256) {
+    function getDeposit() public view returns (uint256) {
         return IEntryPoint(entryPoint()).balanceOf(address(this));
     }
 
-    /// @notice Add to the deposite of the wallet in EntryPoint. Deposit is used to pay user gas fees
-    function addDeposite() public payable {
+    /// @notice Add to the deposit of the wallet in EntryPoint. Deposit is used to pay user gas fees
+    function addDeposit() public payable {
         IEntryPoint(entryPoint()).depositTo{value: msg.value}(address(this));
     }
 
-    /// @notice Withdraw funds from the wallet's deposite in EntryPoint
-    function withdrawDepositeTo(address payable to, uint256 amount) public onlyOwner {
+    /// @notice Withdraw funds from the wallet's deposit in EntryPoint
+    function withdrawDepositTo(address payable to, uint256 amount) public onlyOwner {
         IEntryPoint(entryPoint()).withdrawTo(to, amount);
     }
 
