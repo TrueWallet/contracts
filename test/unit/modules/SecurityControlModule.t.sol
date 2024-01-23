@@ -16,12 +16,6 @@ import {Bundler} from "test/mocks/protocol/Bundler.sol";
 import {createSignature} from "test/utils/createSignature.sol";
 import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 
-import {
-    SocialRecoveryModule,
-    ISocialRecoveryModule,
-    RecoveryEntry
-} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
-
 contract SecurityControlModuleUnitTest is Test {
     SecurityControlModule securityControlModule;
     TrueContractManager contractManager;
@@ -530,5 +524,36 @@ contract SecurityControlModuleUnitTest is Test {
 
         assertTrue(module.isInit(address(deployedWallet)));
         assertTrue(module.walletInitData(address(deployedWallet)) > 0);
+    }
+
+    function testRevertsFullInitAndAddModule() public {
+        testInitModuleViaBundler();
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__InvalidModule.selector));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        address[] memory modules = new address[](1);
+        modules[0] = address(module);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+        assertTrue(contractManager.isTrueModule(address(module)));
+
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("removeModule(address)")), abi.encodePacked(address(module))
+        );
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(); // SecurityControlModule.SecurityControlModule__UnsupportedSelector(0xa063246100000000000000000000000000000000000000000000000000000000)
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(module), abi.encode(uint32(1)))
+        );
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__InvalidInitState.selector));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
     }
 }
