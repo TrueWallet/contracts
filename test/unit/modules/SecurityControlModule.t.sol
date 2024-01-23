@@ -67,6 +67,9 @@ contract SecurityControlModuleUnitTest is Test {
         moduleAddressAndInitData = abi.encodeWithSelector(
             bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(module), initModuleData)
         );
+
+        vm.prank(address(wallet));
+        securityControlModule.fullInit();
     }
 
     function testSetupState() public {
@@ -84,6 +87,10 @@ contract SecurityControlModuleUnitTest is Test {
         assertEq(selectors[1], bytes4(keccak256("removeModule(address)")));
         assertEq(selectors[2], bytes4(keccak256("executeFromModule(address,uint256,bytes)")));
     }
+
+    //////////////////////////////////////
+    //    Execute Add Module Tests      //
+    //////////////////////////////////////
 
     function testExecuteAddModule() public {
         address[] memory modules = new address[](1);
@@ -209,6 +216,10 @@ contract SecurityControlModuleUnitTest is Test {
         securityControlModule.execute(address(wallet), moduleAddressAndInitData);
     }
 
+    //////////////////////////////////////
+    //   Execute Remove Module Tests    //
+    //////////////////////////////////////
+
     function testExecuteRemoveModule() public {
         testExecuteAddModule();
         assertTrue(wallet.isAuthorizedModule(address(module)));
@@ -287,50 +298,262 @@ contract SecurityControlModuleUnitTest is Test {
         assertTrue(module.isInit(address(wallet)));
     }
 
-    function testSetupModuleViaBundler() public {
+    //////////////////////////////////////
+    //  Setup Module via Bundler Tests  //
+    //////////////////////////////////////
+
+    Bundler bundler = new Bundler();
+    TrueWallet deployedWallet;
+    address calculatedAddress;
+    address beneficiary = makeAddr("beneficiary");
+
+    // helper
+    function getUserOp(address sender, uint256 nonce) public pure returns (UserOperation memory userOp) {
+        return (
+            UserOperation({
+                sender: sender,
+                nonce: nonce,
+                initCode: "",
+                callData: "",
+                callGasLimit: 2_000_000,
+                verificationGasLimit: 3_000_000,
+                preVerificationGas: 1_000_000,
+                maxFeePerGas: 10_000,
+                maxPriorityFeePerGas: 10_000,
+                paymasterAndData: hex"",
+                signature: hex""
+            })
+        );
+    }
+
+    function testInitModuleViaBundler() public {
         // this test has own setup
         bytes[] memory modules = new bytes[](1);
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(securityControlModule, initData);
         salt = keccak256(abi.encodePacked(uint256(777)));
 
-        address calculatedAddress = factory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        calculatedAddress = factory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
 
-        UserOperation memory userOp = UserOperation({
-            sender: calculatedAddress,
-            nonce: 0,
-            initCode: "",
-            callData: "",
-            callGasLimit: 2_000_000,
-            verificationGasLimit: 3_000_000,
-            preVerificationGas: 1_000_000,
-            maxFeePerGas: 10_000,
-            maxPriorityFeePerGas: 10_000,
-            paymasterAndData: hex"",
-            signature: hex""
-        });
-
+        UserOperation memory userOp = getUserOp(calculatedAddress, 0);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(factory)),
             abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
         );
         userOp.initCode = initCode;
-
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOp, userOpHash, walletPrivateKey, vm);
         userOp.signature = signature;
 
         vm.deal(calculatedAddress, 1 ether);
-        Bundler bundler = new Bundler();
-        address beneficiary = makeAddr("beneficiary");
         vm.prank(beneficiary);
         bundler.post(entryPoint, userOp);
 
-        TrueWallet deployedWallet = TrueWallet(payable(address(calculatedAddress)));
+        deployedWallet = TrueWallet(payable(address(calculatedAddress)));
 
         assertEq(deployedWallet.entryPoint(), address(entryPoint));
         assertEq(deployedWallet.nonce(), 1);
         assertTrue(deployedWallet.isOwner(walletOwner));
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+    }
+
+    function testFullInitModuleViaBundler() public {
+        testInitModuleViaBundler();
+
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        // fullInit
+        UserOperation memory userOp2 = getUserOp(calculatedAddress, deployedWallet.nonce());
+        userOp2.callData = abi.encodeWithSelector(
+            deployedWallet.execute.selector,
+            securityControlModule,
+            0,
+            abi.encodeWithSelector(securityControlModule.fullInit.selector, "")
+        );
+        bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
+        bytes memory signature2 = createSignature(userOp2, userOpHash2, walletPrivateKey, vm);
+        userOp2.signature = signature2;
+
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp2);
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
         assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
+
+    function testFullInitModuleViaBundlerAndDirectCall() public {
+        testInitModuleViaBundler();
+
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
+
+    function testRevertsFullSetupModuleViaBundlerAndDirectCall_IfBasicInitAlreadyDone() public {
+        testInitModuleViaBundler();
+
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(beneficiary));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__BasicInitNotDone.selector));
+        securityControlModule.fullInit();
+
+        assertFalse(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+    }
+
+    function testRevertsFullInitModuleViaBundlerAndDirectCall_IfBasicInitNotDone() public {
+        testInitModuleViaBundler();
+
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+
+        vm.prank(address(beneficiary));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__BasicInitNotDone.selector));
+        securityControlModule.fullInit();
+
+        assertFalse(securityControlModule.fullInitialized(address(beneficiary)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
+
+    function testRevertsFullInitModuleViaBundlerAndDirectCall_IfFullInitAlreadyDone() public {
+        testInitModuleViaBundler();
+
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(calculatedAddress)), 0);
+
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(
+            abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__FullInitAlreadyDone.selector)
+        );
+        securityControlModule.fullInit();
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(calculatedAddress)) > 0);
+    }
+
+    function testFullInitAndAddModule() public {
+        salt = keccak256(abi.encodePacked(address(factory)));
+        address[] memory modules = new address[](1);
+        modules[0] = address(module);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+        assertTrue(contractManager.isTrueModule(address(module)));
+
+        testInitModuleViaBundler();
+
+        assertFalse(module.isInit(address(deployedWallet)));
+        assertTrue(securityControlModule.basicInitialized(address(deployedWallet)));
+        assertFalse(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertEq(securityControlModule.walletInitSeed(address(deployedWallet)), 0);
+
+        UserOperation memory userOp2 = getUserOp(address(deployedWallet), deployedWallet.nonce());
+        userOp2.callData = abi.encodeWithSelector(
+            deployedWallet.execute.selector,
+            securityControlModule,
+            0,
+            abi.encodeWithSelector(
+                securityControlModule.fullInitAndAddModule.selector, address(deployedWallet), moduleAddressAndInitData
+            )
+        );
+        bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
+        bytes memory signature2 = createSignature(userOp2, userOpHash2, walletPrivateKey, vm);
+        userOp2.signature = signature2;
+
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp2);
+
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(deployedWallet)) > 0);
+
+        assertTrue(module.isInit(address(deployedWallet)));
+        assertTrue(module.walletInitData(address(deployedWallet)) > 0);
+        assertTrue(deployedWallet.isAuthorizedModule(address(module)));
+    }
+
+    function testExecuteAddModuleViaBundler() public {
+        address[] memory modules = new address[](1);
+        modules[0] = address(module);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+        assertTrue(contractManager.isTrueModule(address(module)));
+
+        testFullInitModuleViaBundler();
+        assertTrue(securityControlModule.fullInitialized(address(deployedWallet)));
+        assertTrue(securityControlModule.walletInitSeed(address(deployedWallet)) > 0);
+
+        assertFalse(module.isInit(address(deployedWallet)));
+        assertFalse(module.walletInitData(address(deployedWallet)) > 0);
+
+        UserOperation memory userOp2 = getUserOp(address(deployedWallet), deployedWallet.nonce());
+        userOp2.callData = abi.encodeWithSelector(
+            deployedWallet.execute.selector,
+            securityControlModule,
+            0,
+            abi.encodeWithSelector(
+                securityControlModule.execute.selector, address(deployedWallet), moduleAddressAndInitData
+            )
+        );
+        bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
+        bytes memory signature2 = createSignature(userOp2, userOpHash2, walletPrivateKey, vm);
+        userOp2.signature = signature2;
+
+        vm.deal(address(deployedWallet), 1 ether);
+        vm.prank(beneficiary);
+        bundler.post(entryPoint, userOp2);
+
+        assertTrue(module.isInit(address(deployedWallet)));
+        assertTrue(module.walletInitData(address(deployedWallet)) > 0);
+    }
+
+    function testRevertsFullInitAndAddModule() public {
+        testInitModuleViaBundler();
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__InvalidModule.selector));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        address[] memory modules = new address[](1);
+        modules[0] = address(module);
+        vm.prank(address(adminAddress));
+        contractManager.add(modules);
+        assertTrue(contractManager.isTrueModule(address(module)));
+
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("removeModule(address)")), abi.encodePacked(address(module))
+        );
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(); // SecurityControlModule.SecurityControlModule__UnsupportedSelector(0xa063246100000000000000000000000000000000000000000000000000000000)
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        moduleAddressAndInitData = abi.encodeWithSelector(
+            bytes4(keccak256("addModule(bytes)")), abi.encodePacked(address(module), abi.encode(uint32(1)))
+        );
+        vm.prank(address(deployedWallet));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
+
+        vm.prank(address(deployedWallet));
+        vm.expectRevert(abi.encodeWithSelector(SecurityControlModule.SecurityControlModule__InvalidInitState.selector));
+        securityControlModule.fullInitAndAddModule(address(deployedWallet), moduleAddressAndInitData);
     }
 }

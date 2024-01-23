@@ -21,9 +21,23 @@ contract SecurityControlModule is BaseModule {
     error SecurityControlModule__UnsupportedSelector(bytes4 selector);
     /// @dev Throws when there's an issue executing a function.
     error SecurityControlModule__ExecuteError(address target, bytes data, address sender, bytes returnData);
+    /// @dev Throws when attempting to redo the basic initialization for a wallet that has already been initialized.
+    error SecurityControlModule__BasicInitAlreadyDone();
+    /// @dev Throws when attempting operations requiring basic initialization that hasn't been completed for a wallet.
+    error SecurityControlModule__BasicInitNotDone();
+    /// @dev Throws when attempting to redo the full initialization for a wallet that has already completed full initialization.
+    error SecurityControlModule__FullInitAlreadyDone();
+    /// @dev Throws when the initialization state is invalid.
+    error SecurityControlModule__InvalidInitState();
 
     /// @dev The contract manager that checks if a module is trusted.
     ITrueContractManager public immutable trueContractManager;
+
+    /// @dev Mapping to track whether a basic initialization has been done for each wallet address.
+    mapping(address => bool) public basicInitialized;
+
+    /// @dev Mapping to track whether a full initialization has been done for each wallet address.
+    mapping(address => bool) public fullInitialized;
 
     /// @dev Mapping to track initialization state for wallets.
     mapping(address wallet => uint256 seed) public walletInitSeed;
@@ -39,12 +53,53 @@ contract SecurityControlModule is BaseModule {
         trueContractManager = trueContractManagerAddress;
     }
 
+    /// @notice Completes the full initialization of the module.
+    /// @dev This function should be called after the basic initialization has been done via `_init`.
+    ///      It finalizes the module setup by assigning a unique seed to the `walletInitSeed` mapping for the caller.
+    ///      This function can only be called once for each wallet to prevent re-initialization.
+    function fullInit() external {
+        address _sender = sender();
+        if (!basicInitialized[_sender]) revert SecurityControlModule__BasicInitNotDone();
+        if (fullInitialized[_sender]) revert SecurityControlModule__FullInitAlreadyDone();
+        fullInitialized[_sender] = true;
+        walletInitSeed[_sender] = _newSeed();
+    }
+
+    /// @notice Completes the full initialization and adds a module to the target wallet address.
+    /// @dev This function finalizes the initialization by setting `fullInitialized` to true and assigns a new seed.
+    ///      Only allows adding a module to the target contract after the full initialization is complete.
+    /// @param target The address of the target contract where the module is to be added.
+    /// @param data The function data to be executed, including the module to be added.
+    function fullInitAndAddModule(address target, bytes calldata data) external {
+        address _sender = sender();
+        if (!basicInitialized[_sender] || fullInitialized[_sender]) {
+            revert SecurityControlModule__InvalidInitState();
+        }
+        fullInitialized[_sender] = true;
+        walletInitSeed[_sender] = _newSeed();
+        _authorized(target);
+        if (bytes4(data[0:4]) != IModuleManager.addModule.selector) {
+            revert SecurityControlModule__UnsupportedSelector(bytes4(data[0:4]));
+        }
+        if (!trueContractManager.isTrueModule(address(bytes20(data[68:88])))) {
+            revert SecurityControlModule__InvalidModule();
+        }
+        _execute(target, data);
+    }
+
     /// @notice Executes a specific function on the target address.
     /// @param target The address of the target contract.
     /// @param data The function data to be executed.
     function execute(address target, bytes calldata data) external {
         _authorized(target);
         _preExecute(target, data);
+        _execute(target, data);
+    }
+
+    /// @dev Internal function to execute a call to a target address.
+    /// @param target The address of the target contract.
+    /// @param data The function data to be executed.
+    function _execute(address target, bytes calldata data) internal {
         (bool succ, bytes memory res) = target.call{value: 0}(data);
         if (succ) {
             emit Execute(target, data, sender());
@@ -93,12 +148,18 @@ contract SecurityControlModule is BaseModule {
         return walletInitSeed[wallet] != 0;
     }
 
-    /// @dev Initializes the module for a wallet.
-    /// @param data Additional data (not used in this implementation).
+    /// @notice Internal function for basic initialization of the module.
+    /// @dev This function sets the initial state for the module associated with the caller.
+    ///      It should be invoked only once as part of the module's setup process.
+    ///      The function checks if the basic initialization for the caller (`_sender`) has already been completed to prevent re-initialization.
+    ///      The `data` parameter is not currently used but can be utilized for future extensions or additional initialization parameters.
+    /// @param data Additional initialization data; currently unused.
+    /// @custom:note This function is part of the two-step initialization process and is typically called automatically during module deployment.
     function _init(bytes calldata data) internal override {
         (data);
         address _sender = sender();
-        walletInitSeed[_sender] = _newSeed();
+        if (basicInitialized[_sender]) revert SecurityControlModule__BasicInitAlreadyDone();
+        basicInitialized[_sender] = true;
     }
 
     /// @dev De-initializes the module for a wallet.

@@ -78,6 +78,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
         factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
         wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, deplSalt);
+        vm.prank(address(wallet));
+        securityControlModule.fullInit();
     }
 
     ///////////////////////////////////
@@ -149,6 +151,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
         wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
+        vm.prank(address(wallet2));
+        securityControlModule.fullInit();
 
         // tests
         // negative cases
@@ -234,6 +238,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
         wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
+        vm.prank(address(wallet2));
+        securityControlModule.fullInit();
 
         // test
         // (_guardians.length == 0) && (_guardianHash != bytes32(0))
