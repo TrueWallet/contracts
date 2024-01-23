@@ -29,8 +29,6 @@ contract SecurityControlModule is BaseModule {
     error SecurityControlModule__FullInitAlreadyDone();
     /// @dev Throws when the initialization state is invalid.
     error SecurityControlModule__InvalidInitState();
-    /// @dev Throws when an invalid function selector was provided in the call data.
-    error SecurityControlModule__InvalidSelector();
 
     /// @dev The contract manager that checks if a module is trusted.
     ITrueContractManager public immutable trueContractManager;
@@ -81,7 +79,7 @@ contract SecurityControlModule is BaseModule {
         walletInitSeed[_sender] = _newSeed();
         _authorized(target);
         if (bytes4(data[0:4]) != IModuleManager.addModule.selector) {
-            revert SecurityControlModule__InvalidSelector();
+            revert SecurityControlModule__UnsupportedSelector(bytes4(data[0:4]));
         }
         if (!trueContractManager.isTrueModule(address(bytes20(data[68:88])))) {
             revert SecurityControlModule__InvalidModule();
