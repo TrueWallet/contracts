@@ -244,7 +244,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         // test
         // (_guardians.length == 0) && (_guardianHash != bytes32(0))
         threshold = 2;
-        uint256 salt = 42;
+        bytes32 salt = bytes32(keccak256(abi.encodePacked(uint256(42))));
         address[] memory guardiansEmpty;
         // guardianHash = bytes32(keccak256(abi.encodePacked(guardian1, guardian2, guardian3, salt)));
         guardianHash = bytes32(keccak256(abi.encodePacked(guardians, salt)));
@@ -463,7 +463,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
 
         threshold = 2;
-        uint256 salt = 42;
+        bytes32 salt = bytes32(keccak256(abi.encodePacked(uint256(42))));
         bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
         assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
         assertEq(socialRecoveryModule2.getAnonymousGuardianHash(guardians, salt), anonymousGuardianHashed);
@@ -482,7 +482,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
 
-        uint256 salt = 42;
+        bytes32 salt = bytes32(keccak256(abi.encodePacked(uint256(42))));
         bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
         assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
 
@@ -496,7 +496,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
 
-        uint256 salt = 42;
+        bytes32 salt = bytes32(keccak256(abi.encodePacked(uint256(42))));
         bytes32 anonymousGuardianHashed = bytes32(keccak256(abi.encodePacked(guardians, salt)));
         assertEq(socialRecoveryModule2.getGuardiansHash(address(wallet2)), anonymousGuardianHashed);
 
@@ -510,7 +510,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         assertEq(socialRecoveryModule2.guardiansCount(address(wallet2)), 0);
         assertEq(socialRecoveryModule2.threshold(address(wallet2)), 2);
 
-        uint256 notValidSalt = 24;
+        bytes32 notValidSalt = bytes32(keccak256(abi.encodePacked(uint256(24))));
         vm.prank(address(wallet2));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidGuardianHash.selector);
         socialRecoveryModule2.revealAnonymousGuardians(address(wallet2), guardians, notValidSalt);
