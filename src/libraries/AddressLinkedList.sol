@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
+/**
+ * @title Address Linked List.
+ * @notice This library provides utility functions to manage a linked list of addresses.
+ */
 library AddressLinkedList {
     error InvalidAddress();
     error AddressAlreadyExists();
@@ -9,6 +13,9 @@ library AddressLinkedList {
     address internal constant SENTINEL_ADDRESS = address(1);
     uint160 internal constant SENTINEL_UINT = 1;
 
+    /**
+     * @dev Modifier that checks if an address is valid.
+     */
     modifier onlyAddress(address addr) {
         if (uint160(addr) <= SENTINEL_UINT) {
             revert InvalidAddress();
@@ -16,6 +23,11 @@ library AddressLinkedList {
         _;
     }
 
+    /**
+     * @notice Adds an address to the linked list.
+     * @param self The linked list mapping.
+     * @param addr The address to be added.
+     */
     function add(mapping(address => address) storage self, address addr) internal onlyAddress(addr) {
         if (self[addr] != address(0)) {
             revert AddressAlreadyExists();
@@ -30,34 +42,23 @@ library AddressLinkedList {
         }
     }
 
-    function replace(mapping(address => address) storage self, address oldAddr, address newAddr) internal {
-        if (!isExist(self, oldAddr)) {
-            revert AddressNotExists();
-        }
-        if (isExist(self, newAddr)) {
-            revert AddressAlreadyExists();
-        }
-
-        address cursor = SENTINEL_ADDRESS;
-        while (true) {
-            address _addr = self[cursor];
-            if (_addr == oldAddr) {
-                address next = self[_addr];
-                self[newAddr] = next;
-                self[cursor] = newAddr;
-                self[_addr] = address(0);
-                return;
-            }
-            cursor = _addr;
-        }
-    }
-
+    /**
+     * @notice Removes an address from the linked list.
+     * @param self The linked list mapping.
+     * @param addr The address to be removed.
+     */
     function remove(mapping(address => address) storage self, address addr) internal {
         if (!tryRemove(self, addr)) {
             revert AddressNotExists();
         }
     }
 
+    /**
+     * @notice Tries to remove an address from the linked list.
+     * @param self The linked list mapping.
+     * @param addr The address to be removed.
+     * @return Returns true if removal is successful, false otherwise.
+     */
     function tryRemove(mapping(address => address) storage self, address addr) internal returns (bool) {
         if (isExist(self, addr)) {
             address cursor = SENTINEL_ADDRESS;
@@ -75,13 +76,26 @@ library AddressLinkedList {
         return false;
     }
 
+    /**
+     * @notice Clears all addresses from the linked list.
+     * @param self The linked list mapping.
+     */
     function clear(mapping(address => address) storage self) internal {
-        for (address addr = self[SENTINEL_ADDRESS]; uint160(addr) > SENTINEL_UINT; addr = self[addr]) {
-            self[addr] = address(0);
-        }
+        address addr = self[SENTINEL_ADDRESS];
         self[SENTINEL_ADDRESS] = address(0);
+        while (uint160(addr) > SENTINEL_UINT) {
+            address _addr = self[addr];
+            self[addr] = address(0);
+            addr = _addr;
+        }
     }
 
+    /**
+     * @notice Checks if an address exists in the linked list.
+     * @param self The linked list mapping.
+     * @param addr The address to check.
+     * @return Returns true if the address exists, false otherwise.
+     */
     function isExist(mapping(address => address) storage self, address addr)
         internal
         view
@@ -91,6 +105,11 @@ library AddressLinkedList {
         return self[addr] != address(0);
     }
 
+    /**
+     * @notice Returns the size of the linked list.
+     * @param self The linked list mapping.
+     * @return Returns the size of the linked list.
+     */
     function size(mapping(address => address) storage self) internal view returns (uint256) {
         uint256 result = 0;
         address addr = self[SENTINEL_ADDRESS];
@@ -103,12 +122,21 @@ library AddressLinkedList {
         return result;
     }
 
+    /**
+     * @notice Checks if the linked list is empty.
+     * @param self The linked list mapping.
+     * @return Returns true if the linked list is empty, false otherwise.
+     */
     function isEmpty(mapping(address => address) storage self) internal view returns (bool) {
         return self[SENTINEL_ADDRESS] == address(0);
     }
 
     /**
-     * @dev This function is just an example, please copy this code directly when you need it, you should not call this function
+     * @notice Returns a list of addresses from the linked list.
+     * @param self The linked list mapping.
+     * @param from The starting address.
+     * @param limit The number of addresses to return.
+     * @return Returns an array of addresses.
      */
     function list(mapping(address => address) storage self, address from, uint256 limit)
         internal

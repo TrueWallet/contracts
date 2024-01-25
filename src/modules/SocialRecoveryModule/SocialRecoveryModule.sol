@@ -114,6 +114,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete walletGuardian[_sender];
         delete walletPendingGuardian[_sender];
         delete recoveryEntries[_sender];
+        walletGuardian[_sender].guardians.clear();
     }
 
     /// @notice Checks if a wallet is initialized.
@@ -220,7 +221,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @param _wallet The address of the wallet for which to reveal guardians.
     /// @param _guardians The array of guardian addresses.
     /// @param _salt The salt used to hash the anonymous guardian list.
-    function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, uint256 _salt)
+    function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, bytes32 _salt)
         public
         authorized(_wallet)
         checkPendingGuardian(_wallet)
@@ -401,7 +402,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @param _guardians Array of guardians' addresses.
     /// @param _salt Salt value.
     /// @return The calculated keccak256 hash of the encoded guardians and salt.
-    function getAnonymousGuardianHash(address[] calldata _guardians, uint256 _salt) public pure returns (bytes32) {
+    function getAnonymousGuardianHash(address[] calldata _guardians, bytes32 _salt) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_guardians, _salt));
     }
 

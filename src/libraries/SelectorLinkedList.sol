@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
+/**
+ * @title Selector Linked List.
+ * @notice This library provides utility functions to manage a linked list of selectors.
+ */
 library SelectorLinkedList {
     error InvalidSelector();
     error SelectorAlreadyExists();
@@ -13,6 +17,9 @@ library SelectorLinkedList {
         return uint32(selector) > SENTINEL_UINT;
     }
 
+    /**
+     * @dev Modifier that checks if an selector is valid.
+     */
     modifier onlySelector(bytes4 selector) {
         if (!isSafeSelector(selector)) {
             revert InvalidSelector();
@@ -20,6 +27,11 @@ library SelectorLinkedList {
         _;
     }
 
+    /**
+     * @notice Adds a selector to the linked list.
+     * @param self The linked list mapping.
+     * @param selector The selector to be added.
+     */
     function add(mapping(bytes4 => bytes4) storage self, bytes4 selector) internal onlySelector(selector) {
         if (self[selector] != 0) {
             revert SelectorAlreadyExists();
@@ -43,28 +55,11 @@ library SelectorLinkedList {
         }
     }
 
-    function replace(mapping(bytes4 => bytes4) storage self, bytes4 oldSelector, bytes4 newSelector) internal {
-        if (!isExist(self, oldSelector)) {
-            revert SelectorNotExists();
-        }
-        if (isExist(self, newSelector)) {
-            revert SelectorAlreadyExists();
-        }
-
-        bytes4 cursor = SENTINEL_SELECTOR;
-        while (true) {
-            bytes4 _selector = self[cursor];
-            if (_selector == oldSelector) {
-                bytes4 next = self[_selector];
-                self[newSelector] = next;
-                self[cursor] = newSelector;
-                self[_selector] = 0;
-                return;
-            }
-            cursor = _selector;
-        }
-    }
-
+    /**
+     * @notice Removes an address from the linked list.
+     * @param self The linked list mapping.
+     * @param selector The address to be removed.
+     */
     function remove(mapping(bytes4 => bytes4) storage self, bytes4 selector) internal {
         if (!isExist(self, selector)) {
             revert SelectorNotExists();
@@ -87,13 +82,26 @@ library SelectorLinkedList {
         }
     }
 
+    /**
+     * @notice Clears all selectors from the linked list.
+     * @param self The linked list mapping.
+     */
     function clear(mapping(bytes4 => bytes4) storage self) internal {
-        for (bytes4 selector = self[SENTINEL_SELECTOR]; uint32(selector) > SENTINEL_UINT; selector = self[selector]) {
-            self[selector] = 0;
-        }
+        bytes4 selector = self[SENTINEL_SELECTOR];
         self[SENTINEL_SELECTOR] = 0;
+        while (uint32(selector) > SENTINEL_UINT) {
+            bytes4 _selector = self[selector];
+            self[selector] = 0;
+            selector = _selector;
+        }
     }
 
+    /**
+     * @notice Checks if an selector exists in the linked list.
+     * @param self The linked list mapping.
+     * @param selector The selector to check.
+     * @return Returns true if the selector exists, false otherwise.
+     */
     function isExist(mapping(bytes4 => bytes4) storage self, bytes4 selector)
         internal
         view
@@ -103,6 +111,11 @@ library SelectorLinkedList {
         return self[selector] != 0;
     }
 
+    /**
+     * @notice Returns the size of the linked list.
+     * @param self The linked list mapping.
+     * @return Returns the size of the linked list.
+     */
     function size(mapping(bytes4 => bytes4) storage self) internal view returns (uint256) {
         uint256 result = 0;
         bytes4 selector = self[SENTINEL_SELECTOR];
@@ -115,10 +128,22 @@ library SelectorLinkedList {
         return result;
     }
 
+    /**
+     * @notice Checks if the linked list is empty.
+     * @param self The linked list mapping.
+     * @return Returns true if the linked list is empty, false otherwise.
+     */
     function isEmpty(mapping(bytes4 => bytes4) storage self) internal view returns (bool) {
         return self[SENTINEL_SELECTOR] == 0;
     }
 
+   /**
+     * @notice Returns a list of selectors from the linked list.
+     * @param self The linked list mapping.
+     * @param from The starting selector.
+     * @param limit The number of selectors to return.
+     * @return Returns an array of selectors.
+     */
     function list(mapping(bytes4 => bytes4) storage self, bytes4 from, uint256 limit)
         internal
         view
