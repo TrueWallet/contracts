@@ -114,6 +114,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         delete walletGuardian[_sender];
         delete walletPendingGuardian[_sender];
         delete recoveryEntries[_sender];
+        walletGuardian[_sender].guardians.clear();
     }
 
     /// @notice Checks if a wallet is initialized.
