@@ -10,10 +10,10 @@ import {Initializable} from "openzeppelin-contracts/proxy/utils/Initializable.so
 import {ECDSA, SignatureChecker} from "openzeppelin-contracts/utils/cryptography/SignatureChecker.sol";
 import {ModuleManager} from "src/base/ModuleManager.sol";
 import {OwnerManager} from "src/base/OwnerManager.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {ERC721} from "solmate/tokens/ERC721.sol";
-import {ERC1155} from "solmate/tokens/ERC1155.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "solady/tokens/ERC20.sol";
+import {ERC721} from "solady/tokens/ERC721.sol";
+import {ERC1155} from "solady/tokens/ERC1155.sol";
+import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 import {Authority} from "src/authority/Authority.sol";
 import {WalletErrors} from "src/common/Errors.sol";
 
@@ -201,7 +201,7 @@ contract MockWalletV2 is
     /// @param to The recipient's address.
     /// @param amount The amount of tokens to transfer.
     function transferERC20(address token, address to, uint256 amount) external {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+        SafeTransferLib.safeTransfer(token, to, amount);
         emit TransferredERC20(token, to, amount);
     }
 

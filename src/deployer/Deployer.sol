@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: LGPL-3.0
 pragma solidity ^0.8.19;
 
-import {Owned} from "solmate/auth/Owned.sol";
-import {CREATE3} from "./Create3.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
+import {CREATE3} from "solady/utils/CREATE3.sol";
 
 /// @title A contract for deploying other contracts using CREATE3.
 /// @notice This contract allows an owner to deploy contracts to deterministic addresses using CREATE3.
-contract Deployer is Owned(msg.sender) {
+contract Deployer is Ownable {
     /// @notice Emitted when a contract is successfully deployed.
     event ContractDeployed(address indexed contractAddress);
+
+    /// @dev Sets the original `owner` of the contract to the sender account.
+    constructor() {
+        _setOwner(msg.sender);
+    }
 
     /// @notice Deploys a contract using a specific salt and creation code.
     /// @dev This function can only be called by the owner of the contract.

@@ -2,17 +2,14 @@
 pragma solidity ^0.8.19;
 
 import {IEntryPoint, UserOperation} from "account-abstraction/interfaces/IEntryPoint.sol";
-import {Owned} from "solmate/auth/Owned.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {ITruePaymaster} from "./ITruePaymaster.sol";
 
 // Based on Paymaster in: https://github.com/eth-infinitism/account-abstraction
-contract Paymaster is ITruePaymaster, Owned {
+contract Paymaster is ITruePaymaster, Ownable {
     IEntryPoint public entryPoint;
 
-    event UpdateEntryPoint(
-        address indexed _newEntryPoint,
-        address indexed _oldEntryPoint
-    );
+    event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
 
     /// @notice Validate that only the entryPoint is able to call a method
     modifier onlyEntryPoint() {
@@ -25,8 +22,9 @@ contract Paymaster is ITruePaymaster, Owned {
     /// @dev Reverts in case not valid entryPoint or owner
     error InvalidEntryPoint();
 
-    constructor(address _entryPoint, address _owner) Owned(_owner) {
+    constructor(address _entryPoint, address _owner) {
         entryPoint = IEntryPoint(_entryPoint);
+        _setOwner(_owner);
     }
 
     /// @notice Get the total paymaster stake on the entryPoint
@@ -52,22 +50,19 @@ contract Paymaster is ITruePaymaster, Owned {
     /// @notice Validates that the paymaster will pay for the user transaction. Custom checks can be performed here, to ensure for example
     ///         that the user has sufficient funds to pay for the transaction. It could just return an empty context and deadline to allow
     ///         all transactions by everyone to be paid for through this paymaster.
-    function validatePaymasterUserOp(
-        UserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 maxCost
-    ) external override pure returns (bytes memory context, uint256 validationData) {
+    function validatePaymasterUserOp(UserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
+        external
+        pure
+        override
+        returns (bytes memory context, uint256 validationData)
+    {
         (userOp, userOpHash, maxCost); // unused params
         // Pay for all transactions from everyone, with no check
         return ("", 0);
     }
 
     /// @notice Handler for charging the sender (smart wallet) for the transaction after it has been paid for by the paymaster
-    function postOp(
-        PostOpMode mode,
-        bytes calldata context,
-        uint256 actualGasCost
-    ) external onlyEntryPoint {}
+    function postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) external onlyEntryPoint {}
 
     ///// STAKE MANAGEMENT
 

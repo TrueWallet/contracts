@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.19;
 
-import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
 import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
@@ -29,13 +29,13 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @param _walletImpl Address of the wallet implementation contract.
     /// @param _owner Address of the owner of this factory contract.
     /// @param _entryPoint Address of the entry point contract.
-    constructor(address _walletImpl, address _owner, address _entryPoint) Ownable() Pausable() {
+    constructor(address _walletImpl, address _owner, address _entryPoint) Pausable() {
         if (_walletImpl == address(0) || _owner == address(0) || _entryPoint == address(0)) {
             revert ZeroAddressProvided();
         }
         _WALLETIMPL = uint256(uint160(_walletImpl));
         entryPoint = _entryPoint;
-        _transferOwnership(_owner);
+        _setOwner(_owner);
     }
 
     /// @notice Deploy a new TrueWallet smart contract.
