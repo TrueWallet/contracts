@@ -13,3 +13,6 @@
 	path = lib/account-abstraction
 	url = https://github.com/eth-infinitism/account-abstraction
 	branch = ver0.6.0
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/vectorized/solady
