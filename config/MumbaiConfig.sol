@@ -18,5 +18,5 @@ library MumbaiConfig {
     address public constant WALLET_OWNER = 0x8B2dc96fBEd0452f1386C8c2bfE713f11F88D623;
     address public constant BENEFICIARY = 0xcC7d7D810132c44061d99928AA6e4D63c7c693c7;
 
-    address public constant OFFICIAL_ENTRY_POINT = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+    address public constant ENTRY_POINT_V6 = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
 }

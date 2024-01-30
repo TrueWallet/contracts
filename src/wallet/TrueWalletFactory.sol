@@ -35,6 +35,7 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         }
         _WALLETIMPL = uint256(uint160(_walletImpl));
         entryPoint = _entryPoint;
+        _transferOwnership(_owner);
     }
 
     /// @notice Deploy a new TrueWallet smart contract.

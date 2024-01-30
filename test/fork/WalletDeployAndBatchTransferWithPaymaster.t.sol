@@ -13,7 +13,7 @@ import {MumbaiConfig} from "config/MumbaiConfig.sol";
 import {MockERC1155} from "../mocks/MockERC1155.sol";
 
 contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT_V6);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 

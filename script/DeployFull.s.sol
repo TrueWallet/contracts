@@ -10,7 +10,6 @@ import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {TrueWalletFactory} from "src/wallet/TrueWalletFactory.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
-
 contract DeployFullScript is Script {
     TrueContractManager public contractManager;
     SecurityControlModule public securityModule;
@@ -25,7 +24,7 @@ contract DeployFullScript is Script {
     function setUp() public {
         owner = vm.envAddress("OWNER");
         deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        entryPoint = MumbaiConfig.OFFICIAL_ENTRY_POINT;
+        entryPoint = MumbaiConfig.ENTRY_POINT_V6;
     }
 
     function run() public {

@@ -12,7 +12,7 @@ import {getUserOpHash} from "test/utils/getUserOpHash.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract ETHTransferWithPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT_V6);
     IWallet public constant wallet = IWallet(MumbaiConfig.WALLET_PROXY);
     ITruePaymaster public constant paymaster = ITruePaymaster(MumbaiConfig.PAYMASTER);
 
