@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import {Deployer} from "src/deployer/Deployer.sol";
+import {Deployer, CREATE3, Ownable} from "src/deployer/Deployer.sol";
 import {TrueWallet} from "src/wallet/TrueWallet.sol";
 import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {
@@ -29,7 +29,7 @@ contract DeployerUnitTest is Test {
 
     function setUp() public {
         (adminAddress, adminPrivateKey) = makeAddrAndKey("adminAddress");
-        wallet = new TrueWallet();
+        // wallet = new TrueWallet();
         entryPoint = new EntryPoint();
         vm.prank(address(adminAddress));
         deployer = new Deployer();
@@ -44,9 +44,26 @@ contract DeployerUnitTest is Test {
         assertTrue(deployCodeGenerator.getTrueContractManagerCode(adminAddress).length > 0);
         assertTrue(deployCodeGenerator.getSecurityControlModuleCode(address(contractManager)).length > 0);
         assertTrue(deployCodeGenerator.getSocialRecoveryModuleCode().length > 0);
+        assertTrue(deployCodeGenerator.getTrueWalletImplCode().length > 0);
+    }
+
+    function testDeployWalletImpl() public {
+        salt = keccak256(abi.encodePacked(bytes(deployCodeGenerator.getTrueWalletImplCode())));
+        address calculateAddress = deployer.getContractAddress(salt);
+        assertFalse(calculateAddress.code.length > 0);
+        bytes memory walletCode = deployCodeGenerator.getTrueWalletImplCode();
+        vm.prank(address(this));
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        deployer.deploy(salt, walletCode);
+        vm.prank(adminAddress);
+        address deployedContract = deployer.deploy(salt, walletCode);
+        assertEq(calculateAddress, deployedContract);
+        assertTrue(calculateAddress.code.length > 0);
+        wallet = TrueWallet(payable(address(deployedContract)));
     }
 
     function testDeployFactory() public {
+        testDeployWalletImpl();
         salt = keccak256(
             abi.encodePacked(
                 bytes(deployCodeGenerator.getTrueWalletFactoryCode(address(wallet), adminAddress, address(entryPoint)))
@@ -65,6 +82,10 @@ contract DeployerUnitTest is Test {
         assertEq(TrueWalletFactory(deployedContract).walletImplementation(), address(wallet));
         assertEq(TrueWalletFactory(deployedContract).entryPoint(), address(entryPoint));
         assertEq(TrueWalletFactory(deployedContract).owner(), address(adminAddress));
+        vm.prank(adminAddress);
+        vm.expectRevert(CREATE3.DeploymentFailed.selector);
+        address _deployedContract = deployer.deploy(salt, factoryCode);
+        assertEq(_deployedContract.code.length, 0);
     }
 
     function testDeployContractManager() public {
@@ -101,7 +122,7 @@ contract DeployerUnitTest is Test {
         assertFalse(calculateAddress.code.length > 0);
         bytes memory socialRacoveryCode = deployCodeGenerator.getSocialRecoveryModuleCode();
         vm.prank(address(this));
-        vm.expectRevert();
+        vm.expectRevert(Ownable.Unauthorized.selector);
         deployer.deploy(salt, socialRacoveryCode);
         vm.prank(adminAddress);
         address deployedContract = deployer.deploy(salt, socialRacoveryCode);
