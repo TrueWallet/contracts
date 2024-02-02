@@ -16,14 +16,11 @@ contract TrueWalletFactoryUnitTest is Test {
     EntryPoint entryPoint;
     address walletOwner = address(12);
     bytes32 salt;
-
     MockModule mockModule;
     bytes[] modules = new bytes[](1);
-
     address user;
 
     event AccountInitialized(address indexed account, address indexed entryPoint, address owner);
-
     event TrueWalletCreation(TrueWallet wallet);
 
     function setUp() public {
@@ -36,7 +33,6 @@ contract TrueWalletFactoryUnitTest is Test {
         modules[0] = abi.encodePacked(mockModule, initData);
 
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
-
         user = makeAddr("user");
     }
 
@@ -64,85 +60,80 @@ contract TrueWalletFactoryUnitTest is Test {
 
     // Estimating gas for deployment
     function testDeployWallet() public {
-        factory.createWallet(address(entryPoint), walletOwner, modules, salt);
+        bytes memory initializer =
+            abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        factory.createWallet(initializer, salt);
     }
 
     function testCreateWallet() public {
-        address computedWalletAddress = factory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
-
-        // vm.expectEmit(true, true, true, true);
-        // emit AccountInitialized(
-        //     computedWalletAddress,
-        //     address(entryPoint),
-        //     address(walletOwner)
-        // );
-        // emit TrueWalletCreation(TrueWallet(payable(computedWalletAddress)));
-        TrueWallet proxyWallet = factory.createWallet(address(entryPoint), walletOwner, modules, salt);
+        bytes memory initializer =
+            abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        vm.startPrank(address(this));
+        address computedWalletAddress = factory.getWalletAddress(salt);
+        vm.expectEmit(true, true, true, true);
+        emit AccountInitialized(computedWalletAddress, address(entryPoint), address(walletOwner));
+        emit TrueWalletCreation(TrueWallet(payable(computedWalletAddress)));
+        TrueWallet proxyWallet = factory.createWallet(initializer, salt);
+        vm.stopPrank();
 
         assertEq(address(proxyWallet), computedWalletAddress);
         assertEq(address(proxyWallet.entryPoint()), address(entryPoint));
         assertTrue(proxyWallet.isOwner(walletOwner));
+
+        bytes memory initializer_ = factory.getInitializer(address(entryPoint), walletOwner, modules);
+        assertEq(initializer, initializer_);
     }
-    /*
-    function testCreateWalletInCaseAlreadyDeployed() public {
-        address walletAddress = factory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
-        // Determine if a wallet is already deployed at this address
-        uint256 codeSize = walletAddress.code.length;
-        assertTrue(codeSize == 0);
 
-        wallet = factory.createWallet(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
+    function testCreateWalletFromDiffFactoriesWithSameSalt() public {
+        bytes memory initializer =
+            abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        vm.startPrank(address(this));
+        address computedWalletAddress = factory.getWalletAddress(salt);
 
-        walletAddress = factory.getWalletAddress(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
-        // Determine if a wallet is already deployed at this address
-        codeSize = walletAddress.code.length;
-        assertTrue(codeSize > 0);
-        // Return the address even if the account is already deployed
-        TrueWallet wallet2 = factory.createWallet(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
+        TrueWalletFactory factory2 = new TrueWalletFactory(address(wallet), address(this), address(entryPoint));
+        vm.startPrank(address(this));
+        address computedWalletAddress2 = factory2.getWalletAddress(salt);
+        assert(computedWalletAddress != computedWalletAddress2);
 
-        assertEq(address(wallet), address(wallet2));
+        TrueWallet proxyWallet = factory.createWallet(initializer, salt);
+        TrueWallet proxyWallet2 = factory2.createWallet(initializer, salt);
+        assert(address(proxyWallet) != address(proxyWallet2));
+    }
+
+    function testCreateWallets() public {
+        bytes32 salt1 = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
+        address computedWalletAddress1 = factory.getWalletAddress(salt1);
+
+        bytes32 salt2 = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(42)));
+        address computedWalletAddress2 = factory.getWalletAddress(salt2);
+        assert(computedWalletAddress1 != computedWalletAddress2);
+
+        bytes memory initializer =
+            abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        TrueWallet proxyWallet1 = factory.createWallet(initializer, salt1);
+        TrueWallet proxyWallet2 = factory.createWallet(initializer, salt2);
+        assert(address(proxyWallet1) != address(proxyWallet2));
+
+        assertEq(address(proxyWallet1), computedWalletAddress1);
+        assertEq(address(proxyWallet1.entryPoint()), address(entryPoint));
+        assertTrue(proxyWallet1.isOwner(walletOwner));
+        assertEq(address(proxyWallet2), computedWalletAddress2);
+        assertEq(address(proxyWallet2.entryPoint()), address(entryPoint));
+        assertTrue(proxyWallet2.isOwner(walletOwner));
     }
 
     function testCreateWalletWhenNotPaused() public {
         assertEq(factory.paused(), false);
-        wallet = factory.createWallet(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
+        bytes memory initializer =
+            abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        wallet = factory.createWallet(initializer, salt);
         assertTrue(wallet.isOwner(walletOwner));
 
         factory.pause();
         assertEq(factory.paused(), true);
         vm.expectRevert();
-        factory.createWallet(
-            address(entryPoint),
-            walletOwner,
-            modules,
-            salt
-        );
+        factory.createWallet(initializer, salt);
     }
-    */
 
     function testDeposit() public {
         assertEq(address(entryPoint).balance, 0);

@@ -34,7 +34,8 @@ contract DeployWalletProxyScript is Script {
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
-        wallet = factory.createWallet(address(entryPoint), owner, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), owner, modules);
+        wallet = factory.createWallet(initializer, salt);
         vm.stopBroadcast();
     }
 }

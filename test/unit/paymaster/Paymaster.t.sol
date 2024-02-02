@@ -40,7 +40,8 @@ contract PaymasterUnitTest is Test {
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
 
         factory = new TrueWalletFactory(address(walletImpl), address(ownerAddress), address(entryPoint));
-        wallet = factory.createWallet(address(entryPoint), ownerAddress, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), ownerAddress, modules);
+        wallet = factory.createWallet(initializer, salt);
     }
 
     function testSetupState() public {

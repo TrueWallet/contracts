@@ -53,7 +53,8 @@ contract ModuleManagerUnitTest is Test {
 
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
         factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
-        wallet = factory.createWallet(address(entryPoint), walletOwner, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
+        wallet = factory.createWallet(initializer, salt);
     }
 
     function encodeError(string memory error) internal pure returns (bytes memory encoded) {
