@@ -4,15 +4,17 @@ pragma solidity ^0.8.19;
 import {Ownable} from "solady/auth/Ownable.sol";
 import {CREATE3} from "solady/utils/CREATE3.sol";
 
-/// @title A contract for deploying other contracts using CREATE3.
-/// @notice This contract allows an owner to deploy contracts to deterministic addresses using CREATE3.
+/// @title Deployer
+/// @notice A contract for deploying other contracts using CREATE3 to achieve deterministic addresses.
+/// @dev This contract utilizes the CREATE3 library to enable deterministic deployment of contracts, allowing for the same contract address across different EVM-compatible blockchains.
 contract Deployer is Ownable {
     /// @notice Emitted when a contract is successfully deployed.
     event ContractDeployed(address indexed contractAddress);
 
-    /// @dev Sets the original `owner` of the contract to the sender account.
-    constructor() {
-        _setOwner(msg.sender);
+    /// @dev Initializes the Deployer contract, setting the initial owner to the provided address.
+    /// @param _owner The address that will be granted ownership of this contract, capable of performing deployments.
+    constructor(address _owner) {
+        _setOwner(_owner);
     }
 
     /// @notice Deploys a contract using a specific salt and creation code.

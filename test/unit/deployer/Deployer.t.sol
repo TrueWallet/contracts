@@ -29,10 +29,8 @@ contract DeployerUnitTest is Test {
 
     function setUp() public {
         (adminAddress, adminPrivateKey) = makeAddrAndKey("adminAddress");
-        // wallet = new TrueWallet();
         entryPoint = new EntryPoint();
-        vm.prank(address(adminAddress));
-        deployer = new Deployer();
+        deployer = new Deployer(adminAddress);
         deployCodeGenerator = new DeployCodeGenerator();
     }
 
