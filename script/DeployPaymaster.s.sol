@@ -12,18 +12,18 @@ contract DeployPaymasterScript is Script {
     Paymaster public paymaster;
     address public entryPoint;
 
-    address public owner;
-    uint256 public deployerPrivateKey;
+    address public ownerPublicKey;
+    uint256 public ownerPrivateKey;
 
     function setUp() public {
-        owner = vm.envAddress("OWNER");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
+        ownerPublicKey = vm.envAddress("OWNER");
+        ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         entryPoint = MumbaiConfig.ENTRY_POINT;
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
-        paymaster = new Paymaster(entryPoint, owner);
+        vm.startBroadcast(ownerPrivateKey);
+        paymaster = new Paymaster(entryPoint, ownerPublicKey);
         vm.stopBroadcast();
     }
 }

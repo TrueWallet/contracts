@@ -8,13 +8,12 @@ import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 
 contract DeployWalletScript is Script {
     TrueWallet public wallet;
-
-    address public owner;
+    address public deployerPublicKey;
     uint256 public deployerPrivateKey;
 
     function setUp() public {
-        owner = vm.envAddress("OWNER");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
+        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIK_KEY");
+        deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
     }
 
     function run() public {

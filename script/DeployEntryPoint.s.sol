@@ -8,16 +8,16 @@ import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 contract DeployEntryPointScript is Script {
     EntryPoint public entryPoint;
 
-    address public owner;
-    uint256 public deployerPrivateKey;
+    address public ownerPublicKey;
+    uint256 public ownerPrivateKey;
 
     function setUp() public {
-        owner = vm.envAddress("OWNER");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
+        ownerPublicKey = vm.envAddress("OWNER");
+        ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast(ownerPrivateKey);
         entryPoint = new EntryPoint();
         vm.stopBroadcast();
     }

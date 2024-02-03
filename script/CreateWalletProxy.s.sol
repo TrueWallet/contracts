@@ -9,33 +9,34 @@ import {EntryPoint} from "test/mocks/protocol/EntryPoint.sol";
 import {MumbaiConfig} from "../config/MumbaiConfig.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 
-contract DeployWalletProxyScript is Script {
-    TrueWalletFactory public factory;
+contract CreateWalletProxyScript is Script {
     TrueWallet public wallet;
+    address public factory;
     address public entryPoint;
-    address public owner;
-    uint256 public deployerPrivateKey;
-    bytes32 salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), block.timestamp));
+    address public ownerPublicKey;
+    uint256 public ownerPrivateKey;
+    bytes32 salt;
 
     address public securityModule;
     bytes[] modules = new bytes[](1);
 
     function setUp() public {
-        owner = vm.envAddress("OWNER");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        factory = TrueWalletFactory(MumbaiConfig.FACTORY);
+        ownerPublicKey = vm.envAddress("OWNER");
+        ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         entryPoint = MumbaiConfig.ENTRY_POINT_V6;
-        securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
+        factory = MumbaiConfig.FACTORY_1;
+        securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE_1;
 
-        // mock
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(0)));
         bytes memory initData = abi.encode(uint32(1));
         modules[0] = abi.encodePacked(securityModule, initData);
     }
 
     function run() public {
-        vm.startBroadcast(deployerPrivateKey);
-        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), owner, modules);
-        wallet = factory.createWallet(initializer, salt);
+        vm.startBroadcast(ownerPrivateKey);
+        // abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), ownerPublicKey, modules);
+        bytes memory initializer = TrueWalletFactory(factory).getInitializer(address(entryPoint), ownerPublicKey, modules);
+        wallet = TrueWalletFactory(factory).createWallet(initializer, salt);
         vm.stopBroadcast();
     }
 }

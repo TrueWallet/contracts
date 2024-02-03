@@ -11,19 +11,19 @@ contract DeployDeployerScript is Script {
     address public entryPoint;
     address public walletImplementation;
 
-    address public owner;
+    address public ownerPublicKey;
+    address public deployerPublicKey;
     uint256 public deployerPrivateKey;
 
     function setUp() public {
-        owner = vm.envAddress("OWNER");
-        deployerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        walletImplementation = MumbaiConfig.WALLET_IMPL;
-        entryPoint = MumbaiConfig.ENTRY_POINT_V6;
+        ownerPublicKey = vm.envAddress("OWNER");
+        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIK_KEY");
+        deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
     }
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
-        deployer = new Deployer();
+        deployer = new Deployer(ownerPublicKey);
         vm.stopBroadcast();
     }
 }
