@@ -7,7 +7,7 @@ import {TrueContractManager} from "src/registry/TrueContractManager.sol";
 import {SecurityControlModule} from "src/modules/SecurityControlModule/SecurityControlModule.sol";
 import {SocialRecoveryModule} from "src/modules/SocialRecoveryModule/SocialRecoveryModule.sol";
 
-/// @title Deploy Code Generator.
+/// @title Deploy Code Generator
 /// @notice Provides functions to generate creation bytecode for various contracts.
 contract DeployCodeGenerator {
     /// @notice Retrieves the creation bytecode of the TrueWalletFactory contract.
