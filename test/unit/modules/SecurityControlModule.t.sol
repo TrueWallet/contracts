@@ -59,7 +59,8 @@ contract SecurityControlModuleUnitTest is Test {
 
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
         factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
-        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModules);
+        wallet = factory.createWallet(initializer, salt);
 
         module = new MockModule2();
 
@@ -201,7 +202,10 @@ contract SecurityControlModuleUnitTest is Test {
         bytes memory initData = abi.encode(uint32(moduleInitData));
         initModules[0] = abi.encodePacked(address(securityControlModule2), initData);
 
-        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModules);
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), address(walletOwner)));
+        wallet = factory.createWallet(initializer, salt);
+        // wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, salt);
 
         // test
         module = new MockModule2();
@@ -333,12 +337,13 @@ contract SecurityControlModuleUnitTest is Test {
         modules[0] = abi.encodePacked(securityControlModule, initData);
         salt = keccak256(abi.encodePacked(uint256(777)));
 
-        calculatedAddress = factory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        calculatedAddress = factory.getWalletAddress(salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, modules);
 
         UserOperation memory userOp = getUserOp(calculatedAddress, 0);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(factory)),
-            abi.encodeWithSelector(factory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+            abi.encodeWithSelector(factory.createWallet.selector, initializer, salt)
         );
         userOp.initCode = initCode;
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);

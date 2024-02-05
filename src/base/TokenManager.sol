@@ -3,14 +3,14 @@ pragma solidity ^0.8.19;
 
 import {OwnerAuth} from "../authority/OwnerAuth.sol";
 import {OwnerManager} from "./OwnerManager.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {ERC721} from "solmate/tokens/ERC721.sol";
-import {ERC1155} from "solmate/tokens/ERC1155.sol";
-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+import {ERC20} from "solady/tokens/ERC20.sol";
+import {ERC721} from "solady/tokens/ERC721.sol";
+import {ERC1155} from "solady/tokens/ERC1155.sol";
+import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 import {WalletErrors} from "src/common/Errors.sol";
 
 /// @title TokenManager
-/// @notice This abstract contract defines a set of functionalities to manage various types of token transfers, 
+/// @notice This abstract contract defines a set of functionalities to manage various types of token transfers,
 /// including ETH, ERC20, ERC721, and ERC1155 tokens. It ensures that only the owner can initiate the transfers.
 abstract contract TokenManager is OwnerAuth, WalletErrors {
     /// @dev Ensures that the function can only be called by the contract owner.
@@ -38,12 +38,12 @@ abstract contract TokenManager is OwnerAuth, WalletErrors {
         emit TransferredETH(to, amount);
     }
 
-    /// @notice Transfer ERC20 tokens out of the wallet. 
+    /// @notice Transfer ERC20 tokens out of the wallet.
     /// @param token The ERC20 token contract address.
     /// @param to The recipient's address.
     /// @param amount The amount of tokens to transfer.
     function transferERC20(address token, address to, uint256 amount) external authorized {
-        SafeTransferLib.safeTransfer(ERC20(token), to, amount);
+        SafeTransferLib.safeTransfer(token, to, amount);
         emit TransferredERC20(token, to, amount);
     }
 

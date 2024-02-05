@@ -7,7 +7,7 @@ pragma solidity ^0.8.19;
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {UserOperationLib, UserOperation} from "account-abstraction/interfaces/UserOperation.sol";
 import {ECDSA} from "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
-import {Owned} from "solmate/auth/Owned.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 import {ITruePaymaster} from "./ITruePaymaster.sol";
 import "account-abstraction/core/Helpers.sol";
 
@@ -22,7 +22,7 @@ import "lib/forge-std/src/console.sol";
  * - the paymaster checks a signature to agree to PAY for GAS.
  * - the account checks a signature to prove identity and account ownership.
  */
-contract VerifyingPaymaster is ITruePaymaster, Owned {
+contract VerifyingPaymaster is ITruePaymaster, Ownable {
     using ECDSA for bytes32;
     using UserOperationLib for UserOperation;
 
@@ -36,10 +36,7 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
 
     mapping(address => uint256) public senderNonce;
 
-    event UpdateEntryPoint(
-        address indexed _newEntryPoint,
-        address indexed _oldEntryPoint
-    );
+    event UpdateEntryPoint(address indexed _newEntryPoint, address indexed _oldEntryPoint);
 
     /// @notice Validate that only the entryPoint is able to call a method
     modifier onlyEntryPoint() {
@@ -52,13 +49,10 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
     /// @dev Reverts in case not valid entryPoint or owner
     error InvalidEntryPoint();
 
-    constructor(
-        IEntryPoint _entryPoint,
-        address _verifyingSigner,
-        address _owner
-    ) Owned(_owner) {
+    constructor(IEntryPoint _entryPoint, address _verifyingSigner, address _owner) {
         entryPoint = IEntryPoint(_entryPoint);
         verifyingSigner = _verifyingSigner;
+        _setOwner(_owner);
     }
 
     /// @notice Get the total paymaster stake on the entryPoint
@@ -86,26 +80,20 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
      * paymasterAndData[20:84] : abi.encode(validUntil, validAfter)
      * paymasterAndData[84:] : signature
      */
-    function validatePaymasterUserOp(
-        UserOperation calldata userOp,
-        bytes32 /*userOpHash*/,
-        uint256 requiredPreFund
-    ) external returns (bytes memory context, uint256 validationData) {
+    function validatePaymasterUserOp(UserOperation calldata userOp, bytes32, /*userOpHash*/ uint256 requiredPreFund)
+        external
+        returns (bytes memory context, uint256 validationData)
+    {
         (requiredPreFund);
-        (
-            uint48 validUntil,
-            uint48 validAfter,
-            bytes calldata signature
-        ) = parsePaymasterAndData(userOp.paymasterAndData);
+        (uint48 validUntil, uint48 validAfter, bytes calldata signature) =
+            parsePaymasterAndData(userOp.paymasterAndData);
         // ECDSA library supports both 64 and 65-byte long signatures.
         // we only "require" it here so that the revert reason on invalid signature will be of "VerifyingPaymaster", and not "ECDSA"
         require(
             signature.length == 64 || signature.length == 65,
             "VerifyingPaymaster: invalid signature length in paymasterAndData"
         );
-        bytes32 hash = ECDSA.toEthSignedMessageHash(
-            getHash(userOp, validUntil, validAfter)
-        );
+        bytes32 hash = ECDSA.toEthSignedMessageHash(getHash(userOp, validUntil, validAfter));
         senderNonce[userOp.getSender()]++;
 
         // don't revert on signature failure: return SIG_VALIDATION_FAILED
@@ -126,43 +114,31 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
      * note that this signature covers all fields of the UserOperation, except the "paymasterAndData",
      * which will carry the signature itself.
      */
-    function getHash(
-        UserOperation calldata userOp,
-        uint48 validUntil,
-        uint48 validAfter
-    ) public view returns (bytes32) {
+    function getHash(UserOperation calldata userOp, uint48 validUntil, uint48 validAfter)
+        public
+        view
+        returns (bytes32)
+    {
         //can't use userOp.hash(), since it contains also the paymasterAndData itself.
 
-        return
-            keccak256(
-                abi.encode(
-                    pack(userOp),
-                    block.chainid,
-                    address(this),
-                    senderNonce[userOp.getSender()],
-                    validUntil,
-                    validAfter
-                )
-            );
+        return keccak256(
+            abi.encode(
+                pack(userOp), block.chainid, address(this), senderNonce[userOp.getSender()], validUntil, validAfter
+            )
+        );
     }
 
-    function parsePaymasterAndData(
-        bytes calldata paymasterAndData
-    )
+    function parsePaymasterAndData(bytes calldata paymasterAndData)
         public
         pure
         returns (uint48 validUntil, uint48 validAfter, bytes calldata signature)
     {
-        (validUntil, validAfter) = abi.decode(
-            paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET],
-            (uint48, uint48)
-        );
+        (validUntil, validAfter) =
+            abi.decode(paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET], (uint48, uint48));
         signature = paymasterAndData[SIGNATURE_OFFSET:];
     }
 
-    function pack(
-        UserOperation calldata userOp
-    ) internal pure returns (bytes memory ret) {
+    function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
         // lighter signature scheme
         bytes calldata pnd = userOp.paymasterAndData;
         // copy directly the userOp from calldata up to (but not including) the paymasterAndData.
@@ -179,11 +155,7 @@ contract VerifyingPaymaster is ITruePaymaster, Owned {
     }
 
     /// @notice Handler for charging the sender (smart wallet) for the transaction after it has been paid for by the paymaster
-    function postOp(
-        PostOpMode mode,
-        bytes calldata context,
-        uint256 actualGasCost
-    ) external onlyEntryPoint {}
+    function postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) external onlyEntryPoint {}
 
     ///// STAKE MANAGEMENT
 

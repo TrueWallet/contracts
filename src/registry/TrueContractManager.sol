@@ -2,12 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {ITrueContractManager} from "src/registry/ITrueContractManager.sol";
-import {Owned} from "solmate/auth/Owned.sol";
+import {Ownable} from "solady/auth/Ownable.sol";
 
 /// @title TrueContractManager
 /// @notice This contract manages and verifies TrueContract modules
 /// @dev It allows the owner to add or remove module contracts and check if a module is registered
-contract TrueContractManager is ITrueContractManager, Owned {
+contract TrueContractManager is ITrueContractManager, Ownable {
     /// @dev Emitted when an address provided is not a contract
     error TrueContractManager__NotContractProvided();
     /// @dev Emitted when attempting to register an already registered contract
@@ -19,8 +19,8 @@ contract TrueContractManager is ITrueContractManager, Owned {
     mapping(address module => bool) private _isTrueModule;
 
     /// @param _owner The address of the owner of this contract
-    constructor(address _owner) Owned(_owner) {
-        owner = _owner;
+    constructor(address _owner) {
+        _setOwner(_owner);
     }
 
     /// @notice Adds a list of modules to the registry

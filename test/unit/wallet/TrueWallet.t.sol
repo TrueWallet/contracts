@@ -55,9 +55,9 @@ contract TrueWalletUnitTest is Test {
         modules[0] = abi.encodePacked(address(module), initData);
 
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
-
         factory = new TrueWalletFactory(address(walletImpl), address(ownerAddress), address(entryPoint));
-        wallet = factory.createWallet(address(entryPoint), ownerAddress, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), ownerAddress, modules);
+        wallet = factory.createWallet(initializer, salt);
     }
 
     function encodeError(string memory error) internal pure returns (bytes memory encoded) {
@@ -566,19 +566,17 @@ contract TrueWalletUnitTest is Test {
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(1)));
 
         vm.expectRevert(); //encodeError("ZeroAddressProvided()")
-        wallet = factory.createWallet(address(0), ownerAddress, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(0), ownerAddress, modules);
+        wallet = factory.createWallet(initializer, salt);
     }
 
     function testInitializeWithZeroOwnerAddress() public {
-        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(1)));
+        salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(2)));
+
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), address(0), modules);
 
         vm.expectRevert(); //encodeError("ZeroAddressProvided()")
-        wallet = factory.createWallet(
-            address(entryPoint), //address(entryPoint)
-            address(0), //ownerAddress
-            modules,
-            salt
-        );
+        wallet = factory.createWallet(initializer, salt);
     }
 
     function testAddAndWithdrawDeposite() public {

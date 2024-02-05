@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 
-import {TrueContractManager} from "src/registry/TrueContractManager.sol";
+import {TrueContractManager, Ownable} from "src/registry/TrueContractManager.sol";
 import {MockModule} from "../../mocks/MockModule.sol";
 
 contract TrueContractManagerUnitTest is Test {
@@ -41,7 +41,7 @@ contract TrueContractManagerUnitTest is Test {
         address[] memory modules = new address[](1);
         modules[0] = address(module);
         vm.prank(address(user));
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(Ownable.Unauthorized.selector);
         contractManager.add(modules);
         assertFalse(contractManager.isTrueModule(address(module)));
     }
@@ -96,7 +96,7 @@ contract TrueContractManagerUnitTest is Test {
         address[] memory modules = new address[](1);
         modules[0] = address(module);
         vm.prank(address(user));
-        vm.expectRevert("UNAUTHORIZED");
+        vm.expectRevert(Ownable.Unauthorized.selector);
         contractManager.remove(modules);
         assertTrue(contractManager.isTrueModule(address(module)));
     }

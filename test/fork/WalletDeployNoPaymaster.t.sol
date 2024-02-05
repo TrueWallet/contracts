@@ -13,7 +13,7 @@ import {Bundler} from "test/mocks/protocol/Bundler.sol";
 import {MumbaiConfig} from "config/MumbaiConfig.sol";
 
 contract WalletDeployNoPaymasterEndToEndTest is Test {
-    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.OFFICIAL_ENTRY_POINT);
+    IEntryPoint public constant entryPoint = IEntryPoint(MumbaiConfig.ENTRY_POINT_V6);
     IWalletFactory public constant walletFactory = IWalletFactory(MumbaiConfig.FACTORY);
 
     address payable public beneficiary = payable(MumbaiConfig.BENEFICIARY);

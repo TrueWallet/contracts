@@ -49,7 +49,8 @@ contract TrueWalletProxyUnitTest is Test {
     }
 
     function deployWallet() public returns (TrueWallet proxyWallet) {
-        proxyWallet = factory.createWallet(address(entryPoint), ownerAddress, modules, salt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), ownerAddress, modules);
+        proxyWallet = factory.createWallet(initializer, salt);
     }
 
     function preUpgrade(TrueWallet proxyWallet) public {

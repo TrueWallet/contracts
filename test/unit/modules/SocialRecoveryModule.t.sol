@@ -77,7 +77,8 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
         factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
-        wallet = factory.createWallet(address(entryPoint), walletOwner, initModules, deplSalt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModules);
+        wallet = factory.createWallet(initializer, deplSalt);
         vm.prank(address(wallet));
         securityControlModule.fullInit();
     }
@@ -150,7 +151,9 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
-        wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModules2);
+        deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint), address(walletOwner)));
+        wallet2 = factory.createWallet(initializer, deplSalt);
         vm.prank(address(wallet2));
         securityControlModule.fullInit();
 
@@ -237,7 +240,9 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes memory securityControlModuleInitData = abi.encode(uint32(controlModuleInitData));
         initModules2[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
 
-        wallet2 = factory.createWallet(address(entryPoint), walletOwner, initModules2, deplSalt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModules2);
+        deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint), address(walletOwner)));
+        wallet2 = factory.createWallet(initializer, deplSalt);
         vm.prank(address(wallet2));
         securityControlModule.fullInit();
 
@@ -525,7 +530,8 @@ contract SocialRecoveryModuleUnitTest is Test {
         initModule[0] = abi.encodePacked(address(securityControlModule), securityControlModuleInitData);
         deplSalt = keccak256(abi.encodePacked(address(factory), address(entryPoint)));
         factory = new TrueWalletFactory(address(walletImpl), adminAddress, address(entryPoint));
-        walletNoRecoveryModule = factory.createWallet(address(entryPoint), walletOwner, initModule, deplSalt);
+        bytes memory initializer = abi.encodeWithSignature("initialize(address,address,bytes[])", address(entryPoint), walletOwner, initModule);
+        walletNoRecoveryModule = factory.createWallet(initializer, deplSalt);
         return walletNoRecoveryModule;
     }
 

@@ -124,8 +124,6 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
         return inited(_wallet);
     }
 
-    // TODO TBC: addGuardians to existing list
-    // _checkApplyGuardianUpdate allows only new list of guardians addresses, not previous
     /// @notice External function to process any pending guardian updates for a wallet.
     /// @param _wallet The address of the wallet for which to process guardian updates.
     function processGuardianUpdates(address _wallet) external authorized(sender()) {
