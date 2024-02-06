@@ -1,5 +1,5 @@
 # ITrueContractManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/registry/ITrueContractManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/registry/ITrueContractManager.sol)
 
 *Interface to manage and check permissions for TrueContract modules*
 
@@ -35,6 +35,12 @@ function isTrueModule(address module) external view returns (bool);
 event TrueContractManagerAdded(address indexed module);
 ```
 
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`module`|`address`|Address of the new module added|
+
 ### TrueContractManagerRemoved
 *Emitted when an existing module is removed*
 
@@ -42,4 +48,10 @@ event TrueContractManagerAdded(address indexed module);
 ```solidity
 event TrueContractManagerRemoved(address indexed module);
 ```
+
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`module`|`address`|Address of the module removed|
 

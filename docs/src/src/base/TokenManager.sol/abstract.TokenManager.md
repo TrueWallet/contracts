@@ -1,5 +1,5 @@
 # TokenManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/base/TokenManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/base/TokenManager.sol)
 
 **Inherits:**
 [OwnerAuth](/src/authority/OwnerAuth.sol/abstract.OwnerAuth.md), [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
@@ -87,35 +87,35 @@ function transferERC1155(address collection, uint256 tokenId, address to, uint25
 
 
 ## Events
-### TransferedETH
+### TransferredETH
 Emitted when ETH is transferred out of the wallet.
 
 
 ```solidity
-event TransferedETH(address indexed to, uint256 amount);
+event TransferredETH(address indexed to, uint256 amount);
 ```
 
-### TransferedERC20
+### TransferredERC20
 Emitted when ERC20 tokens are transferred out of the wallet.
 
 
 ```solidity
-event TransferedERC20(address token, address indexed to, uint256 amount);
+event TransferredERC20(address token, address indexed to, uint256 amount);
 ```
 
-### TransferedERC721
+### TransferredERC721
 Emitted when ERC721 tokens are transferred out of the wallet.
 
 
 ```solidity
-event TransferedERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
+event TransferredERC721(address indexed collection, uint256 indexed tokenId, address indexed to);
 ```
 
-### TransferedERC1155
+### TransferredERC1155
 Emitted when ERC1155 tokens are transferred out of the wallet.
 
 
 ```solidity
-event TransferedERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
+event TransferredERC1155(address indexed collection, uint256 indexed tokenId, uint256 amount, address indexed to);
 ```
 

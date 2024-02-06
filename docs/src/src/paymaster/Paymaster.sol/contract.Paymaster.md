@@ -1,8 +1,8 @@
 # Paymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/paymaster/Paymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/paymaster/Paymaster.sol)
 
 **Inherits:**
-[ITruePaymaster](/src/paymaster/ITruePaymaster.sol/interface.ITruePaymaster.md), Owned
+[ITruePaymaster](/src/paymaster/ITruePaymaster.sol/interface.ITruePaymaster.md), Ownable
 
 
 ## State Variables
@@ -27,7 +27,7 @@ modifier onlyEntryPoint();
 
 
 ```solidity
-constructor(address _entryPoint, address _owner) Owned(_owner);
+constructor(address _entryPoint, address _owner);
 ```
 
 ### getStake

@@ -1,5 +1,5 @@
 # ISocialRecoveryModule
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol)
 
 *If a user is already in a recovery process, they cannot change guardians.
 If a user starts the recovery process while guardians are being changed, the change of guardians will be canceled.*
@@ -35,7 +35,12 @@ Begin the process to update guardians, changes are effective after a waiting per
 
 
 ```solidity
-function updatePendingGuardians(address[] calldata guardians, uint256 threshold, bytes32 guardianHash) external;
+function updatePendingGuardians(
+    address[] calldata guardians,
+    uint256 threshold,
+    bytes32 guardianHash,
+    uint256 pendingUntil
+) external;
 ```
 **Parameters**
 
@@ -44,6 +49,7 @@ function updatePendingGuardians(address[] calldata guardians, uint256 threshold,
 |`guardians`|`address[]`|List of new guardian addresses|
 |`threshold`|`uint256`|The new threshold of guardians required|
 |`guardianHash`|`bytes32`|Hash related to the new set of guardians|
+|`pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### cancelSetGuardians
@@ -67,7 +73,7 @@ A single guardian approves the recovery process
 
 
 ```solidity
-function approveRecovery(address wallet, address[] calldata newOwners) external;
+function approveRecovery(address wallet, address[] calldata newOwners, uint256 pendingUntil) external;
 ```
 **Parameters**
 
@@ -75,6 +81,7 @@ function approveRecovery(address wallet, address[] calldata newOwners) external;
 |----|----|-----------|
 |`wallet`|`address`|The address of the wallet being recovered|
 |`newOwners`|`address[]`|The new owner(s) of the wallet post recovery|
+|`pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### batchApproveRecovery
@@ -91,7 +98,8 @@ function batchApproveRecovery(
     address wallet,
     address[] calldata newOwner,
     uint256 signatureCount,
-    bytes memory signatures
+    bytes memory signatures,
+    uint256 pendingUntil
 ) external;
 ```
 **Parameters**
@@ -102,6 +110,7 @@ function batchApproveRecovery(
 |`newOwner`|`address[]`|The new owner(s) of the wallet post recovery|
 |`signatureCount`|`uint256`|The count of signatures from guardians|
 |`signatures`|`bytes`|The actual signatures from the guardians|
+|`pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### executeRecovery

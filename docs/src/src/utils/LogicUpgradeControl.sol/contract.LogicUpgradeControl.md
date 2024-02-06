@@ -1,5 +1,5 @@
 # LogicUpgradeControl
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/utils/LogicUpgradeControl.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/utils/LogicUpgradeControl.sol)
 
 **Inherits:**
 [ILogicUpgradeControl](/src/interfaces/ILogicUpgradeControl.sol/interface.ILogicUpgradeControl.md), [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md), [UpgradeWalletErrors](/src/common/Errors.sol/contract.UpgradeWalletErrors.md)
@@ -16,7 +16,7 @@ uint256 public constant upgradeDelay = 2 days;
 ## Functions
 ### logicUpgradeInfo
 
-*Returns Logic updgrade layout info*
+*Returns Logic upgrade layout info*
 
 
 ```solidity

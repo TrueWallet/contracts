@@ -1,5 +1,9 @@
 # Upgradeable
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/utils/Upgradeable.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/utils/Upgradeable.sol)
+
+*This abstract contract provides a basic framework for upgradeable contracts using the EIP-1967 standard.
+It includes functionality to get and set the implementation address, and to upgrade the contract.
+EIP-1967 is a standard for handling proxy contracts and their implementation addresses in a predictable manner.*
 
 
 ## State Variables
@@ -88,12 +92,5 @@ Emits an {Upgraded} event.*
 
 ```solidity
 function _upgradeToAndCall(address newImplementation, bytes memory data) internal;
-```
-
-### _initialize
-
-
-```solidity
-function _initialize(address newImplementation, bytes memory data) internal;
 ```
 

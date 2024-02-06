@@ -1,8 +1,8 @@
 # VerifyingPaymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/paymaster/VerifyingPaymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/paymaster/VerifyingPaymaster.sol)
 
 **Inherits:**
-[ITruePaymaster](/src/paymaster/ITruePaymaster.sol/interface.ITruePaymaster.md), Owned
+[ITruePaymaster](/src/paymaster/ITruePaymaster.sol/interface.ITruePaymaster.md), Ownable
 
 A paymaster that uses external service to decide whether to pay for the UserOp.
 The paymaster trusts an external signer to sign the transaction.
@@ -63,7 +63,7 @@ modifier onlyEntryPoint();
 
 
 ```solidity
-constructor(IEntryPoint _entryPoint, address _verifyingSigner, address _owner) Owned(_owner);
+constructor(IEntryPoint _entryPoint, address _verifyingSigner, address _owner);
 ```
 
 ### getStake

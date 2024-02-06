@@ -7,3 +7,5 @@
 - [IModuleManager](IModuleManager.sol/interface.IModuleManager.md)
 - [IOwnerManager](IOwnerManager.sol/interface.IOwnerManager.md)
 - [IPaymaster](IPaymaster.sol/interface.IPaymaster.md)
+- [IWallet](IWallet.sol/interface.IWallet.md)
+- [IWalletFactory](IWalletFactory.sol/interface.IWalletFactory.md)

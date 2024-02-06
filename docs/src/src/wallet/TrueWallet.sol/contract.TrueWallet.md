@@ -1,10 +1,10 @@
 # TrueWallet
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/wallet/TrueWallet.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/wallet/TrueWallet.sol)
 
 **Inherits:**
-[IWallet](/src/wallet/IWallet.sol/interface.IWallet.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [Authority](/src/authority/Authority.sol/abstract.Authority.md), [ModuleManager](/src/base/ModuleManager.sol/abstract.ModuleManager.md), [OwnerManager](/src/base/OwnerManager.sol/abstract.OwnerManager.md), [TokenManager](/src/base/TokenManager.sol/abstract.TokenManager.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md)
+[IWallet](/src/interfaces/IWallet.sol/interface.IWallet.md), [Initializable](/src/utils/Initializable.sol/abstract.Initializable.md), [Authority](/src/authority/Authority.sol/abstract.Authority.md), [ModuleManager](/src/base/ModuleManager.sol/abstract.ModuleManager.md), [OwnerManager](/src/base/OwnerManager.sol/abstract.OwnerManager.md), [TokenManager](/src/base/TokenManager.sol/abstract.TokenManager.md), [LogicUpgradeControl](/src/utils/LogicUpgradeControl.sol/contract.LogicUpgradeControl.md), [TokenCallbackHandler](/src/callback/TokenCallbackHandler.sol/contract.TokenCallbackHandler.md)
 
-*This contract provides functionality to execute AA (ERC-4337) UserOperetion
+*This contract provides functionality to execute AA (ERC-4337) UserOperation
 It allows to receive and manage assets using the owner account of the smart contract wallet*
 
 
@@ -48,7 +48,7 @@ function initialize(address _entryPoint, address _owner, bytes[] calldata _modul
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_entryPoint`|`address`|trused entrypoint|
+|`_entryPoint`|`address`|trusted entrypoint|
 |`_owner`|`address`|wallet sign key address|
 |`_modules`|`bytes[]`|The list of encoded modules to be added and its associated initialization data.|
 
@@ -147,31 +147,31 @@ preUpgradeTo is called before upgrading the wallet
 function preUpgradeTo(address newImplementation) external onlyEntryPointOrOwner;
 ```
 
-### getDeposite
+### getDeposit
 
 Returns the wallet's deposit in EntryPoint
 
 
 ```solidity
-function getDeposite() public view returns (uint256);
+function getDeposit() public view returns (uint256);
 ```
 
-### addDeposite
+### addDeposit
 
-Add to the deposite of the wallet in EntryPoint. Deposit is used to pay user gas fees
+Add to the deposit of the wallet in EntryPoint. Deposit is used to pay user gas fees
 
 
 ```solidity
-function addDeposite() public payable;
+function addDeposit() public payable;
 ```
 
-### withdrawDepositeTo
+### withdrawDepositTo
 
-Withdraw funds from the wallet's deposite in EntryPoint
+Withdraw funds from the wallet's deposit in EntryPoint
 
 
 ```solidity
-function withdrawDepositeTo(address payable to, uint256 amount) public onlyOwner;
+function withdrawDepositTo(address payable to, uint256 amount) public onlyOwner;
 ```
 
 ### _validateSignature

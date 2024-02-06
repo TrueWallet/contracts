@@ -1,8 +1,8 @@
 # TrueContractManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/registry/TrueContractManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/registry/TrueContractManager.sol)
 
 **Inherits:**
-[ITrueContractManager](/src/registry/ITrueContractManager.sol/interface.ITrueContractManager.md), Owned
+[ITrueContractManager](/src/registry/ITrueContractManager.sol/interface.ITrueContractManager.md), Ownable
 
 This contract manages and verifies TrueContract modules
 
@@ -24,7 +24,7 @@ mapping(address module => bool) private _isTrueModule;
 
 
 ```solidity
-constructor(address _owner) Owned(_owner);
+constructor(address _owner);
 ```
 **Parameters**
 

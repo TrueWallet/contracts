@@ -1,5 +1,5 @@
 # SocialRecoveryModule
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/modules/SocialRecoveryModule/SocialRecoveryModule.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/modules/SocialRecoveryModule/SocialRecoveryModule.sol)
 
 **Inherits:**
 [ISocialRecoveryModule](/src/modules/SocialRecoveryModule/ISocialRecoveryModule.sol/interface.ISocialRecoveryModule.md), [BaseModule](/src/modules/BaseModule.sol/abstract.BaseModule.md)
@@ -227,11 +227,12 @@ This update is pending for a certain delay before being applied.
 
 
 ```solidity
-function updatePendingGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
-    external
-    authorized(sender())
-    whenNotRecovery(sender())
-    checkPendingGuardian(sender());
+function updatePendingGuardians(
+    address[] calldata _guardians,
+    uint256 _threshold,
+    bytes32 _guardianHash,
+    uint256 _pendingUntil
+) external authorized(sender()) whenNotRecovery(sender()) checkPendingGuardian(sender());
 ```
 **Parameters**
 
@@ -240,6 +241,7 @@ function updatePendingGuardians(address[] calldata _guardians, uint256 _threshol
 |`_guardians`|`address[]`|The list of new guardians to be set.|
 |`_threshold`|`uint256`|The new threshold for guardian consensus.|
 |`_guardianHash`|`bytes32`|The new guardian hash to be used for off-chain guardians.|
+|`_pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### cancelSetGuardians
@@ -269,7 +271,7 @@ Reveal the anonymous guardians of a wallet.
 
 
 ```solidity
-function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, uint256 _salt)
+function revealAnonymousGuardians(address _wallet, address[] calldata _guardians, bytes32 _salt)
     public
     authorized(_wallet)
     checkPendingGuardian(_wallet);
@@ -280,7 +282,7 @@ function revealAnonymousGuardians(address _wallet, address[] calldata _guardians
 |----|----|-----------|
 |`_wallet`|`address`|The address of the wallet for which to reveal guardians.|
 |`_guardians`|`address[]`|The array of guardian addresses.|
-|`_salt`|`uint256`|The salt used to hash the anonymous guardian list.|
+|`_salt`|`bytes32`|The salt used to hash the anonymous guardian list.|
 
 
 ### approveRecovery
@@ -291,7 +293,9 @@ Approve a wallet recovery process initiated by guardians.
 
 
 ```solidity
-function approveRecovery(address _wallet, address[] memory _newOwners) external authorized(_wallet);
+function approveRecovery(address _wallet, address[] memory _newOwners, uint256 _pendingUntil)
+    external
+    authorized(_wallet);
 ```
 **Parameters**
 
@@ -299,6 +303,7 @@ function approveRecovery(address _wallet, address[] memory _newOwners) external 
 |----|----|-----------|
 |`_wallet`|`address`|The address of the wallet undergoing recovery.|
 |`_newOwners`|`address[]`|The proposed new array of owner addresses.|
+|`_pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### _pendingRecovery
@@ -307,7 +312,8 @@ Initiates a new pending recovery process for a given wallet, setting new owners 
 
 
 ```solidity
-function _pendingRecovery(address _wallet, address[] memory _newOwners, uint256 _nonce) private;
+function _pendingRecovery(address _wallet, address[] memory _newOwners, uint256 _nonce, uint256 _pendingUntil)
+    private;
 ```
 **Parameters**
 
@@ -316,6 +322,7 @@ function _pendingRecovery(address _wallet, address[] memory _newOwners, uint256 
 |`_wallet`|`address`|The address of the wallet undergoing recovery.|
 |`_newOwners`|`address[]`|An array of addresses that will be the new owners of the wallet after recovery.|
 |`_nonce`|`uint256`|The nonce associated with the recovery process, ensuring the recovery action is unique.|
+|`_pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### executeRecovery
@@ -382,7 +389,8 @@ function batchApproveRecovery(
     address _wallet,
     address[] calldata _newOwners,
     uint256 _signatureCount,
-    bytes memory _signatures
+    bytes memory _signatures,
+    uint256 _pendingUntil
 ) external authorized(_wallet);
 ```
 **Parameters**
@@ -393,6 +401,7 @@ function batchApproveRecovery(
 |`_newOwners`|`address[]`|The proposed new array of owner addresses.|
 |`_signatureCount`|`uint256`|The number of signatures provided.|
 |`_signatures`|`bytes`|Concatenated signatures from the guardians.|
+|`_pendingUntil`|`uint256`|Seconds after the current block until which the update is pending.|
 
 
 ### _newSeed
@@ -440,14 +449,14 @@ Generates a hash of the guardians.
 
 
 ```solidity
-function getAnonymousGuardianHash(address[] calldata _guardians, uint256 _salt) public pure returns (bytes32);
+function getAnonymousGuardianHash(address[] calldata _guardians, bytes32 _salt) public pure returns (bytes32);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
 |`_guardians`|`address[]`|Array of guardians' addresses.|
-|`_salt`|`uint256`|Salt value.|
+|`_salt`|`bytes32`|Salt value.|
 
 **Returns**
 
@@ -493,7 +502,7 @@ function getRecoveryApprovals(address _wallet, address[] memory _newOwners)
 |Name|Type|Description|
 |----|----|-----------|
 |`_wallet`|`address`|The target wallet.|
-|`_newOwners`|`address[]`|The new owners' addressess.|
+|`_newOwners`|`address[]`|The new owners' addresses.|
 
 **Returns**
 
@@ -519,7 +528,7 @@ function hasGuardianApproved(address _guardian, address _wallet, address[] calld
 |----|----|-----------|
 |`_guardian`|`address`|The guardian.|
 |`_wallet`|`address`|The target wallet.|
-|`_newOwners`|`address[]`|The new owners' addressess.|
+|`_newOwners`|`address[]`|The new owners' addresses.|
 
 **Returns**
 
@@ -655,13 +664,13 @@ function nonce(address _wallet) public view returns (uint256);
 |`<none>`|`uint256`|The nonce for this wallet.|
 
 
-### pendingGuarian
+### pendingGuardian
 
 Retrieves the pending guardian update details for a specified wallet.
 
 
 ```solidity
-function pendingGuarian(address _wallet) public view returns (uint256, uint256, bytes32, address[] memory);
+function pendingGuardian(address _wallet) public view returns (uint256, uint256, bytes32, address[] memory);
 ```
 **Parameters**
 
@@ -681,7 +690,7 @@ function pendingGuarian(address _wallet) public view returns (uint256, uint256, 
 
 ### checkNSignatures
 
-*Referece from gnosis safe validation.*
+*Reference from gnosis safe validation.*
 
 *Validates a set of signatures for a given hash, ensuring they are from guardians.*
 

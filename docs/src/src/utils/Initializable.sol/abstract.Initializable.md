@@ -1,10 +1,10 @@
 # Initializable
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/utils/Initializable.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/utils/Initializable.sol)
 
 *This is a base contract to aid in writing upgradeable contracts, or any kind of contract that will be deployed
 behind a proxy. Since proxied contracts do not make use of a constructor, it's common to move constructor logic to an
 external initializer function, usually called `initialize`. It then becomes necessary to protect this initializer
-function so it can only be called once. The {initializer} modifier provided by this contract will have this effect.
+function so it can only be called once. The [initializer](/src/utils/Initializable.sol/abstract.Initializable.md#initializer) modifier provided by this contract will have this effect.
 The initialization functions use a version number. Once a version number is used, it is consumed and cannot be
 reused. This mechanism prevents re-execution of each "step" but allows the creation of new initialization steps in
 case an upgrade adds a module that needs to be initialized.
@@ -56,7 +56,7 @@ function _layout() internal view returns (InitializableLayout storage layout);
 `onlyInitializing` functions can be used to initialize parent contracts.
 Similar to `reinitializer(1)`, except that functions marked with `initializer` can be nested in the context of a
 constructor.
-Emits an {Initialized} event.*
+Emits an [Initialized](/src/utils/Initializable.sol/abstract.Initializable.md#initialized) event.*
 
 
 ```solidity
@@ -75,7 +75,7 @@ cannot be nested. If one is invoked in the context of another, execution will re
 Note that versions can jump in increments greater than 1; this implies that if multiple reinitializers coexist in
 a contract, executing them in the right order is up to the developer or operator.
 WARNING: setting the version to 255 will prevent any future reinitialization.
-Emits an {Initialized} event.*
+Emits an [Initialized](/src/utils/Initializable.sol/abstract.Initializable.md#initialized) event.*
 
 
 ```solidity
@@ -85,7 +85,7 @@ modifier reinitializer(uint8 version);
 ### onlyInitializing
 
 *Modifier to protect an initialization function so that it can only be invoked by functions with the
-{initializer} and {reinitializer} modifiers, directly or indirectly.*
+[initializer](/src/utils/Initializable.sol/abstract.Initializable.md#initializer) and {reinitializer} modifiers, directly or indirectly.*
 
 
 ```solidity
@@ -98,7 +98,7 @@ modifier onlyInitializing();
 Calling this in the constructor of a contract will prevent that contract from being initialized or reinitialized
 to any version. It is recommended to use this to lock implementation contracts that are designed to be called
 through proxies.
-Emits an {Initialized} event the first time it is successfully executed.*
+Emits an [Initialized](/src/utils/Initializable.sol/abstract.Initializable.md#initialized) event the first time it is successfully executed.*
 
 
 ```solidity

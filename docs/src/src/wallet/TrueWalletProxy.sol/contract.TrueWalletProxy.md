@@ -1,59 +1,38 @@
 # TrueWalletProxy
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/wallet/TrueWalletProxy.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/wallet/TrueWalletProxy.sol)
 
 **Inherits:**
 [Upgradeable](/src/utils/Upgradeable.sol/abstract.Upgradeable.md)
+
+A proxy contract that forwards calls to an implementation contract.
+
+*This proxy uses the EIP-1967 standard for storage slots.*
 
 
 ## Functions
 ### constructor
 
-*Initializes the upgradeable proxy with an initial implementation specified by `logic`.
-If `data` is nonempty, it's used as data in a delegate call to `logic`. This will typically be an encoded
-function call, and allows initializing the storage of the proxy like a Solidity constructor.*
+Initializes the proxy with the address of the initial implementation contract.
 
 
 ```solidity
-constructor(address logic, bytes memory data) payable;
+constructor(address logic);
 ```
+**Parameters**
 
-### _delegate
+|Name|Type|Description|
+|----|----|-----------|
+|`logic`|`address`|Address of the initial implementation.|
 
-*Delegates the current call to `implementation`.
-This function does not return to its internal call site, it will return directly to the external caller.*
-
-
-```solidity
-function _delegate(address implementation) private;
-```
-
-### _fallback
-
-*Delegates the current call to the address returned by `_implementation()`.
-This function does not return to its internal call site, it will return directly to the external caller.*
-
-
-```solidity
-function _fallback() internal;
-```
 
 ### fallback
 
-*Fallback function that delegates calls to the address returned by `_implementation()`. Will run if no other
-function in the contract matches the call data.*
+Fallback function which forwards all calls to the implementation contract.
+
+*Uses delegatecall to ensure the context remains within the proxy.*
 
 
 ```solidity
 fallback() external payable;
-```
-
-### receive
-
-*Fallback function that delegates calls to the address returned by `_implementation()`. Will run if call data
-is empty.*
-
-
-```solidity
-receive() external payable;
 ```
 

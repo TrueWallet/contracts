@@ -1,5 +1,5 @@
 # UpgradeWalletErrors
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/common/Errors.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/common/Errors.sol)
 
 
 ## Errors

@@ -1,12 +1,12 @@
 # TrueWalletFactory
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/wallet/TrueWalletFactory.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/wallet/TrueWalletFactory.sol)
 
 **Inherits:**
 Ownable, Pausable, [WalletErrors](/src/common/Errors.sol/contract.WalletErrors.md)
 
-A factory contract for deploying and managing TrueWallet smart contracts.
+A factory contract for deploying and managing TrueWallet smart contracts using CREATE2 and CREATE3 for deterministic addresses.
 
-*This contract allows for the creation of TrueWallet instances using the CREATE2 opcode for predictable addresses.*
+*This contract allows for the creation of TrueWallet instances with predictable addresses.*
 
 
 ## State Variables
@@ -31,38 +31,35 @@ address public immutable entryPoint;
 ## Functions
 ### constructor
 
+*Initializes the factory with the wallet implementation and entry point addresses.*
+
 
 ```solidity
-constructor(address _walletImplementation, address _owner, address _entryPoint) Ownable Pausable;
+constructor(address _walletImpl, address _owner, address _entryPoint) Pausable();
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_walletImplementation`|`address`|Address of the wallet implementation contract.|
+|`_walletImpl`|`address`|Address of the wallet implementation contract.|
 |`_owner`|`address`|Address of the owner of this factory contract.|
 |`_entryPoint`|`address`|Address of the entry point contract.|
 
 
 ### createWallet
 
-Deploy a new TrueWallet smart contract.
+Deploy a new TrueWallet smart contract using CREATE3.
 
 
 ```solidity
-function createWallet(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
-    external
-    whenNotPaused
-    returns (TrueWallet proxy);
+function createWallet(bytes memory _initializer, bytes32 _salt) external whenNotPaused returns (TrueWallet proxy);
 ```
 **Parameters**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
-|`_walletOwner`|`address`|The owner address for the new wallet.|
-|`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
-|`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
+|`_initializer`|`bytes`|Initialization data for the new wallet.|
+|`_salt`|`bytes32`|A unique salt value used in the CREATE3 operation for deterministic address generation.|
 
 **Returns**
 
@@ -73,16 +70,39 @@ function createWallet(address _entryPoint, address _walletOwner, bytes[] calldat
 
 ### getWalletAddress
 
-Computes the deterministic address for a potential wallet deployment using CREATE2.
+Computes the deterministic address for a potential wallet deployment using CREATE3.
 
-*This doesn't deploy the wallet, just calculates its address.*
+*This doesn't deploy the wallet, just calculates its address using the provided salt.*
 
 
 ```solidity
-function getWalletAddress(address _entryPoint, address _walletOwner, bytes[] calldata _modules, bytes32 _salt)
+function getWalletAddress(bytes32 _salt) public view returns (address proxy);
+```
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`_salt`|`bytes32`|A unique salt value used in the CREATE3 operation for deterministic address generation.|
+
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`proxy`|`address`|The address of the wallet that would be created using the provided salt.|
+
+
+### getInitializer
+
+Constructs the initializer payload for wallet creation.
+
+*This function prepares the data required to initialize a new wallet, encoding it for the constructor.*
+
+
+```solidity
+function getInitializer(address _entryPoint, address _walletOwner, bytes[] calldata _modules)
     public
-    view
-    returns (address);
+    pure
+    returns (bytes memory initializer);
 ```
 **Parameters**
 
@@ -90,14 +110,45 @@ function getWalletAddress(address _entryPoint, address _walletOwner, bytes[] cal
 |----|----|-----------|
 |`_entryPoint`|`address`|The address of the EntryPoint contract for the new wallet.|
 |`_walletOwner`|`address`|The owner address for the new wallet.|
-|`_modules`|`bytes[]`|Array of initial module addresses for the wallet.|
-|`_salt`|`bytes32`|A salt value used in the CREATE2 opcode for deterministic address generation.|
+|`_modules`|`bytes[]`|Array of initial module addresses with respective init data for the wallet.|
 
 **Returns**
 
 |Name|Type|Description|
 |----|----|-----------|
-|`<none>`|`address`|Address of the wallet that would be created using the provided parameters.|
+|`initializer`|`bytes`|The encoded initializer payload.|
+
+
+### proxyCode
+
+Returns the proxy's creation code.
+
+*This public function is used to access the creation code of the TrueWalletProxy contract.*
+
+
+```solidity
+function proxyCode() external pure returns (bytes memory);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bytes`|A byte array representing the proxy's creation code.|
+
+
+### _proxyCode
+
+*Provides the low-level creation code used by the `proxyCode` function.*
+
+
+```solidity
+function _proxyCode() private pure returns (bytes memory);
+```
+**Returns**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`<none>`|`bytes`|The creation code of the TrueWalletProxy contract.|
 
 
 ### deposit

@@ -1,5 +1,5 @@
 # IPaymaster
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/interfaces/IPaymaster.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/interfaces/IPaymaster.sol)
 
 The interface exposed by a paymaster contract, who agrees to pay the gas for user's operations.
 A paymaster must hold a stake to cover the required entrypoint stake and also the gas for the transaction.

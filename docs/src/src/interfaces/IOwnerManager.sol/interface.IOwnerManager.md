@@ -1,5 +1,5 @@
 # IOwnerManager
-[Git Source](https://github.com/TrueWallet/contracts/blob/3a8d1f53b9460a762889129a9214639685ad5b95/src/interfaces/IOwnerManager.sol)
+[Git Source](https://github.com/TrueWallet/contracts/blob/5a052bc82f5ecbfdc3b7fb992a66fa5b770bcc4b/src/interfaces/IOwnerManager.sol)
 
 Interface for managing ownership in a contract
 
@@ -125,6 +125,12 @@ function listOwner() external returns (address[] memory owners);
 event OwnerAdded(address indexed owner);
 ```
 
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`owner`|`address`|Address of the new owner added|
+
 ### OwnerRemoved
 *Emitted when an existing owner is removed*
 
@@ -132,6 +138,12 @@ event OwnerAdded(address indexed owner);
 ```solidity
 event OwnerRemoved(address indexed owner);
 ```
+
+**Parameters**
+
+|Name|Type|Description|
+|----|----|-----------|
+|`owner`|`address`|Address of the owner removed|
 
 ### OwnerCleared
 *Emitted when all owners are cleared and reset*
