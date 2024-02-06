@@ -164,7 +164,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @param _guardians The list of new guardians to be set.
     /// @param _threshold The new threshold for guardian consensus.
     /// @param _guardianHash The new guardian hash to be used for off-chain guardians.
-    function updatePendingGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash)
+    /// @param _pendingUntil Seconds after the current block until which the update is pending.
+    function updatePendingGuardians(address[] calldata _guardians, uint256 _threshold, bytes32 _guardianHash, uint _pendingUntil)
         external
         authorized(sender())
         whenNotRecovery(sender())
@@ -188,7 +189,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             }
         }
         PendingGuardianEntry memory pendingEntry;
-        pendingEntry.pendingUntil = block.timestamp + 2 days;
+        pendingEntry.pendingUntil = block.timestamp + _pendingUntil;
         pendingEntry.threshold = _threshold;
         pendingEntry.guardians = _guardians;
         pendingEntry.guardianHash = _guardianHash;
@@ -261,7 +262,8 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @dev Reverts if no new owners are provided or the caller is not authorized.
     /// @param _wallet The address of the wallet undergoing recovery.
     /// @param _newOwners The proposed new array of owner addresses.
-    function approveRecovery(address _wallet, address[] memory _newOwners) external authorized(_wallet) {
+    /// @param _pendingUntil Seconds after the current block until which the update is pending.
+    function approveRecovery(address _wallet, address[] memory _newOwners, uint _pendingUntil) external authorized(_wallet) {
         if (_newOwners.length == 0) revert SocialRecovery__OwnersEmpty();
         if (!isGuardian(_wallet, sender())) {
             revert SocialRecovery__Unauthorized();
@@ -276,7 +278,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
 
         // In case this is the first approval => initiate recovery request
         if (recoveryEntries[_wallet].executeAfter == 0) {
-            _pendingRecovery(_wallet, _newOwners, _nonce);
+            _pendingRecovery(_wallet, _newOwners, _nonce, _pendingUntil);
         }
     }
 
@@ -284,8 +286,9 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @param _wallet The address of the wallet undergoing recovery.
     /// @param _newOwners An array of addresses that will be the new owners of the wallet after recovery.
     /// @param _nonce The nonce associated with the recovery process, ensuring the recovery action is unique.
-    function _pendingRecovery(address _wallet, address[] memory _newOwners, uint256 _nonce) private {
-        uint256 executeAfter = block.timestamp + 2 days;
+    /// @param _pendingUntil Seconds after the current block until which the update is pending.
+    function _pendingRecovery(address _wallet, address[] memory _newOwners, uint256 _nonce, uint _pendingUntil) private {
+        uint256 executeAfter = block.timestamp + _pendingUntil;
         recoveryEntries[_wallet] = RecoveryEntry(_newOwners, executeAfter, _nonce);
         walletRecoveryNonce[_wallet]++;
         emit PendingRecovery(_wallet, _newOwners, _nonce, executeAfter);
@@ -349,11 +352,13 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
     /// @param _newOwners The proposed new array of owner addresses.
     /// @param _signatureCount The number of signatures provided.
     /// @param _signatures Concatenated signatures from the guardians.
+    /// @param _pendingUntil Seconds after the current block until which the update is pending.
     function batchApproveRecovery(
         address _wallet,
         address[] calldata _newOwners,
         uint256 _signatureCount,
-        bytes memory _signatures // guardians signatures arranged based on the sorted addresses.
+        bytes memory _signatures, // guardians signatures arranged based on the sorted addresses.
+        uint _pendingUntil
     ) external authorized(_wallet) {
         // Apply & clear pending guardians settings
         _checkApplyGuardianUpdate(_wallet);
@@ -375,7 +380,7 @@ contract SocialRecoveryModule is ISocialRecoveryModule, BaseModule {
             (_signatureCount < threshold(_wallet))
                 || ((_signatureCount > threshold(_wallet)) && (_signatureCount != walletGuardian[_wallet].guardians.size()))
         ) {
-            _pendingRecovery(_wallet, _newOwners, _nonce);
+            _pendingRecovery(_wallet, _newOwners, _nonce, _pendingUntil);
         }
         emit BatchApproveRecovery(_wallet, _newOwners, _signatureCount, _signatures, recoveryHash);
     }

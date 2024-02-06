@@ -284,7 +284,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         threshold2 = 1;
 
         vm.prank(address(wallet));
-        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2, 2 days);
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
         = socialRecoveryModule.pendingGuardian(address(wallet));
@@ -303,7 +303,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(securityControlModule));
         vm.expectRevert(); // ISocialRecoveryModule.SocialRecovery__Unauthorized.selector
-        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2, 2 days);
     }
 
     function testRevertsUpdateGuardiansIfOnchainGuardianConfigError() public {
@@ -315,7 +315,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(wallet));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OnchainGuardianConfigError.selector);
-        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2, 2 days);
     }
 
     function testRevertsUpdateGuardiansWhenInvalidThreshold() public {
@@ -326,16 +326,16 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(wallet));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidThreshold.selector);
-        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(guardians2, threshold2, guardianHash2, 2 days);
 
         vm.prank(address(wallet));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidThreshold.selector);
-        socialRecoveryModule.updatePendingGuardians(guardians2, 0, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(guardians2, 0, guardianHash2, 2 days);
 
         guardianHash2 = bytes32(keccak256(abi.encodePacked(guardian2_1)));
         vm.prank(address(wallet));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__InvalidThreshold.selector);
-        socialRecoveryModule.updatePendingGuardians(new address[](1), 0, guardianHash2);
+        socialRecoveryModule.updatePendingGuardians(new address[](1), 0, guardianHash2, 2 days);
     }
 
     function testCanReUpdateGuardians() public {
@@ -352,7 +352,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         bytes32 guardianHash3 = bytes32(keccak256(abi.encodePacked(guardian2_1, guardian2_2, guardian2_3)));
 
         vm.prank(address(wallet));
-        socialRecoveryModule.updatePendingGuardians(new address[](0), threshold3, guardianHash3);
+        socialRecoveryModule.updatePendingGuardians(new address[](0), threshold3, guardianHash3, 2 days);
 
         (pendingUntil, pendingThreshold, pendingGuardianHash, guardiansUpdated) =
             socialRecoveryModule.pendingGuardian(address(wallet));
@@ -562,7 +562,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.prank(address(guardian1));
         vm.expectEmit(true, true, true, true);
         emit ApproveRecovery(address(wallet), address(guardian1), recoveryHash);
-        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners, 2 days);
 
         request = socialRecoveryModule.getRecoveryEntry(address(wallet));
         assertEq(request.newOwners.length, newOwners.length);
@@ -578,14 +578,14 @@ contract SocialRecoveryModuleUnitTest is Test {
         newOwners[0] = newOwner1;
         vm.prank(address(adminAddress));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
-        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners, 2 days);
     }
 
     function testRevertsApproveRecoveryIfOwnersEmpty() public {
         newOwners[0] = newOwner1;
         vm.prank(address(guardian1));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OwnersEmpty.selector);
-        socialRecoveryModule.approveRecovery(address(wallet), new address[](0));
+        socialRecoveryModule.approveRecovery(address(wallet), new address[](0), 2 days);
     }
 
     function testRevertsApproveRecoveryIfUnauthorizedWallet() public {
@@ -593,7 +593,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         newOwners[0] = newOwner1;
         vm.prank(address(walletNoRecoveryModule));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
-        socialRecoveryModule.approveRecovery(address(walletNoRecoveryModule), newOwners);
+        socialRecoveryModule.approveRecovery(address(walletNoRecoveryModule), newOwners, 2 days);
     }
 
     function testRevertsApproveRecoveryWhenUnrevealedAnonymousGuardians() public {
@@ -601,7 +601,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         newOwners[0] = newOwner1;
         vm.prank(address(guardian1));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
-        socialRecoveryModule2.approveRecovery(address(wallet), newOwners);
+        socialRecoveryModule2.approveRecovery(address(wallet), newOwners, 2 days);
     }
 
     ////////////////////////////////////
@@ -631,7 +631,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         // bytes32 recoveryHash = socialRecoveryModule.getSocialRecoveryHash(address(wallet), newOwners, recoveryNonce);
 
         vm.prank(address(guardian2));
-        socialRecoveryModule.approveRecovery(address(wallet), newOwners);
+        socialRecoveryModule.approveRecovery(address(wallet), newOwners, 2 days);
 
         assertEq(socialRecoveryModule.getRecoveryApprovals(address(wallet), newOwners), 2);
         assertEq(socialRecoveryModule.hasGuardianApproved(address(guardian2), address(wallet), newOwners), 1);
@@ -774,7 +774,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         uint256 signatureCount = 1;
 
         vm.prank(address(guardian1));
-        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, sign1);
+        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, sign1, 2 days);
 
         request = socialRecoveryModule.getRecoveryEntry(address(wallet));
         assertEq(request.newOwners.length, newOwners.length);
@@ -811,7 +811,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.prank(address(guardian1));
         vm.expectEmit(true, true, true, true);
         emit SocialRecoveryExecuted(address(wallet), newOwners);
-        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, signatures);
+        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, signatures, 2 days);
 
         request = socialRecoveryModule.getRecoveryEntry(address(wallet));
         assertEq(request.newOwners.length, 0);
@@ -883,7 +883,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         guardians3[4] = guardian3_5;
 
         vm.prank(address(wallet));
-        socialRecoveryModule.updatePendingGuardians(guardians3, threshold, guardianHash);
+        socialRecoveryModule.updatePendingGuardians(guardians3, threshold, guardianHash, 2 days);
 
         (uint256 pendingUntil, uint256 pendingThreshold, bytes32 pendingGuardianHash, address[] memory guardiansUpdated)
         = socialRecoveryModule.pendingGuardian(address(wallet));
@@ -942,7 +942,7 @@ contract SocialRecoveryModuleUnitTest is Test {
         vm.expectEmit(true, true, true, true);
         emit PendingRecovery(address(wallet), newOwners, 0, block.timestamp + 2 days);
         emit BatchApproveRecovery(address(wallet), newOwners, signatureCount, signatures, recoveryHash);
-        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, signatures);
+        socialRecoveryModule.batchApproveRecovery(address(wallet), newOwners, signatureCount, signatures, 2 days);
 
         request = socialRecoveryModule.getRecoveryEntry(address(wallet));
         assertEq(request.newOwners.length, newOwners.length);
@@ -971,7 +971,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(guardian1));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__AnonymousGuardianNotRevealed.selector);
-        socialRecoveryModule2.batchApproveRecovery(address(wallet2), newOwners, signatureCount, sign1);
+        socialRecoveryModule2.batchApproveRecovery(address(wallet2), newOwners, signatureCount, sign1, 2 days);
     }
 
     function testRevertsBatchRecoveryIfOwnersEmpty() public {
@@ -984,7 +984,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(guardian1));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__OwnersEmpty.selector);
-        socialRecoveryModule.batchApproveRecovery(address(wallet), new address[](0), signatureCount, sign1);
+        socialRecoveryModule.batchApproveRecovery(address(wallet), new address[](0), signatureCount, sign1, 2 days);
     }
 
     function testRevertsBatchRecoveryWhenUnauthorizedWallet() public {
@@ -999,7 +999,7 @@ contract SocialRecoveryModuleUnitTest is Test {
 
         vm.prank(address(guardian1));
         vm.expectRevert(ISocialRecoveryModule.SocialRecovery__Unauthorized.selector);
-        socialRecoveryModule.batchApproveRecovery(address(walletNoRecoveryModule), newOwners, signatureCount, sign1);
+        socialRecoveryModule.batchApproveRecovery(address(walletNoRecoveryModule), newOwners, signatureCount, sign1, 2 days);
     }
 
     ////////////////////////////////////

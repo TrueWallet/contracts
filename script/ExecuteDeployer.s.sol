@@ -34,7 +34,7 @@ contract ExecuteDeployerScript is Script {
     function setUp() public {
         ownerPublicKey = vm.envAddress("OWNER");
         ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIK_KEY");
+        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIC_KEY");
         deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
 
         entryPoint = SepoliaConfig.ENTRY_POINT_V6;

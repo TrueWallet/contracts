@@ -104,7 +104,8 @@ interface ISocialRecoveryModule {
     /// @param guardians List of new guardian addresses
     /// @param threshold The new threshold of guardians required
     /// @param guardianHash Hash related to the new set of guardians
-    function updatePendingGuardians(address[] calldata guardians, uint256 threshold, bytes32 guardianHash) external;
+    /// @param pendingUntil Seconds after the current block until which the update is pending.
+    function updatePendingGuardians(address[] calldata guardians, uint256 threshold, bytes32 guardianHash, uint pendingUntil) external;
 
     /// @notice Cancel the process of updating guardians
     /// @param wallet The address of the wallet for which the process is being canceled
@@ -113,7 +114,8 @@ interface ISocialRecoveryModule {
     /// @notice A single guardian approves the recovery process
     /// @param wallet The address of the wallet being recovered
     /// @param newOwners The new owner(s) of the wallet post recovery
-    function approveRecovery(address wallet, address[] calldata newOwners) external;
+    /// @param pendingUntil Seconds after the current block until which the update is pending.
+    function approveRecovery(address wallet, address[] calldata newOwners, uint pendingUntil) external;
 
     /// @dev A function where multiple guardians can approve a recovery.
     /// If over half the guardians confirm, there's a 2-day waiting period.
@@ -123,11 +125,13 @@ interface ISocialRecoveryModule {
     /// @param newOwner The new owner(s) of the wallet post recovery
     /// @param signatureCount The count of signatures from guardians
     /// @param signatures The actual signatures from the guardians
+    /// @param pendingUntil Seconds after the current block until which the update is pending.
     function batchApproveRecovery(
         address wallet,
         address[] calldata newOwner,
         uint256 signatureCount,
-        bytes memory signatures
+        bytes memory signatures,
+        uint pendingUntil
     ) external;
 
     /// @notice Execute the recovery process for a wallet

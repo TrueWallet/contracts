@@ -17,7 +17,7 @@ contract DeployDeployerScript is Script {
 
     function setUp() public {
         ownerPublicKey = vm.envAddress("OWNER");
-        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIK_KEY");
+        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIC_KEY");
         deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
     }
 

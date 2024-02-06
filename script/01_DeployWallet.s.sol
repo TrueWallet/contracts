@@ -12,7 +12,7 @@ contract DeployWalletScript is Script {
     uint256 public deployerPrivateKey;
 
     function setUp() public {
-        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIK_KEY");
+        deployerPublicKey = vm.envAddress("DEPLOYER_EOA_PUBLIC_KEY");
         deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
     }
 
