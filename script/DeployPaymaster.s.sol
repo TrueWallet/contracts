@@ -18,7 +18,7 @@ contract DeployPaymasterScript is Script {
     function setUp() public {
         ownerPublicKey = vm.envAddress("OWNER");
         ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
-        entryPoint = MumbaiConfig.ENTRY_POINT;
+        entryPoint = MumbaiConfig.ENTRY_POINT_V6;
     }
 
     function run() public {

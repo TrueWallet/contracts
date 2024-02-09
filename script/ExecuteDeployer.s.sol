@@ -38,11 +38,11 @@ contract ExecuteDeployerScript is Script {
         deployerPrivateKey = vm.envUint("DEPLOYER_EOA_PRIVATE_KEY");
 
         entryPoint = SepoliaConfig.ENTRY_POINT_V6;
-        walletImpl = SepoliaConfig.WALLET_IMPL_1; 
-        deployer = SepoliaConfig.DEPLOYER_CONTRACT_1;
-        // factory = SepoliaConfig.FACTORY_1;
-        // contractManager = SepoliaConfig.CONTRACT_MANAGER_1;
-        // socialRecoveryModule = SepoliaConfig.SOCIAL_RECOVERY_MODULE_1;
+        walletImpl = SepoliaConfig.WALLET_IMPL; 
+        deployer = SepoliaConfig.DEPLOYER_CONTRACT;
+        // factory = SepoliaConfig.FACTORY;
+        // contractManager = SepoliaConfig.CONTRACT_MANAGER;
+        // socialRecoveryModule = SepoliaConfig.SOCIAL_RECOVERY_MODULE;
     }
 
     function run() public {

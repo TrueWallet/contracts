@@ -24,8 +24,8 @@ contract CreateWalletProxyScript is Script {
         ownerPublicKey = vm.envAddress("OWNER");
         ownerPrivateKey = vm.envUint("PRIVATE_KEY_TESTNET");
         entryPoint = MumbaiConfig.ENTRY_POINT_V6;
-        factory = MumbaiConfig.FACTORY_1;
-        securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE_1;
+        factory = MumbaiConfig.FACTORY;
+        securityModule = MumbaiConfig.SECURITY_CONTROL_MODULE;
 
         salt = keccak256(abi.encodePacked(address(factory), address(entryPoint), uint256(0)));
         bytes memory initData = abi.encode(uint32(1));
