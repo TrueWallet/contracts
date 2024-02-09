@@ -37,7 +37,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // Determine what the sender account will be beforehand
-        sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        sender = walletFactory.getWalletAddress(salt);
 
         // Generate a userOperation
         userOp = UserOperation({
@@ -55,9 +55,10 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         });
 
         // Set initCode, to trigger wallet deploy
+        bytes memory initializer = walletFactory.getInitializer(address(entryPoint), walletOwner, modules);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+            abi.encodeWithSelector(walletFactory.createWallet.selector, initializer, salt)
         );
         userOp.initCode = initCode;
 
@@ -101,7 +102,7 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         assertEq(sender.code.length > 0, true, "sender.code.length == 0");
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -116,6 +117,6 @@ contract WalletDeployNoPaymasterEndToEndTest is Test {
         uint256 finalBeneficiaryBalance = address(beneficiary).balance;
         assertEq(finalBeneficiaryBalance > initialBeneficiaryBalance, true, "beneficiary didn't receive payment");
 
-        assertTrue(SecurityControlModule(securityModule).walletInitSeed(address(deployedWallet)) > 0);
+        assertTrue(SecurityControlModule(securityModule).basicInitialized(address(deployedWallet)));
     }
 }

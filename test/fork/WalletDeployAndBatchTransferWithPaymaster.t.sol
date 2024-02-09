@@ -42,7 +42,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
-        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        wallet = walletFactory.getWalletAddress(salt);
         vm.deal(wallet, 1 ether);
 
         // 1. Deploy a MockERC1155 and fund smart wallet with this tokens
@@ -67,9 +67,10 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         });
 
         // 3. Set initCode, to trigger wallet deploy
+        bytes memory initializer = walletFactory.getInitializer(address(entryPoint), walletOwner, modules);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+            abi.encodeWithSelector(walletFactory.createWallet.selector, initializer, salt)
         );
         userOp.initCode = initCode;
 
@@ -91,10 +92,10 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         missingWalletFunds = 1096029019333521;
 
         // 8. Fund deployer with ETH
-        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+        vm.deal(address(MumbaiConfig.WALLET_OWNER), 5 ether);
 
         // 9. Deposit paymaster to pay for gas
-        vm.startPrank(address(MumbaiConfig.DEPLOYER));
+        vm.startPrank(address(MumbaiConfig.WALLET_OWNER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
         vm.stopPrank();
@@ -123,7 +124,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
     /// The wallet executes batch assets transfer and Paymaster pays for gas.
     function testWalletDeployAndAssetsBatchTransferWithPaymaster() public {
         // Verify wallet was not deployed yet
-        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -148,7 +149,7 @@ contract WalletDeployAndBatchTransferWithPaymasterEndToEndTest is Test {
         entryPoint.handleOps(userOps, bundler);
 
         // Verify wallet was deployed as expected
-        expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        expectedWalletAddress = walletFactory.getWalletAddress(salt);
         deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address after deployment

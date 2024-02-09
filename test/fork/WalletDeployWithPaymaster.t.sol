@@ -37,7 +37,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the sender account will be beforehand
-        address sender = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        address sender = walletFactory.getWalletAddress(salt);
         vm.deal(sender, 1 ether);
 
         // 1. Generate a userOperation
@@ -56,9 +56,10 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         });
 
         // 2. Set initCode, to trigger wallet deploy
+        bytes memory initializer = walletFactory.getInitializer(address(entryPoint), walletOwner, modules);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+            abi.encodeWithSelector(walletFactory.createWallet.selector, initializer, salt)
         );
         userOp.initCode = initCode;
 
@@ -74,10 +75,10 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         missingWalletFunds = 1096029019333521;
 
         // 6. Fund deployer with ETH
-        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+        vm.deal(address(MumbaiConfig.WALLET_OWNER), 5 ether);
 
         // 7. Deposit paymaster to pay for gas
-        vm.startPrank(address(MumbaiConfig.DEPLOYER));
+        vm.startPrank(address(MumbaiConfig.WALLET_OWNER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
         vm.stopPrank();
@@ -96,7 +97,7 @@ contract WalletDeployWithPaymasterEndToEndTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
 
         // Verify wallet was deployed as expected
-        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address

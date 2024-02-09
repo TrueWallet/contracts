@@ -63,10 +63,10 @@ contract ETHTransferWithPaymasterEndToEndTest is Test {
         missingWalletFunds = 1096029019333521;
 
         // 5. Fund deployer with ETH
-        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+        vm.deal(address(MumbaiConfig.WALLET_OWNER), 5 ether);
 
         // 6. Deposit paymaster to pay for gas
-        vm.startPrank(address(MumbaiConfig.DEPLOYER));
+        vm.startPrank(address(MumbaiConfig.WALLET_OWNER));
         paymaster.deposit{value: 2 ether}();
         paymaster.addStake{value: 1 ether}(1);
         vm.stopPrank();

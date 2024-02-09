@@ -38,7 +38,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         modules[0] = abi.encodePacked(securityModule, initData);
 
         // 0. Determine what the wallet account will be beforehand and fund ether to this address
-        wallet = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        wallet = walletFactory.getWalletAddress(salt);
         vm.deal(wallet, 1 ether);
 
         // 1. Deploy a MockERC721 and fund smart wallet with token
@@ -62,9 +62,10 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         });
 
         // 3. Set initCode, to trigger wallet deploy
+        bytes memory initializer = walletFactory.getInitializer(address(entryPoint), walletOwner, modules);
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(walletFactory)),
-            abi.encodeWithSelector(walletFactory.createWallet.selector, address(entryPoint), walletOwner, modules, salt)
+            abi.encodeWithSelector(walletFactory.createWallet.selector, initializer, salt)
         );
         userOp.initCode = initCode;
 
@@ -85,14 +86,14 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         missingWalletFunds = 1096029019333521;
 
         // 7. Fund deployer with ETH
-        vm.deal(address(MumbaiConfig.DEPLOYER), 5 ether);
+        vm.deal(address(MumbaiConfig.WALLET_OWNER), 5 ether);
     }
 
     /// @notice Validate that the AA wallet can receive assets before deployment.
     /// The AA wallet is only actually deployed when you send the first transaction with the wallet.
     function testWalletDeployAndTokenTransfer() public {
         // Verify wallet was not deployed yet
-        address expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        address expectedWalletAddress = walletFactory.getWalletAddress(salt);
         IWallet deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address
@@ -119,7 +120,7 @@ contract WalletDeployAndTransferNoPaymasterEndToEndTest is Test {
         assertEq(entryPoint.getNonce(address(wallet), 0), 1);
 
         // Verify wallet was deployed as expected
-        expectedWalletAddress = walletFactory.getWalletAddress(address(entryPoint), walletOwner, modules, salt);
+        expectedWalletAddress = walletFactory.getWalletAddress(salt);
         deployedWallet = IWallet(expectedWalletAddress);
 
         // Extract the code at the expected address after deployment
