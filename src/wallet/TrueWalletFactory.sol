@@ -2,15 +2,15 @@
 pragma solidity ^0.8.19;
 
 import {Ownable} from "solady/auth/Ownable.sol";
-import {CREATE3} from "solady/utils/CREATE3.sol";
 import {Pausable} from "openzeppelin-contracts/security/Pausable.sol";
+import {Create2} from "openzeppelin-contracts/utils/Create2.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
 import {TrueWallet} from "./TrueWallet.sol";
 import {TrueWalletProxy} from "./TrueWalletProxy.sol";
 import {WalletErrors} from "../common/Errors.sol";
 
 /// @title TrueWalletFactory
-/// @notice A factory contract for deploying and managing TrueWallet smart contracts using CREATE2 and CREATE3 for deterministic addresses.
+/// @notice A factory contract for deploying and managing TrueWallet smart contracts using CREATE2 for deterministic addresses.
 /// @dev This contract allows for the creation of TrueWallet instances with predictable addresses.
 contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
     /// @notice Address of the wallet implementation contract.
@@ -35,15 +35,22 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         _setOwner(_owner);
     }
 
-    /// @notice Deploy a new TrueWallet smart contract using CREATE3.
+    /// @notice Deploy a new TrueWallet smart contract using CREATE2.
     /// @param _initializer Initialization data for the new wallet.
-    /// @param _salt A unique salt value used in the CREATE3 operation for deterministic address generation.
+    /// @param _salt A unique salt value used in the CREATE2 operation for deterministic address generation.
     /// @return proxy The address of the newly created TrueWallet contract.
     function createWallet(bytes memory _initializer, bytes32 _salt) external whenNotPaused returns (TrueWallet proxy) {
         bytes memory deploymentData =
             abi.encodePacked(type(TrueWalletProxy).creationCode, uint256(uint160(walletImplementation)));
         
-        proxy = TrueWallet(payable(address(CREATE3.deploy(_salt, deploymentData, 0))));
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            proxy := create2(0x0, add(deploymentData, 0x20), mload(deploymentData), _salt)
+        }
+
+        if (address(proxy) == address(0)) {
+            revert();
+        }
         
         // solhint-disable-next-line no-inline-assembly
         assembly {
@@ -54,12 +61,14 @@ contract TrueWalletFactory is Ownable, Pausable, WalletErrors {
         emit TrueWalletCreation(proxy);
     }
 
-    /// @notice Computes the deterministic address for a potential wallet deployment using CREATE3.
+    /// @notice Computes the deterministic address for a potential wallet deployment using CREATE2.
     /// @dev This doesn't deploy the wallet, just calculates its address using the provided salt.
-    /// @param _salt A unique salt value used in the CREATE3 operation for deterministic address generation.
+    /// @param _salt A unique salt value used in the CREATE2 operation for deterministic address generation.
     /// @return proxy The address of the wallet that would be created using the provided salt.
     function getWalletAddress(bytes32 _salt) public view returns (address proxy) {
-        proxy = CREATE3.getDeployed(_salt);
+        bytes memory deploymentData =
+            abi.encodePacked(type(TrueWalletProxy).creationCode, uint256(uint160(walletImplementation)));
+        proxy = Create2.computeAddress(_salt, keccak256(deploymentData));
     }
 
     /// @notice Constructs the initializer payload for wallet creation.
