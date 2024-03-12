@@ -18,7 +18,7 @@
     "deployfactory:mumbai": "source .env && forge script script/03_DeployWalletFactory.s.sol:DeployWalletFactoryScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --gas-limit $GAS_LIMIT --gas-price 40000000000 --verify -vvvv",
     "deploypaymaster:mumbai": "source .env && forge script script/DeployPaymaster.s.sol:DeployPaymasterScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --gas-limit $GAS_LIMIT --gas-price 40000000000 --verify -vvvv",
     "deploy:manager:modules:mumbai": "source .env && forge script script/04_DeployManagerAndModules.s.sol:DeployManagerAndModules --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
-    "deployfull:local": "source .env && forge script script/DeployFull.s.sol:DeployFullScript --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:local": "source .env && forge script script/DeployLocal.s.sol:DeployLocalScript --rpc-url http://127.0.0.1:8545 --broadcast",
     "deploy:mumbai:walletimpl": "source .env && forge script script/01_DeployWallet.s.sol:DeployWalletScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --gas-limit $GAS_LIMIT --gas-price 40000000000 --verify -vvvv",
     "deploy:mumbai:deployer": "source .env && forge script script/deployer/02_DeployDeployer.s.sol:DeployDeployerScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --verify -vvvv",
     "deploy:mumbai:factory": "source .env && forge script script/deployer/ExecuteDeployer.s.sol:ExecuteDeployerScript --rpc-url $MUMBAI_RPC_URL --broadcast --etherscan-api-key $POLYGONSCAN_API_KEY --gas-limit $GAS_LIMIT --gas-price 40000000000 --verify -vvvv",
